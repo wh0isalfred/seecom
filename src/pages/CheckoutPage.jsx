@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createOrderAfterPayment } from '../services/checkoutService';
-import logoBadge from '../assets/logo.jpeg';
+import logoBadge from '../assets/logo.webp';
 
 const SHIPPING_THRESHOLD = 50000;
 const FLAT_SHIPPING      = 3500;
