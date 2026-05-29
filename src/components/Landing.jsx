@@ -72,11 +72,9 @@ export default function Landing({ onNavigate }) {
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    audio.volume = 0.5;
+    audio.volume = 0.3;
 
-    // Attempt immediate autoplay
     audio.play().catch(() => {
-      // Browser blocked autoplay — play on the very first user interaction instead
       const unlock = () => {
         audio.play().catch(() => {});
         window.removeEventListener('touchstart', unlock);
@@ -87,6 +85,12 @@ export default function Landing({ onNavigate }) {
       window.addEventListener('mousedown',  unlock, { once: true });
       window.addEventListener('keydown',    unlock, { once: true });
     });
+
+    // Stop music when user leaves the landing page
+    return () => {
+      audio.pause();
+      audio.currentTime = 0;
+    };
   }, []);
 
   // Sync play/pause and volume changes after initial mount
