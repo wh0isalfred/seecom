@@ -16,7 +16,7 @@ const ShirtIcon = ({ size = 24 }) => (
 );
 
 const seeComModelPath = new URL('../assets/see-com.glb', import.meta.url).href;
-const musicPath       = new URL('../assets/music.mp3',   import.meta.url).href;
+const musicPath       = new URL('../assets/music.mp4',   import.meta.url).href;
 
 export default function Landing({ onNavigate }) {
   const mountRef    = useRef(null);
@@ -28,8 +28,8 @@ export default function Landing({ onNavigate }) {
   const [time, setTime]                   = useState({ date: "", clock: "" });
   const [hoveredLink, setHoveredLink]     = useState(null);
   const [hoveredSocial, setHoveredSocial] = useState(null);
-  const [isPlaying, setIsPlaying]         = useState(false);
-  const [volume, setVolume]               = useState(0);
+  const [isPlaying, setIsPlaying]         = useState(true);
+  const [volume, setVolume]               = useState(0.3);
   const [showVolume, setShowVolume]       = useState(false);
   const [isMobile, setIsMobile]           = useState(window.innerWidth < 768);
 
@@ -68,17 +68,37 @@ export default function Landing({ onNavigate }) {
   }, []);
 
   // ── Audio ──────────────────────────────────────────────────────────────────
+  // ── Audio — autoplay at 30%, fall back to first-interaction if browser blocks ──
   useEffect(() => {
-    if (!audioRef.current) return;
-    audioRef.current.volume = volume;
-    if (isPlaying && volume > 0) audioRef.current.play().catch(() => {});
-    else audioRef.current.pause();
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.volume = 0.3;
+
+    // Attempt immediate autoplay
+    audio.play().catch(() => {
+      // Browser blocked autoplay — play on the very first user interaction instead
+      const unlock = () => {
+        audio.play().catch(() => {});
+        window.removeEventListener('touchstart', unlock);
+        window.removeEventListener('mousedown',  unlock);
+        window.removeEventListener('keydown',    unlock);
+      };
+      window.addEventListener('touchstart', unlock, { once: true });
+      window.addEventListener('mousedown',  unlock, { once: true });
+      window.addEventListener('keydown',    unlock, { once: true });
+    });
+  }, []);
+
+  // Sync play/pause and volume changes after initial mount
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.volume = volume;
+    if (isPlaying && volume > 0) audio.play().catch(() => {});
+    else audio.pause();
   }, [isPlaying, volume]);
 
-  const togglePlay = () => {
-    if (volume === 0) { setVolume(0.5); setIsPlaying(true); }
-    else setIsPlaying(p => !p);
-  };
+  const togglePlay = () => setIsPlaying(p => !p);
 
   // ── Mouse rotation ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -240,7 +260,7 @@ export default function Landing({ onNavigate }) {
       paddingBottom: isMobile ? 24 : 0,
     }}>
 
-      <audio ref={audioRef} loop crossOrigin="anonymous">
+      <audio ref={audioRef} loop crossOrigin="anonymous" preload="auto">
         <source src={musicPath} type="audio/mpeg" />
       </audio>
 
