@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { fetchProductById, fetchProductInventory } from '../services/products';
 import Footer from '../components/Footer';
-import logoBadge from '../assets/logo.jpeg';
+import logoBadge from '../assets/logo.webp';
 import { useDiscount } from '../contexts/DiscountContext';
 import { getEffectivePrice, isDiscounted, getDiscountLabel } from '../utils/discountUtils';
 
