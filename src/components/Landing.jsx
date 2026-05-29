@@ -34,6 +34,9 @@ export default function Landing({ onNavigate }) {
   const mouseY = useRef(0);
   const targetRotX = useRef(0);
   const targetRotY = useRef(0);
+  const touchStartX = useRef(null);
+  const touchStartY = useRef(null);
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
   useEffect(() => {
     const tick = () => {
@@ -92,7 +95,37 @@ export default function Landing({ onNavigate }) {
     };
 
     window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+
+    // Touch: rotate model on swipe
+    const handleTouchStart = (e) => {
+      touchStartX.current = e.touches[0].clientX;
+      touchStartY.current = e.touches[0].clientY;
+    };
+    const handleTouchMove = (e) => {
+      if (touchStartX.current === null) return;
+      const dx = e.touches[0].clientX - touchStartX.current;
+      const dy = e.touches[0].clientY - touchStartY.current;
+      targetRotY.current = (dx / window.innerWidth) * Math.PI * 2;
+      targetRotX.current = -(dy / window.innerHeight) * Math.PI * 1.5;
+    };
+    const handleTouchEnd = () => {
+      touchStartX.current = null;
+      touchStartY.current = null;
+      // Gently return to neutral
+      targetRotX.current = 0;
+      targetRotY.current = 0;
+    };
+
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
+    window.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
   }, [hoveredMusic]);
 
   useEffect(() => {
@@ -217,139 +250,75 @@ export default function Landing({ onNavigate }) {
         <source src={musicPath} type="audio/mpeg" />
       </audio>
 
-      {/* Modern Vertical Tube Volume Control */}
+      {/* Volume / Music control */}
       <div
-        onMouseEnter={() => {
-          setHoveredMusic(true);
-          setShowVolumeControl(true);
-        }}
-        onMouseLeave={() => {
-          setHoveredMusic(false);
-          setShowVolumeControl(false);
-        }}
-        style={{
-          position: 'fixed',
-          top: 20,
-          right: 20,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 14,
-          zIndex: 100,
-        }}
+        onMouseEnter={() => { setHoveredMusic(true); setShowVolumeControl(true); }}
+        onMouseLeave={() => { setHoveredMusic(false); setShowVolumeControl(false); }}
+        style={{ position: 'fixed', top: 20, right: 20, display: 'flex', alignItems: 'center', gap: 14, zIndex: 100 }}
       >
-        {/* Vertical Tube Slider */}
+        {/* Volume slider — horizontal on mobile, vertical tube on desktop */}
         {showVolumeControl && (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 8,
-              animation: 'slideInLeft 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-            }}
-          >
-            {/* Modern Tube Container */}
-            <div
-              style={{
-                position: 'relative',
-                width: 14,
-                height: 140,
-                background: 'rgba(200, 200, 200, 0.3)',
-                borderRadius: 10,
-                overflow: 'hidden',
-                border: '1px solid rgba(220, 38, 38, 0.2)',
-                boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.1)',
-              }}
-            >
-              {/* Tube Filler - Modern Gradient */}
-              <div
-                style={{
-                  position: 'absolute',
-                  bottom: 0,
-                  left: 0,
-                  width: '100%',
-                  height: `${volume * 100}%`,
-                  background: 'linear-gradient(180deg, #be1826 0%, #b91c1c 100%)',
-                  borderRadius: '10px 10px 0 0',
-                  transition: 'height 0.15s ease',
-                  boxShadow: '0 0 12px rgba(220, 38, 38, 0.4)',
-                }}
-              />
-
-              {/* Hidden Range Input */}
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={volume}
-                onChange={(e) => {
-                  setVolume(parseFloat(e.target.value));
-                  if (parseFloat(e.target.value) > 0) {
-                    setIsPlaying(true);
-                  }
-                }}
-                style={{
-                  position: 'absolute',
-                  width: '100%',
-                  height: '100%',
-                  opacity: 0,
-                  cursor: 'pointer',
-                  writingMode: 'bt-lr',
-                  appearance: 'slider-vertical',
-                  WebkitAppearance: 'slider-vertical',
-                }}
-              />
-            </div>
-
-            {/* Shirt Icon Indicator */}
-            <div
-              style={{
-                color: volume > 0 ? '#be1826' : '#999',
-                transition: 'color 0.2s ease',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <ShirtIcon size={18} />
-            </div>
+          <div style={{ animation: 'slideInLeft 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)' }}>
+            {isMobile ? (
+              /* ── Mobile: horizontal slider ── */
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill={volume > 0 ? '#be1826' : '#999'}>
+                  <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
+                </svg>
+                <input
+                  type="range" min="0" max="1" step="0.01" value={volume}
+                  onChange={(e) => { setVolume(parseFloat(e.target.value)); if (parseFloat(e.target.value) > 0) setIsPlaying(true); }}
+                  style={{ width: 80, height: 4, accentColor: '#be1826', cursor: 'pointer' }}
+                />
+              </div>
+            ) : (
+              /* ── Desktop: vertical tube ── */
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                <div style={{ position: 'relative', width: 14, height: 140, background: 'rgba(200,200,200,0.3)', borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(220,38,38,0.2)', boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.1)' }}>
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: `${volume * 100}%`, background: 'linear-gradient(180deg, #be1826 0%, #b91c1c 100%)', borderRadius: '10px 10px 0 0', transition: 'height 0.15s ease', boxShadow: '0 0 12px rgba(220,38,38,0.4)' }} />
+                  <input
+                    type="range" min="0" max="1" step="0.01" value={volume}
+                    onChange={(e) => { setVolume(parseFloat(e.target.value)); if (parseFloat(e.target.value) > 0) setIsPlaying(true); }}
+                    style={{ position: 'absolute', width: '100%', height: '100%', opacity: 0, cursor: 'pointer', writingMode: 'bt-lr', appearance: 'slider-vertical', WebkitAppearance: 'slider-vertical' }}
+                  />
+                </div>
+                <div style={{ color: volume > 0 ? '#be1826' : '#999', transition: 'color 0.2s ease' }}>
+                  <ShirtIcon size={18} />
+                </div>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Play/Pause Button */}
+        {/* Play/Pause button */}
         <button
           onClick={togglePlay}
+          onTouchStart={() => { setShowVolumeControl(true); }}
           aria-label="Toggle music"
           style={{
-            color: isPlaying && volume > 0 ? "#ffffff" : "#666",
-            display: "flex",
-            background: isPlaying && volume > 0 
-              ? 'linear-gradient(135deg, #be1826, #b91c1c)' 
-              : 'rgba(200, 200, 200, 0.4)',
+            color: isPlaying && volume > 0 ? '#ffffff' : '#666',
+            display: 'flex',
+            background: isPlaying && volume > 0 ? 'linear-gradient(135deg, #be1826, #b91c1c)' : 'rgba(200,200,200,0.4)',
             backdropFilter: 'blur(10px)',
             border: 'none',
             cursor: 'pointer',
             transition: 'all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
             padding: '12px',
-            margin: 0,
             borderRadius: '50%',
             alignItems: 'center',
             justifyContent: 'center',
-            width: 48,
-            height: 48,
-            boxShadow: isPlaying && volume > 0 ? '0 8px 24px rgba(220, 38, 38, 0.3)' : 'none',
+            width: isMobile ? 52 : 48,
+            height: isMobile ? 52 : 48,
+            boxShadow: isPlaying && volume > 0 ? '0 8px 24px rgba(220,38,38,0.3)' : 'none',
             transform: showVolumeControl ? 'scale(1.1)' : 'scale(1)',
+            touchAction: 'manipulation',
+            WebkitTapHighlightColor: 'transparent',
           }}
         >
           {isPlaying && volume > 0 ? (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-            </svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" /></svg>
           ) : (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M8 5v14l11-7z" />
-            </svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
           )}
         </button>
       </div>
@@ -408,8 +377,8 @@ export default function Landing({ onNavigate }) {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: 14,
-          marginBottom: 44,
+          gap: isMobile ? 18 : 14,
+          marginBottom: isMobile ? 36 : 44,
         }}
       >
         {links.map(({ label, href, action }) => (
@@ -419,7 +388,7 @@ export default function Landing({ onNavigate }) {
               onMouseEnter={() => setHoveredLink(label)}
               onMouseLeave={() => setHoveredLink(null)}
               style={{
-                fontSize: 10.5,
+                fontSize: isMobile ? 12 : 10.5,
                 fontFamily: "'Arial Black', 'Impact', Arial, sans-serif",
                 fontWeight: 600,
                 letterSpacing: "0.26em",
@@ -432,21 +401,25 @@ export default function Landing({ onNavigate }) {
                 cursor: 'pointer',
                 transition: 'all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
                 transform: hoveredLink === label ? 'scale(1.12)' : 'scale(1)',
-                padding: 0,
+                padding: isMobile ? '10px 20px' : '4px 0',
                 margin: 0,
                 position: 'relative',
+                minHeight: 44,
+                display: 'flex',
+                alignItems: 'center',
+                WebkitTapHighlightColor: 'transparent',
+                touchAction: 'manipulation',
               }}
             >
               {label}
             </button>
-            
             <div
               style={{
                 position: 'absolute',
-                bottom: -6,
+                bottom: isMobile ? 4 : -6,
                 left: '50%',
                 transform: 'translateX(-50%)',
-                width: hoveredLink === label ? '100%' : '0%',
+                width: hoveredLink === label ? '80%' : '0%',
                 height: 2,
                 backgroundColor: '#be1826',
                 transition: 'width 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
@@ -455,13 +428,9 @@ export default function Landing({ onNavigate }) {
           </div>
         ))}
       </nav>
+      </nav>
 
-      <div style={{ 
-        display: "flex", 
-        gap: 22, 
-        alignItems: "center",
-        flex: '0 0 auto',
-      }}>
+      <div style={{ display: "flex", gap: isMobile ? 32 : 22, alignItems: "center", flex: '0 0 auto' }}>
         {socials.map(({ id, icon: Icon, label }) => (
           <button
             key={id}
@@ -469,21 +438,25 @@ export default function Landing({ onNavigate }) {
             onMouseEnter={() => setHoveredSocial(id)}
             onMouseLeave={() => setHoveredSocial(null)}
             aria-label={label}
-            style={{ 
+            style={{
               color: hoveredSocial === id ? "#be1826" : "#333",
-              display: "flex", 
+              display: "flex",
               background: 'none',
               border: 'none',
               cursor: 'pointer',
               transition: 'all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
               transform: hoveredSocial === id ? 'scale(1.3)' : 'scale(1)',
-              padding: 0,
+              padding: isMobile ? '10px' : '0',
               margin: 0,
               alignItems: 'center',
               justifyContent: 'center',
+              minWidth: 44,
+              minHeight: 44,
+              WebkitTapHighlightColor: 'transparent',
+              touchAction: 'manipulation',
             }}
           >
-            {id === 'instagram' ? <Icon size={20} strokeWidth={1.8} /> : <Icon size={20} />}
+            {id === 'instagram' ? <Icon size={isMobile ? 24 : 20} strokeWidth={1.8} /> : <Icon size={isMobile ? 24 : 20} />}
           </button>
         ))}
       </div>

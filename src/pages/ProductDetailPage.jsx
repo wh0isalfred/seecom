@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { fetchProductById, fetchProductInventory } from '../services/products';
 import Footer from '../components/Footer';
-import logoBadge from '../assets/logo.webp';
+import logoBadge from '../assets/logo.jpeg';
 import { useDiscount } from '../contexts/DiscountContext';
 import { getEffectivePrice, isDiscounted, getDiscountLabel } from '../utils/discountUtils';
 
@@ -184,7 +184,7 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
 
           {/* Name + price */}
           <div style={{
-            padding: '28px 28px 20px',
+            padding: isDesktop ? '28px 28px 20px' : '20px 16px 16px',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'flex-start',
@@ -244,7 +244,7 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
           </div>
 
           {/* Accordion sections */}
-          <div style={{ padding: '16px 28px', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ padding: isDesktop ? '16px 28px' : '12px 16px', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
             {/* SIZE — hidden if only one option (auto-selected above) */}
             {sizes.length > 1 && (
@@ -350,7 +350,7 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
           </div>
 
           {/* ADD TO BAG — pinned to bottom */}
-          <div style={{ padding: '20px 28px 28px', borderTop: '1px solid #f0f0f0' }}>
+          <div style={{ padding: isDesktop ? '20px 28px 28px' : '16px 16px 24px', borderTop: '1px solid #f0f0f0' }}>
 
             {/* Selection nudge */}
             {!selectedSize && sizes.length > 1 && (
@@ -586,6 +586,8 @@ function SizeButton({ label, selected, oos, onClick }) {
         position: 'relative',
         width: '52px',
         height: '52px',
+        minWidth: '48px',
+        minHeight: '48px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -599,6 +601,8 @@ function SizeButton({ label, selected, oos, onClick }) {
         color: oos ? '#ccc' : selected ? '#fff' : '#000',
         transition: 'all 0.15s',
         overflow: 'hidden',
+        WebkitTapHighlightColor: 'transparent',
+        touchAction: 'manipulation',
       }}
       onMouseEnter={(e) => { if (!oos && !selected) e.currentTarget.style.borderColor = '#000'; }}
       onMouseLeave={(e) => { if (!oos && !selected) e.currentTarget.style.borderColor = '#d0d0d0'; }}
@@ -684,6 +688,9 @@ function AddToBagButton({ state, canAdd, isSoldOut, onClick }) {
         letterSpacing: '0.18em',
         cursor: isSoldOutDisplay ? 'not-allowed' : 'pointer',
         transition: 'background 0.3s ease',
+        minHeight: '52px',
+        WebkitTapHighlightColor: 'transparent',
+        touchAction: 'manipulation',
       }}
     >
       {label}

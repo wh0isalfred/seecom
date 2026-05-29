@@ -28,6 +28,13 @@ const fmtDate = (d) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric',
 // ── Root ─────────────────────────────────────────────────────────────────────
 export default function AdminPage({ onNavigate }) {
   const [tab, setTab] = useState('dashboard');
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', h);
+    return () => window.removeEventListener('resize', h);
+  }, []);
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f7f7f7' }}>
@@ -37,14 +44,17 @@ export default function AdminPage({ onNavigate }) {
           <button onClick={() => onNavigate?.('home')} style={logoBtn}>SEE.COM</button>
           <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', letterSpacing: '0.14em', color: '#ccc', textTransform: 'uppercase' }}>Admin</span>
         </div>
-        <div style={{ display: 'flex' }}>
+        {/* Tabs — scrollable on mobile */}
+        <div style={{ display: 'flex', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {['dashboard', 'orders', 'inventory', 'products'].map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
+              flexShrink: 0,
               padding: '11px 20px', background: 'none', border: 'none',
               borderBottom: tab === t ? '2px solid #be1826' : '2px solid transparent',
               fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700,
               fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase',
               color: tab === t ? '#be1826' : '#aaa', cursor: 'pointer', transition: 'color 0.15s',
+              WebkitTapHighlightColor: 'transparent',
             }}>
               {t}
             </button>
@@ -52,18 +62,18 @@ export default function AdminPage({ onNavigate }) {
         </div>
       </div>
 
-      <div style={{ padding: '32px 40px', maxWidth: '1400px', margin: '0 auto' }}>
-        {tab === 'dashboard'  && <DashboardTab setTab={setTab} />}
-        {tab === 'orders'     && <OrdersTab />}
-        {tab === 'inventory'  && <InventoryTab />}
-        {tab === 'products'   && <ProductsTab />}
+      <div style={{ padding: isMobile ? '20px 16px' : '32px 40px', maxWidth: '1400px', margin: '0 auto' }}>
+        {tab === 'dashboard'  && <DashboardTab setTab={setTab} isMobile={isMobile} />}
+        {tab === 'orders'     && <OrdersTab isMobile={isMobile} />}
+        {tab === 'inventory'  && <InventoryTab isMobile={isMobile} />}
+        {tab === 'products'   && <ProductsTab isMobile={isMobile} />}
       </div>
     </div>
   );
 }
 
 // ── DASHBOARD ────────────────────────────────────────────────────────────────
-function DashboardTab({ setTab }) {
+function DashboardTab({ setTab, isMobile }) {
   const [orders, setOrders]     = useState([]);
   const [inventory, setInv]     = useState([]);
   const [loading, setLoading]   = useState(true);
@@ -86,7 +96,7 @@ function DashboardTab({ setTab }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
       {/* Stat cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '12px' }}>
         <StatCard label="Total Revenue" value={fmt(revenue)} sub="from paid orders" accent="#16a34a" />
         <StatCard label="Orders Today"  value={todayCount}  sub="new orders"        accent="#3b82f6" />
         <StatCard label="Pending"       value={pending}     sub="awaiting action"   accent="#f59e0b"
@@ -153,7 +163,7 @@ function DashboardTab({ setTab }) {
 }
 
 // ── ORDERS ───────────────────────────────────────────────────────────────────
-function OrdersTab() {
+function OrdersTab({ isMobile = false }) {
   const [orders, setOrders]       = useState([]);
   const [loading, setLoading]     = useState(true);
   const [filter, setFilter]       = useState('all');
@@ -247,7 +257,7 @@ function OrdersTab() {
                   onClick={() => setExpanded(isExpanded ? null : order.id)}
                   style={{ width: '100%', background: 'none', border: 'none', padding: '16px 20px', cursor: 'pointer', textAlign: 'left' }}
                 >
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 2fr 1fr 1fr 1fr 1fr 24px', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ display: isMobile ? 'flex' : 'grid', flexDirection: isMobile ? 'column' : undefined, gridTemplateColumns: isMobile ? undefined : '1.5fr 2fr 1fr 1fr 1fr 1fr 24px', alignItems: isMobile ? 'flex-start' : 'center', gap: '8px' }}>
                     <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '12px', letterSpacing: '0.06em' }}>
                       {order.order_number}
                     </span>
@@ -268,7 +278,7 @@ function OrdersTab() {
 
                 {/* Expanded detail */}
                 {isExpanded && (
-                  <div style={{ borderTop: '1px solid #f0f0f0', padding: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                  <div style={{ borderTop: '1px solid #f0f0f0', padding: '20px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '24px' }}>
                     {/* Items */}
                     <div>
                       <p style={sectionLabel}>Items</p>
@@ -396,7 +406,7 @@ function OrdersTab() {
 }
 
 // ── INVENTORY ────────────────────────────────────────────────────────────────
-function InventoryTab() {
+function InventoryTab({ isMobile = false }) {
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading]     = useState(true);
   const [edits, setEdits]         = useState({});
@@ -553,7 +563,7 @@ function InventoryTab() {
 }
 
 // ── PRODUCTS ─────────────────────────────────────────────────────────────────
-function ProductsTab() {
+function ProductsTab({ isMobile = false }) {
   const [products, setProducts]     = useState([]);
   const [loading, setLoading]       = useState(true);
   const [showForm, setShowForm]     = useState(false);
@@ -800,7 +810,7 @@ function ProductsTab() {
                       {editError[p.id]}
                     </div>
                   )}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: '12px', marginBottom: '12px' }}>
                     <div>
                       <label style={editLabel}>Product Name</label>
                       <input

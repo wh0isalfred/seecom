@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useDiscount } from '../contexts/DiscountContext';
 import { getEffectivePrice, isDiscounted, getDiscountLabel } from '../utils/discountUtils';
 
@@ -6,6 +6,9 @@ export default function ProductCard({ product, showPrice, onProductClick }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isHovering, setIsHovering] = useState(false);
   const { discount } = useDiscount();
+  const touchStartX = useRef(null);
+  const touchStartY = useRef(null);
+  const isDragging = useRef(false);
 
   const effectivePrice = getEffectivePrice(product, discount);
   const discounted     = isDiscounted(product, discount);
@@ -27,15 +30,36 @@ export default function ProductCard({ product, showPrice, onProductClick }) {
 
   return (
     <div
-      onClick={() => onProductClick?.(product.id)}
-      style={{
-        cursor: 'pointer',
-      }}
+      onClick={() => { if (!isDragging.current) onProductClick?.(product.id); }}
+      style={{ cursor: 'pointer' }}
     >
       {/* Image Container */}
       <div
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
+        onTouchStart={(e) => {
+          touchStartX.current = e.touches[0].clientX;
+          touchStartY.current = e.touches[0].clientY;
+          isDragging.current = false;
+        }}
+        onTouchMove={(e) => {
+          if (touchStartX.current === null) return;
+          const dx = Math.abs(e.touches[0].clientX - touchStartX.current);
+          const dy = Math.abs(e.touches[0].clientY - touchStartY.current);
+          if (dx > 8) isDragging.current = true;
+        }}
+        onTouchEnd={(e) => {
+          if (touchStartX.current === null) return;
+          const dx = e.changedTouches[0].clientX - touchStartX.current;
+          const dy = Math.abs(e.changedTouches[0].clientY - touchStartY.current);
+          if (Math.abs(dx) > 40 && dy < 60) {
+            // horizontal swipe
+            if (dx < 0) setCurrentImageIndex(prev => (prev === images.length - 1 ? 0 : prev + 1));
+            else        setCurrentImageIndex(prev => (prev === 0 ? images.length - 1 : prev - 1));
+          }
+          touchStartX.current = null;
+          touchStartY.current = null;
+        }}
         style={{
           position: 'relative',
           aspectRatio: '1/1',
@@ -74,6 +98,31 @@ export default function ProductCard({ product, showPrice, onProductClick }) {
             {discountLabel}
           </div>
         )}
+        {/* Dot indicators — visible on mobile */}
+        {images.length > 1 && (
+          <div style={{
+            position: 'absolute',
+            bottom: '8px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+            gap: '4px',
+            zIndex: 5,
+            pointerEvents: 'none',
+          }}>
+            {images.map((_, i) => (
+              <div key={i} style={{
+                width: currentImageIndex === i ? 14 : 5,
+                height: 5,
+                borderRadius: 3,
+                backgroundColor: currentImageIndex === i ? '#fff' : 'rgba(255,255,255,0.5)',
+                transition: 'width 0.2s ease',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+              }} />
+            ))}
+          </div>
+        )}
+
         {isHovering && (
           <>
             <button
