@@ -74,7 +74,7 @@ export default function HomePage({ onNavigate }) {
           backgroundImage: `url(${heroImage})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          backgroundColor: '#2a1a0e',
+          backgroundColor: '#350000',
           display: 'block',
           overflow: 'hidden',
           margin: 0,
