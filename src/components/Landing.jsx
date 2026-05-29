@@ -72,7 +72,7 @@ export default function Landing({ onNavigate }) {
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    audio.volume = 0.3;
+    audio.volume = 0.4;
 
     // Attempt immediate autoplay
     audio.play().catch(() => {
