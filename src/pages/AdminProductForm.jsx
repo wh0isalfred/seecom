@@ -2,6 +2,13 @@ import { useState, useEffect } from 'react';
 import { uploadProductImage, createProduct } from '../services/productAdmin';
 
 export default function AdminProductForm({ onProductCreated }) {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', h);
+    return () => window.removeEventListener('resize', h);
+  }, []);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -155,7 +162,7 @@ export default function AdminProductForm({ onProductCreated }) {
   };
 
   return (
-    <div style={{ padding: '40px', maxWidth: '900px', margin: '0 auto' }}>
+    <div style={{ padding: isMobile ? '24px 16px' : '40px', maxWidth: '900px', margin: '0 auto' }}>
       <h1 style={{ marginBottom: '24px', fontFamily: "'Space Grotesk', sans-serif" }}>ADD PRODUCT</h1>
 
       {error && (
@@ -184,7 +191,7 @@ export default function AdminProductForm({ onProductCreated }) {
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {/* Basic Info */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
           <input
             type="text"
             name="name"
@@ -214,7 +221,7 @@ export default function AdminProductForm({ onProductCreated }) {
           style={{ padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}
         />
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
           <select
             name="category"
             value={formData.category}
@@ -253,7 +260,7 @@ export default function AdminProductForm({ onProductCreated }) {
         </div>
 
         {/* Images */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '16px' }}>
           {['image_1', 'image_2', 'image_male', 'image_female'].map(type => (
             <div key={type}>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
@@ -296,20 +303,22 @@ export default function AdminProductForm({ onProductCreated }) {
           <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
             COLORS <span style={{ color: '#be1826' }}>*</span>
           </label>
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
             {['Black', 'White', 'Red', 'Navy', 'Green', 'Gold', 'Silver', 'Grey'].map(color => (
               <button
                 key={color}
                 type="button"
                 onClick={() => formData.colors.includes(color) ? handleColorRemove(color) : handleColorAdd(color)}
                 style={{
-                  padding: '8px 12px',
+                  padding: isMobile ? '10px 14px' : '8px 12px',
                   background: formData.colors.includes(color) ? '#000' : '#eee',
                   color: formData.colors.includes(color) ? '#fff' : '#000',
                   border: 'none',
                   borderRadius: '4px',
                   cursor: 'pointer',
                   fontSize: '12px',
+                  minHeight: '40px',
+                  WebkitTapHighlightColor: 'transparent',
                 }}
               >
                 {color}
@@ -365,8 +374,8 @@ export default function AdminProductForm({ onProductCreated }) {
           )}
 
           {inventory.length > 0 && (
-            <div style={{ maxHeight: '300px', overflowY: 'auto', border: '1px solid #ccc', borderRadius: '4px', padding: '12px' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <div style={{ maxHeight: '300px', overflowY: 'auto', overflowX: 'auto', border: '1px solid #ccc', borderRadius: '4px', padding: '12px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: isMobile ? '280px' : 'auto' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid #ddd' }}>
                     <th style={{ textAlign: 'left', padding: '8px', fontWeight: '600' }}>Size</th>
@@ -400,7 +409,7 @@ export default function AdminProductForm({ onProductCreated }) {
           type="submit"
           disabled={loading}
           style={{
-            padding: '12px 24px',
+            padding: '14px 24px',
             background: loading ? '#ccc' : '#be1826',
             color: '#fff',
             border: 'none',
@@ -409,6 +418,9 @@ export default function AdminProductForm({ onProductCreated }) {
             fontSize: '14px',
             fontWeight: '600',
             letterSpacing: '0.1em',
+            width: isMobile ? '100%' : 'auto',
+            minHeight: '48px',
+            WebkitTapHighlightColor: 'transparent',
           }}
         >
           {loading ? 'CREATING...' : 'CREATE PRODUCT'}

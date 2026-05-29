@@ -276,8 +276,12 @@ function OrdersTab({ isMobile = false }) {
                   </div>
                 </button>
 
-                {/* Expanded detail */}
-                {isExpanded && (
+                {/* Expanded detail — smooth slide */}
+                <div style={{
+                  overflow: 'hidden',
+                  maxHeight: isExpanded ? '800px' : '0',
+                  transition: 'max-height 0.3s ease',
+                }}>
                   <div style={{ borderTop: '1px solid #f0f0f0', padding: '20px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '24px' }}>
                     {/* Items */}
                     <div>
@@ -395,7 +399,7 @@ function OrdersTab({ isMobile = false }) {
                       </div>
                     </div>
                   </div>
-                )}
+                </div>
               </div>
             );
           })}
@@ -802,8 +806,12 @@ function ProductsTab({ isMobile = false }) {
                 </div>
               </div>
 
-              {/* ── Inline edit form ── */}
-              {editing === p.id && (
+              {/* ── Inline edit form — smooth slide ── */}
+              <div style={{
+                overflow: 'hidden',
+                maxHeight: editing === p.id ? '600px' : '0',
+                transition: 'max-height 0.28s ease',
+              }}>
                 <div style={{ borderTop: '1px solid #f5f5f5', padding: '20px', backgroundColor: '#fafafa' }}>
                   {editError[p.id] && (
                     <div style={{ padding: '8px 12px', backgroundColor: '#fff5f5', borderLeft: '3px solid #be1826', fontFamily: "'Archivo', sans-serif", fontSize: '12px', color: '#be1826', marginBottom: '14px' }}>
@@ -861,7 +869,7 @@ function ProductsTab({ isMobile = false }) {
                     </button>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
           ))}
         </div>
