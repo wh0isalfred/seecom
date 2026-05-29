@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createOrderAfterPayment } from '../services/checkoutService';
-import logoBadge from '../assets/logo.webp';
+import logoBadge from '../assets/logo.jpeg';
 
 const SHIPPING_THRESHOLD = 50000;
 const FLAT_SHIPPING      = 3500;
@@ -86,17 +86,17 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
           { display_name: 'Address', variable_name: 'address', value: `${form.address}, ${form.city}, ${form.state}` },
         ],
       },
-      callback: async (response) => {
+      callback: (response) => {
         setLoading(true);
-        try {
-          const order = await createOrderAfterPayment({ formData: form, cart, paystackReference: response.reference, total, shipping });
-          setCart([]);
-          setOrderDone(order);
-        } catch {
-          setError(`Payment received (ref: ${response.reference}) but order failed. Contact us with this reference.`);
-        } finally {
-          setLoading(false);
-        }
+        createOrderAfterPayment({ formData: form, cart, paystackReference: response.reference, total, shipping })
+          .then(order => {
+            setCart([]);
+            setOrderDone(order);
+          })
+          .catch(() => {
+            setError(`Payment received (ref: ${response.reference}) but order failed. Contact us with this reference.`);
+          })
+          .finally(() => setLoading(false));
       },
       onClose: () => {},
     });
