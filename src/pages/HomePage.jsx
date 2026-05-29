@@ -5,7 +5,7 @@ import { fetchProducts } from '../services/products';
 import ProductCard from '../components/ProductCard';
 import { useResponsiveGrid } from '../utils/responsiveGrid';
 import Footer from '../components/Footer';
-import lookbookImage from '../assets/lookbook3.jpeg';
+import lookbookImage from '../assets/lookbook3.webp';
 
 export default function HomePage({ onNavigate }) {
   const [pastHero, setPastHero] = useState(false);

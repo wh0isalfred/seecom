@@ -3,7 +3,7 @@ import ProductCard from '../components/ProductCard';
 import Footer from '../components/Footer';
 import { fetchProducts } from '../services/products';
 import { useResponsiveGrid } from '../utils/responsiveGrid';
-import logoBadge from '../assets/logo.jpeg';
+import logoBadge from '../assets/logo.webp';
 
 export default function ShopPage({ onNavigate }) {
   const [showPrice, setShowPrice] = useState(false);

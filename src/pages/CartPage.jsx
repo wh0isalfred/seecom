@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import Footer from '../components/Footer';
-import logoBadge from '../assets/logo.jpeg';
+import logoBadge from '../assets/logo.webp';
 
 // Cart item shape (set by ProductDetailPage when adding to cart):
 // { id: string, productId: string, name: string, price: number,
