@@ -94,7 +94,7 @@ export default function Footer() {
               letterSpacing: '0.12em',
               color: '#000',
               marginBottom: '20px',
-              margin: 0,
+              margin: '0 0 16px 0',
               textTransform: 'uppercase',
             }}
           >
@@ -163,7 +163,7 @@ export default function Footer() {
               letterSpacing: '0.12em',
               color: '#000',
               marginBottom: '20px',
-              margin: 0,
+              margin: '0 0 16px 0',
               textTransform: 'uppercase',
             }}
           >
