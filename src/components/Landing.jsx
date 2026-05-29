@@ -142,8 +142,8 @@ export default function Landing({ onNavigate }) {
     const getSize = () => {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
-      if (vw < 480) return { W: vw,             H: Math.round(vh * 0.38) };
-      if (vw < 768) return { W: vw,             H: Math.round(vh * 0.36) };
+      if (vw < 480) return { W: vw,             H: Math.round(vh * 0.32) };
+      if (vw < 768) return { W: vw,             H: Math.round(vh * 0.30) };
       return               { W: Math.min(vw * 0.82, 640), H: Math.round(vh * 0.34) };
     };
 
@@ -158,10 +158,10 @@ export default function Landing({ onNavigate }) {
     const scene = new THREE.Scene();
 
     // Wider FOV on mobile so model fills the frame
-    const fov = window.innerWidth < 480 ? 52 : window.innerWidth < 768 ? 46 : 40;
+    const fov = window.innerWidth < 480 ? 38 : window.innerWidth < 768 ? 40 : 40;
     const camera = new THREE.PerspectiveCamera(fov, W / H, 0.1, 1000);
-    // Move camera closer on mobile so model appears bigger
-    camera.position.z = window.innerWidth < 480 ? 7.5 : window.innerWidth < 768 ? 8.5 : 10;
+    // Further back on mobile so the whole model fits in frame
+    camera.position.z = window.innerWidth < 480 ? 14 : window.innerWidth < 768 ? 12 : 10;
     cameraRef.current = camera;
 
     scene.add(new THREE.AmbientLight(0xffffff, 0.6));
@@ -192,9 +192,9 @@ export default function Landing({ onNavigate }) {
 
     const onResize = () => {
       const { W: nW, H: nH } = getSize();
-      camera.fov    = window.innerWidth < 480 ? 52 : window.innerWidth < 768 ? 46 : 40;
+      camera.fov    = window.innerWidth < 480 ? 38 : window.innerWidth < 768 ? 40 : 40;
       camera.aspect = nW / nH;
-      camera.position.z = window.innerWidth < 480 ? 7.5 : window.innerWidth < 768 ? 8.5 : 10;
+      camera.position.z = window.innerWidth < 480 ? 14 : window.innerWidth < 768 ? 12 : 10;
       camera.updateProjectionMatrix();
       renderer.setSize(nW, nH);
     };
@@ -348,8 +348,8 @@ export default function Landing({ onNavigate }) {
       {/* ── Nav links ── */}
       <nav role="navigation" style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center',
-        gap: isMobile ? 4 : 14,
-        marginBottom: isMobile ? 28 : 44,
+        gap: 14,
+        marginBottom: 44,
       }}>
         {links.map(({ label, action }) => (
           <div key={label} style={{ position: 'relative' }}>
@@ -358,7 +358,7 @@ export default function Landing({ onNavigate }) {
               onMouseEnter={() => setHoveredLink(label)}
               onMouseLeave={() => setHoveredLink(null)}
               style={{
-                fontSize: isMobile ? 11 : 10.5,
+                fontSize: 10.5,
                 fontFamily: "'Arial Black', 'Impact', Arial, sans-serif",
                 fontWeight: 600,
                 letterSpacing: '0.24em',
@@ -366,10 +366,8 @@ export default function Landing({ onNavigate }) {
                 textTransform: 'uppercase',
                 lineHeight: 1,
                 background: 'none', border: 'none', cursor: 'pointer',
-                padding: isMobile ? '11px 24px' : '6px 4px',
+                padding: 0,
                 margin: 0,
-                display: 'flex', alignItems: 'center',
-                minHeight: 44,
                 WebkitTapHighlightColor: 'transparent',
                 touchAction: 'manipulation',
                 transition: 'color 0.25s ease',
