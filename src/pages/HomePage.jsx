@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import heroImage from '../assets/see.png';
+import heroImage from '../assets/see.webp';
 import shopAllImage from '../assets/shopallchain.jpeg';
 import { fetchProducts } from '../services/products';
 import ProductCard from '../components/ProductCard';
