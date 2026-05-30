@@ -26,6 +26,7 @@ function AppInner() {
   })
   const syncTimeout   = useRef(null)
   const prevUserId    = useRef(null)
+  const cartReady     = useRef(false)
 
   const [sessionId, setSessionId]         = useState(null)
   const [sidebarOpen, setSidebarOpen]     = useState(false)
@@ -36,9 +37,10 @@ function AppInner() {
     if (!user) localStorage.setItem('cart', JSON.stringify(cart))
   }, [cart, user])
 
-  // Load + merge remote cart when user logs in
+  // Load remote cart when user is available — set cartReady only after load
   useEffect(() => {
-    if (!user) return
+    if (!user) { cartReady.current = false; return }
+    cartReady.current = false
     loadRemoteCart(user.id)
       .then(remote => {
         setCart(prev => {
@@ -48,12 +50,13 @@ function AppInner() {
           return merged
         })
       })
-      .catch(console.error)
+      .catch(err => console.error('Failed to load remote cart:', err))
+      .finally(() => { cartReady.current = true })
   }, [user?.id]) // eslint-disable-line
 
-  // Debounced sync to Supabase on every cart change
+  // Debounced sync — only after initial remote load completes
   useEffect(() => {
-    if (!user) return
+    if (!user || !cartReady.current) return
     clearTimeout(syncTimeout.current)
     syncTimeout.current = setTimeout(() => {
       saveRemoteCart(user.id, cart).catch(console.error)
