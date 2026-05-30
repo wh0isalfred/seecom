@@ -16,6 +16,7 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
   const [bagState, setBagState]         = useState('idle');
   const [isDesktop, setIsDesktop]       = useState(window.innerWidth >= 820);
   const [ready, setReady]               = useState(false);
+  const [showSizeGuide, setShowSizeGuide] = useState(false);
   const { discount }                    = useDiscount();
 
   useEffect(() => {
@@ -76,8 +77,11 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
   const toggle = section => setExpanded(p => p === section ? null : section);
 
   const handleAddToBag = () => {
-    if (!canAddToBag) { setExpanded('size'); return; }
-    if (isSoldOut)    { setBagState('soldout'); return; }
+    // No size selected — expand size accordion
+    if (!selectedSize && sizes.length > 1) { setExpanded('size'); return; }
+    // Size selected but no color — expand color accordion
+    if (selectedSize && colors.length > 0 && !selectedColor) { setExpanded('color'); return; }
+    if (isSoldOut) { setBagState('soldout'); return; }
     const id = `${product.id}__${selectedSize}__${selectedColor ?? 'default'}`;
     setCart(prev => {
       const exists = prev.find(i => i.id === id);
@@ -94,6 +98,7 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
         @keyframes fadeIn  { from { opacity:0 } to { opacity:1 } }
         @keyframes fadeUp  { from { opacity:0; transform:translateY(10px) } to { opacity:1; transform:translateY(0) } }
         @keyframes clipUp  { from { clip-path:inset(0 0 100% 0); transform:translateY(60%) } to { clip-path:inset(0 0 0 0); transform:translateY(0) } }
+        @keyframes modalIn { from { opacity:0; transform:translateY(16px) scale(0.98) } to { opacity:1; transform:translateY(0) scale(1) } }
       `}</style>
 
       {/* Breadcrumb */}
@@ -177,7 +182,10 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
             {sizes.length > 1 && (
               <Accordion label="SIZE" isOpen={expanded === 'size'} onToggle={() => toggle('size')} badge={selectedSize}>
                 <div style={{ padding: '14px 0 6px' }}>
-                  <button style={{ background: 'none', border: 'none', padding: '0 0 12px', fontFamily: "'Archivo', sans-serif", fontSize: '10px', letterSpacing: '0.08em', color: '#bbb', textDecoration: 'underline', cursor: 'pointer' }}>
+                  <button onClick={() => setShowSizeGuide(true)} style={{ background: 'none', border: 'none', padding: '0 0 12px', fontFamily: "'Archivo', sans-serif", fontSize: '10px', letterSpacing: '0.08em', color: '#bbb', textDecoration: 'underline', textUnderlineOffset: '3px', cursor: 'pointer', transition: 'color 0.15s' }}
+                    onMouseEnter={e => e.currentTarget.style.color = '#000'}
+                    onMouseLeave={e => e.currentTarget.style.color = '#bbb'}
+                  >
                     Size guide
                   </button>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
@@ -230,6 +238,120 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
           </div>
         </div>
       </div>
+
+      {/* ── SIZE GUIDE MODAL ── */}
+      {showSizeGuide && (
+        <div
+          onClick={() => setShowSizeGuide(false)}
+          style={{
+            position: 'fixed', inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.55)',
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
+            zIndex: 99999,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '20px',
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              backgroundColor: '#fff',
+              width: '100%', maxWidth: '520px',
+              maxHeight: '90dvh', overflowY: 'auto',
+              animation: 'modalIn 0.3s cubic-bezier(0.16,1,0.3,1) both',
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid #f0f0f0' }}>
+              <div>
+                <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.22em', color: '#be1826', textTransform: 'uppercase', margin: '0 0 4px' }}>
+                  Reference
+                </p>
+                <h2 style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: '18px', letterSpacing: '0.04em', color: '#000', margin: 0 }}>
+                  Size Guide
+                </h2>
+              </div>
+              <button onClick={() => setShowSizeGuide(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb', padding: 4, transition: 'color 0.15s' }}
+                onMouseEnter={e => e.currentTarget.style.color = '#000'}
+                onMouseLeave={e => e.currentTarget.style.color = '#bbb'}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 4l16 16M20 4L4 20" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+              </button>
+            </div>
+
+            {/* T-Shirts table */}
+            {(!product.category || product.category === 'tshirts') && (
+              <div style={{ padding: '20px 24px 0' }}>
+                <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '10px', letterSpacing: '0.14em', color: '#000', textTransform: 'uppercase', margin: '0 0 14px' }}>T-Shirts — cm</p>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: "'Archivo', sans-serif" }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid #000' }}>
+                      {['Size', 'Chest', 'Length', 'Shoulder', 'Sleeve'].map(h => (
+                        <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontSize: '9px', letterSpacing: '0.14em', fontWeight: 700, color: '#000', textTransform: 'uppercase' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      ['XS', '86–91', '66', '41', '60'],
+                      ['S',  '91–96', '69', '43', '62'],
+                      ['M',  '96–101','71', '45', '64'],
+                      ['L',  '101–106','74','47', '66'],
+                      ['XL', '106–111','76','49', '68'],
+                    ].map(([size, ...vals], i) => (
+                      <tr key={size} style={{ backgroundColor: i % 2 === 0 ? '#fafafa' : '#fff', borderBottom: '1px solid #f0f0f0' }}>
+                        <td style={{ padding: '10px 10px', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '12px', color: '#000' }}>{size}</td>
+                        {vals.map((v, vi) => (
+                          <td key={vi} style={{ padding: '10px 10px', fontSize: '12px', color: '#555' }}>{v}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Chains note */}
+            {product.category === 'chains' && (
+              <div style={{ padding: '24px' }}>
+                <div style={{ padding: '16px', backgroundColor: '#f9f9f9', borderLeft: '2px solid #be1826' }}>
+                  <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '13px', color: '#555', lineHeight: 1.7, margin: 0 }}>
+                    All SEE.COM chains are <strong style={{ color: '#000' }}>one size fits all</strong>. Standard length: <strong style={{ color: '#000' }}>50cm</strong> with an adjustable clasp. Contact us if you need a custom length.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* How to measure */}
+            <div style={{ padding: '20px 24px', borderTop: '1px solid #f0f0f0', marginTop: 4 }}>
+              <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '9px', letterSpacing: '0.14em', color: '#000', textTransform: 'uppercase', margin: '0 0 12px' }}>
+                How to measure
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {[
+                  ['Chest',    'Measure around the fullest part of your chest, keeping the tape horizontal.'],
+                  ['Length',   'From the highest point of the shoulder down to the hem.'],
+                  ['Shoulder', 'From shoulder seam to shoulder seam across the back.'],
+                  ['Sleeve',   'From the shoulder seam to the end of the cuff.'],
+                ].map(([label, desc]) => (
+                  <div key={label} style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 8 }}>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '11px', color: '#000' }}>{label}</span>
+                    <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '11px', color: '#888', lineHeight: 1.5 }}>{desc}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer note */}
+            <div style={{ padding: '14px 24px 24px' }}>
+              <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', color: '#bbb', letterSpacing: '0.04em', margin: 0, lineHeight: 1.6 }}>
+                Measurements are in centimetres. If you're between sizes, size up. All SEE.COM pieces are designed with a relaxed fit.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>
