@@ -28,7 +28,7 @@ const NEXT_STEPS = {
   shipped:          ['out_for_delivery'],
   out_for_delivery: [],
   delivered:        [],
-  investigating:    ['shipped', 'out_for_delivery', 'delivered', 'cancelled'],
+  investigating:    ['shipped', 'out_for_delivery', 'cancelled'],
   cancelled:        [],
 };
 const PAYMENT_STATUS = {
@@ -488,8 +488,11 @@ function OrdersTab({ isMobile = false }) {
                           <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '9px', letterSpacing: '0.12em', color: '#c2410c', margin: '0 0 3px', textTransform: 'uppercase' }}>
                             ⚠ Customer reported an issue
                           </p>
-                          <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '11px', color: '#666', margin: 0, lineHeight: 1.5 }}>
-                            Contact the customer and resolve before marking delivered.
+                          <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '11px', color: '#666', margin: '0 0 6px', lineHeight: 1.5 }}>
+                            Resolve with the customer first. Once resolved, mark as <strong>Shipped</strong> or <strong>Out for Delivery</strong> — the customer will then be able to confirm receipt.
+                          </p>
+                          <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', color: '#c2410c', margin: 0, fontStyle: 'italic' }}>
+                            You cannot mark this as Delivered directly.
                           </p>
                           {order.customer_phone && (
                             <a
