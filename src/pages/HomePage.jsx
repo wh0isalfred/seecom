@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import heroImage from '../assets/see.webp';
+import heroImage from '../assets/see.png';
 import shopAllImage from '../assets/shopallchain.jpeg';
 import { fetchProducts } from '../services/products';
 import ProductCard from '../components/ProductCard';
@@ -74,7 +74,7 @@ export default function HomePage({ onNavigate }) {
           backgroundImage: `url(${heroImage})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          backgroundColor: '#350000',
+          backgroundColor: '#2a1a0e',
           display: 'block',
           overflow: 'hidden',
           margin: 0,
@@ -101,26 +101,21 @@ export default function HomePage({ onNavigate }) {
               display: 'flex',
               alignItems: 'center',
               paddingLeft: '28px',
+              cursor: 'pointer',
             }}
+            onClick={() => onNavigate?.('landing')}
           >
             <span
               style={{
-                fontFamily: "'Space Grotesk', sans-serif",
-                fontWeight: 700,
+                fontFamily: "'Clash Display', sans-serif",
+                fontWeight: 600,
                 fontSize: '20px',
                 color: '#fff',
-                letterSpacing: '0.03em',
+                letterSpacing: '0.22em',
+                pointerEvents: 'none',
               }}
             >
-              <button onClick={() => onNavigate?.('landing')} style={{background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: 0,fontFamily: "'Space Grotesk', sans-serif",
-                fontWeight: 700,
-                fontSize: '20px',
-                color: '#fff',
-                letterSpacing: '0.03em'}}>SEE.COM</button>
-              
+              SEE.COM
             </span>
           </div>
         </div>
@@ -150,25 +145,21 @@ export default function HomePage({ onNavigate }) {
             display: 'flex',
             alignItems: 'center',
             paddingLeft: '28px',
+            cursor: 'pointer',
           }}
+          onClick={() => onNavigate?.('landing')}
         >
           <span
             style={{
-              fontFamily: "'Space Grotesk', sans-serif",
-              fontWeight: 700,
+              fontFamily: "'Clash Display', sans-serif",
+              fontWeight: 600,
               fontSize: '20px',
               color: '#fff',
-              letterSpacing: '0.03em',
+              letterSpacing: '0.22em',
+              pointerEvents: 'none',
             }}
           >
-            <button onClick={() => onNavigate?.('landing')} style={{background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: 0,fontFamily: "'Space Grotesk', sans-serif",
-                fontWeight: 700,
-                fontSize: '20px',
-                color: '#fff',
-                letterSpacing: '0.03em'}}>SEE.COM</button>
+            SEE.COM
           </span>
         </div>
       </div>
@@ -553,9 +544,9 @@ export default function HomePage({ onNavigate }) {
               <div
                 style={{
                   fontSize: '24px',
-                  fontFamily: "'Space Grotesk', sans-serif",
-                  fontWeight: 700,
-                  letterSpacing: '0.12em',
+                  fontFamily: "'Clash Display', sans-serif",
+                  fontWeight: 600,
+                  letterSpacing: '0.22em',
                   marginBottom: '8px',
                   textShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
                 }}

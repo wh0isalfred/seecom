@@ -1,9 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { fetchProductById, fetchProductInventory } from '../services/products';
 import Footer from '../components/Footer';
-import logoBadge from '../assets/logo.webp';
-import { useDiscount } from '../contexts/DiscountContext';
-import { getEffectivePrice, isDiscounted, getDiscountLabel } from '../utils/discountUtils';
 
 export default function ProductDetailPage({ productId, cart, setCart, onNavigate }) {
   const [product, setProduct]     = useState(null);
@@ -16,8 +13,6 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
   const [expanded, setExpanded]         = useState(null); // 'size' | 'color' | 'description'
   const [bagState, setBagState]         = useState('idle'); // 'idle' | 'added' | 'soldout'
   const [isDesktop, setIsDesktop]       = useState(window.innerWidth >= 820);
-
-  const { discount } = useDiscount();
 
   useEffect(() => {
     const h = () => setIsDesktop(window.innerWidth >= 820);
@@ -54,10 +49,6 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
 
   const sizes  = Array.isArray(product.sizes)  ? product.sizes  : [];
   const colors = Array.isArray(product.colors) ? product.colors : [];
-
-  const effectivePrice = getEffectivePrice(product, discount);
-  const discounted     = isDiscounted(product, discount);
-  const discountLabel  = getDiscountLabel(product, discount);
 
   const stockFor = (size, color) => {
     if (inventory.length === 0) return 999; // no inventory data → assume in stock
@@ -99,7 +90,7 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
         id,
         productId: product.id,
         name: product.name,
-        price: effectivePrice,
+        price: product.discount_price || product.price,
         image: images[0],
         size: selectedSize,
         color: selectedColor,
@@ -122,7 +113,6 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
         display: 'flex',
         alignItems: 'center',
         gap: '8px',
-        position: 'relative',
       }}>
         <BreadCrumb label="SEE.COM" onClick={() => onNavigate?.('home')} />
         <Chevron />
@@ -136,24 +126,6 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
           </>
         )}
         <span style={crumbActive}>{product.name}</span>
-
-        {/* Logo badge — click to go to landing */}
-        <img
-          src={logoBadge}
-          alt="SEE.COM"
-          onClick={() => onNavigate?.('landing')}
-          style={{
-            position: 'absolute',
-            right: '40px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            width: '44px',
-            height: '44px',
-            objectFit: 'cover',
-            borderRadius: '4px',
-            cursor: 'pointer',
-          }}
-        />
       </div>
 
       {/* Main content */}
@@ -184,7 +156,7 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
 
           {/* Name + price */}
           <div style={{
-            padding: isDesktop ? '28px 28px 20px' : '20px 16px 16px',
+            padding: '28px 28px 20px',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'flex-start',
@@ -203,7 +175,7 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
               }}>
                 {product.name}
               </h1>
-              {discounted && (
+              {product.discount_price && (
                 <span style={{
                   fontFamily: "'Archivo', sans-serif",
                   fontSize: '11px',
@@ -216,35 +188,20 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
                 </span>
               )}
             </div>
-            <div style={{ textAlign: 'right' }}>
-              <span style={{
-                fontFamily: "'Space Grotesk', sans-serif",
-                fontWeight: 700,
-                fontSize: '14px',
-                letterSpacing: '0.04em',
-                color: discounted ? '#be1826' : '#000',
-                whiteSpace: 'nowrap',
-              }}>
-                ₦{effectivePrice?.toLocaleString()}
-              </span>
-              {discounted && discountLabel && (
-                <span style={{
-                  display: 'block',
-                  fontFamily: "'Space Grotesk', sans-serif",
-                  fontWeight: 700,
-                  fontSize: '10px',
-                  letterSpacing: '0.06em',
-                  color: '#be1826',
-                  marginTop: '2px',
-                }}>
-                  {discountLabel} OFF
-                </span>
-              )}
-            </div>
+            <span style={{
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontWeight: 700,
+              fontSize: '14px',
+              letterSpacing: '0.04em',
+              color: '#000',
+              whiteSpace: 'nowrap',
+            }}>
+              ₦{(product.discount_price || product.price)?.toLocaleString()}
+            </span>
           </div>
 
           {/* Accordion sections */}
-          <div style={{ padding: isDesktop ? '16px 28px' : '12px 16px', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ padding: '16px 28px', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
             {/* SIZE — hidden if only one option (auto-selected above) */}
             {sizes.length > 1 && (
@@ -350,7 +307,7 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
           </div>
 
           {/* ADD TO BAG — pinned to bottom */}
-          <div style={{ padding: isDesktop ? '20px 28px 28px' : '16px 16px 24px', borderTop: '1px solid #f0f0f0' }}>
+          <div style={{ padding: '20px 28px 28px', borderTop: '1px solid #f0f0f0' }}>
 
             {/* Selection nudge */}
             {!selectedSize && sizes.length > 1 && (
@@ -586,8 +543,6 @@ function SizeButton({ label, selected, oos, onClick }) {
         position: 'relative',
         width: '52px',
         height: '52px',
-        minWidth: '48px',
-        minHeight: '48px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -601,8 +556,6 @@ function SizeButton({ label, selected, oos, onClick }) {
         color: oos ? '#ccc' : selected ? '#fff' : '#000',
         transition: 'all 0.15s',
         overflow: 'hidden',
-        WebkitTapHighlightColor: 'transparent',
-        touchAction: 'manipulation',
       }}
       onMouseEnter={(e) => { if (!oos && !selected) e.currentTarget.style.borderColor = '#000'; }}
       onMouseLeave={(e) => { if (!oos && !selected) e.currentTarget.style.borderColor = '#d0d0d0'; }}
@@ -688,9 +641,6 @@ function AddToBagButton({ state, canAdd, isSoldOut, onClick }) {
         letterSpacing: '0.18em',
         cursor: isSoldOutDisplay ? 'not-allowed' : 'pointer',
         transition: 'background 0.3s ease',
-        minHeight: '52px',
-        WebkitTapHighlightColor: 'transparent',
-        touchAction: 'manipulation',
       }}
     >
       {label}
@@ -749,8 +699,8 @@ function BreadCrumb({ label, onClick }) {
       onClick={onClick}
       style={{
         background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-        fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
-        fontSize: '10px', letterSpacing: '0.1em',
+        fontFamily: "'Clash Display', sans-serif",
+        fontSize: '10px', letterSpacing: '0.22em',
         color: '#aaa', textTransform: 'uppercase',
         transition: 'color 0.15s',
       }}

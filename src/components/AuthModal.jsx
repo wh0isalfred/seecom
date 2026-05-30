@@ -241,7 +241,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
 
 function Logo() {
   return (
-    <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '20px', letterSpacing: '0.12em', color: '#000', textAlign: 'center', marginBottom: '18px' }}>
+    <div style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: '22px', letterSpacing: '0.22em', color: '#000', textAlign: 'center', marginBottom: '18px' }}>
       SEE.COM
     </div>
   );

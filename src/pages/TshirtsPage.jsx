@@ -158,9 +158,9 @@ export default function TshirtsPage({ onNavigate }) {
               <button
                 onClick={() => onNavigate?.('home')}
                 style={{
-                  fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
+                  fontFamily: "'Clash Display', sans-serif",
                   fontSize: '10px',
-                  letterSpacing: '0.14em',
+                  letterSpacing: '0.22em',
                   color: 'rgba(255,255,255,0.4)',
                   background: 'none',
                   border: 'none',

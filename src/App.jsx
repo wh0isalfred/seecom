@@ -67,6 +67,13 @@ function AppInner() {
   }, [currentPage])
 
   const goToPage = (page, params = {}) => {
+    // Kill audio before unmounting Landing so the element is still in the DOM
+    if (page !== 'landing') {
+      document.querySelectorAll('audio').forEach(a => {
+        a.pause();
+        a.currentTime = 0;
+      });
+    }
     setCurrentPage(page)
     setPageParams(params)
     window.history.pushState(

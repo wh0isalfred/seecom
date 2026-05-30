@@ -41,7 +41,7 @@ export default function AdminPage({ onNavigate }) {
       {/* Sticky header */}
       <div style={{ backgroundColor: '#fff', borderBottom: '1px solid #ebebeb', padding: '0 40px', position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '52px' }}>
-          <button onClick={() => onNavigate?.('home')} style={logoBtn}>SEE.COM</button>
+          <button onClick={() => onNavigate?.('home')} style={logoBtn}>see.com</button>
           <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', letterSpacing: '0.14em', color: '#ccc', textTransform: 'uppercase' }}>Admin</span>
         </div>
         {/* Tabs — scrollable on mobile */}
@@ -276,12 +276,8 @@ function OrdersTab({ isMobile = false }) {
                   </div>
                 </button>
 
-                {/* Expanded detail — smooth slide */}
-                <div style={{
-                  overflow: 'hidden',
-                  maxHeight: isExpanded ? '800px' : '0',
-                  transition: 'max-height 0.3s ease',
-                }}>
+                {/* Expanded detail */}
+                {isExpanded && (
                   <div style={{ borderTop: '1px solid #f0f0f0', padding: '20px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '24px' }}>
                     {/* Items */}
                     <div>
@@ -399,7 +395,7 @@ function OrdersTab({ isMobile = false }) {
                       </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             );
           })}
@@ -806,12 +802,8 @@ function ProductsTab({ isMobile = false }) {
                 </div>
               </div>
 
-              {/* ── Inline edit form — smooth slide ── */}
-              <div style={{
-                overflow: 'hidden',
-                maxHeight: editing === p.id ? '600px' : '0',
-                transition: 'max-height 0.28s ease',
-              }}>
+              {/* ── Inline edit form ── */}
+              {editing === p.id && (
                 <div style={{ borderTop: '1px solid #f5f5f5', padding: '20px', backgroundColor: '#fafafa' }}>
                   {editError[p.id] && (
                     <div style={{ padding: '8px 12px', backgroundColor: '#fff5f5', borderLeft: '3px solid #be1826', fontFamily: "'Archivo', sans-serif", fontSize: '12px', color: '#be1826', marginBottom: '14px' }}>
@@ -869,7 +861,7 @@ function ProductsTab({ isMobile = false }) {
                     </button>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           ))}
         </div>
@@ -944,7 +936,7 @@ function LoadingBlock() {
 }
 
 // ── Styles ───────────────────────────────────────────────────────────────────
-const logoBtn  = { fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '15px', letterSpacing: '0.1em', background: 'none', border: 'none', cursor: 'pointer', color: '#000', padding: 0 };
+const logoBtn  = { fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: '15px', letterSpacing: '0.22em', background: 'none', border: 'none', cursor: 'pointer', color: '#000', padding: 0, textTransform: 'lowercase' };
 const tableStyle = { width: '100%', borderCollapse: 'collapse' };
 const thRowStyle = { borderBottom: '1px solid #f5f5f5' };
 const trStyle  = { borderBottom: '1px solid #f9f9f9', transition: 'background 0.1s' };

@@ -15,6 +15,8 @@ export default function Footer() {
         backgroundColor: '#fff',
         borderTop: '3px solid #000',
         marginTop: 0,
+        width: '100%',
+        boxSizing: 'border-box',
       }}
     >
       {/* Content Area */}
@@ -22,20 +24,21 @@ export default function Footer() {
         style={{
           display: 'grid',
           gridTemplateColumns: isDesktop ? 'repeat(3, 1fr)' : '1fr',
-          gap: isDesktop ? '100px' : '60px',
-          padding: isDesktop ? '80px 40px' : '60px 40px',
+          gap: isDesktop ? '48px' : '40px',
+          padding: isDesktop ? '56px 40px' : '48px 24px',
           maxWidth: '100%',
           textAlign: isDesktop ? 'left' : 'center',
+          boxSizing: 'border-box',
         }}
       >
         {/* Logo & Socials */}
         <div>
           <div
             style={{
-              fontFamily: "'Space Grotesk', sans-serif",
-              fontWeight: 700,
+              fontFamily: "'Clash Display', sans-serif",
+              fontWeight: 600,
               fontSize: '18px',
-              letterSpacing: '0.1em',
+              letterSpacing: '0.22em',
               color: '#000',
               marginBottom: '24px',
             }}
@@ -94,7 +97,7 @@ export default function Footer() {
               letterSpacing: '0.12em',
               color: '#000',
               marginBottom: '20px',
-              margin: '0 0 16px 0',
+              margin: 0,
               textTransform: 'uppercase',
             }}
           >
@@ -163,7 +166,7 @@ export default function Footer() {
               letterSpacing: '0.12em',
               color: '#000',
               marginBottom: '20px',
-              margin: '0 0 16px 0',
+              margin: 0,
               textTransform: 'uppercase',
             }}
           >

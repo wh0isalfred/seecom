@@ -96,11 +96,10 @@ export default function ShopPage({ onNavigate }) {
           </div>
         </div>
 
-        {/* Logo badge — click to go to landing */}
+        {/* Recycle badge */}
         <img
           src={logoBadge}
-          alt="SEE.COM"
-          onClick={() => onNavigate?.('landing')}
+          alt="Recycle — SEE.COM"
           style={{
             position: 'absolute',
             right: '40px',
@@ -110,7 +109,6 @@ export default function ShopPage({ onNavigate }) {
             height: '56px',
             objectFit: 'cover',
             borderRadius: '4px',
-            cursor: 'pointer',
           }}
         />
       </div>

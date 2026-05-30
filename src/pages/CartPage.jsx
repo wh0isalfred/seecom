@@ -11,32 +11,6 @@ const FLAT_SHIPPING      = 3500;  // ₦3,500 flat rate below threshold
 
 export default function CartPage({ cart = [], setCart, onNavigate }) {
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 900);
-  const [pendingOrders, setPendingOrders] = useState(() =>
-    JSON.parse(localStorage.getItem('pendingOrders') || '[]')
-  );
-
-  // Sync pending orders — remove any marked delivered/cancelled by admin
-  useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem('pendingOrders') || '[]');
-    if (stored.length === 0) return;
-    import('../services/supabase').then(({ supabase }) => {
-      const ids = stored.map(o => o.id).filter(Boolean);
-      if (ids.length === 0) return;
-      supabase
-        .from('orders')
-        .select('id, order_status')
-        .in('id', ids)
-        .then(({ data }) => {
-          if (!data) return;
-          const active = stored.filter(o => {
-            const live = data.find(d => d.id === o.id);
-            return !live || !['delivered', 'cancelled'].includes(live.order_status);
-          });
-          localStorage.setItem('pendingOrders', JSON.stringify(active));
-          setPendingOrders(active);
-        });
-    });
-  }, []);
 
   useEffect(() => {
     const handle = () => setIsDesktop(window.innerWidth >= 900);
@@ -68,7 +42,7 @@ export default function CartPage({ cart = [], setCart, onNavigate }) {
   const fmt = (n) => `₦${n.toLocaleString()}`;
 
   // ── Empty state ──────────────────────────────────────────
-  if (cart.length === 0 && pendingOrders.length === 0) {
+  if (cart.length === 0) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         <PageHeader onNavigate={onNavigate} />
@@ -385,81 +359,6 @@ export default function CartPage({ cart = [], setCart, onNavigate }) {
         </div>
       </div>
 
-      {/* ── Pending Orders ── */}
-      {pendingOrders.length > 0 && (
-        <div style={{ borderTop: '3px solid #000', padding: isDesktop ? '40px 40px' : '28px 20px' }}>
-          <h2 style={{
-            fontFamily: "'Space Grotesk', sans-serif",
-            fontWeight: 700, fontSize: '13px', letterSpacing: '0.14em',
-            color: '#000', margin: '0 0 24px', textTransform: 'uppercase',
-          }}>
-            PENDING DELIVERY
-          </h2>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {pendingOrders.map((order, oi) => (
-              <div key={order.id || oi} style={{ border: '1px solid #f0f0f0', padding: '20px' }}>
-                {/* Order header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
-                  <div>
-                    <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '12px', letterSpacing: '0.06em', color: '#000' }}>
-                      {order.order_number}
-                    </div>
-                    <div style={{ fontFamily: "'Archivo', sans-serif", fontSize: '11px', color: '#aaa', marginTop: '3px', letterSpacing: '0.04em' }}>
-                      {order.created_at ? new Date(order.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
-                    </div>
-                  </div>
-                  {/* Waiting badge */}
-                  <div style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '6px',
-                    padding: '5px 12px', backgroundColor: '#fef3c7',
-                    border: '1px solid #fde68a',
-                  }}>
-                    <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#f59e0b', animation: 'pulse 2s infinite' }} />
-                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '9px', letterSpacing: '0.1em', color: '#92400e', textTransform: 'uppercase' }}>
-                      Waiting for Delivery
-                    </span>
-                  </div>
-                </div>
-
-                {/* Items */}
-                {(order.items || []).map((item, ii) => (
-                  <div key={ii} style={{ display: 'grid', gridTemplateColumns: '52px 1fr auto', gap: '12px', alignItems: 'center', padding: '10px 0', borderTop: '1px solid #f5f5f5' }}>
-                    <div style={{
-                      width: 52, height: 62,
-                      backgroundColor: '#f5f5f5',
-                      backgroundImage: item.image ? `url(${item.image})` : 'none',
-                      backgroundSize: 'cover', backgroundPosition: 'center',
-                      opacity: 0.75,
-                    }} />
-                    <div>
-                      <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '12px', color: '#555' }}>
-                        {item.name}
-                      </div>
-                      <div style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', color: '#bbb', marginTop: '3px', letterSpacing: '0.04em' }}>
-                        {[item.size, item.color].filter(Boolean).join(' / ')} × {item.quantity}
-                      </div>
-                    </div>
-                    <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '12px', color: '#888' }}>
-                      {fmt(item.price * item.quantity)}
-                    </div>
-                  </div>
-                ))}
-
-                {/* Total */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '12px', borderTop: '1px solid #f5f5f5', marginTop: '4px' }}>
-                  <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '13px', color: '#000' }}>
-                    {fmt(order.total)}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <style>{`@keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.4 } }`}</style>
-
       <Footer />
     </div>
   );
@@ -482,10 +381,10 @@ function PageHeader({ onNavigate }) {
       <button
         onClick={() => onNavigate?.('home')}
         style={{
-          fontFamily: "'Space Grotesk', sans-serif",
-          fontWeight: 700,
+          fontFamily: "'Clash Display', sans-serif",
+          fontWeight: 600,
           fontSize: '18px',
-          letterSpacing: '0.08em',
+          letterSpacing: '0.22em',
           color: '#000',
           background: 'none',
           border: 'none',

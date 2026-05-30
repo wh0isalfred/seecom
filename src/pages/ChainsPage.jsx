@@ -155,9 +155,9 @@ export default function ChainsPage({ onNavigate }) {
               <button
                 onClick={() => onNavigate?.('home')}
                 style={{
-                  fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
+                  fontFamily: "'Clash Display', sans-serif",
                   fontSize: '10px',
-                  letterSpacing: '0.14em',
+                  letterSpacing: '0.22em',
                   color: 'rgba(0,0,0,0.3)',
                   background: 'none',
                   border: 'none',

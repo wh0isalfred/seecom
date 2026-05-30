@@ -360,11 +360,11 @@ export default function Sidebar({
           <button
             onClick={() => { onNavigate?.("home"); onClose?.(false); }}
             style={{
-              fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-              fontWeight: "700",
+              fontFamily: "'Clash Display', sans-serif",
+              fontWeight: 600,
               fontSize: "18px",
               color: "#000",
-              letterSpacing: "0.08em",
+              letterSpacing: "0.22em",
               background: "none",
               border: "none",
               cursor: "pointer",

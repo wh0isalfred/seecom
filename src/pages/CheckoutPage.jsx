@@ -86,41 +86,17 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
           { display_name: 'Address', variable_name: 'address', value: `${form.address}, ${form.city}, ${form.state}` },
         ],
       },
-      callback: (response) => {
+      callback: async (response) => {
         setLoading(true);
-
-        // Safety net — if Supabase hangs, unblock after 12s
-        const timeout = setTimeout(() => {
+        try {
+          const order = await createOrderAfterPayment({ formData: form, cart, paystackReference: response.reference, total, shipping });
+          setCart([]);
+          setOrderDone(order);
+        } catch {
+          setError(`Payment received (ref: ${response.reference}) but order failed. Contact us with this reference.`);
+        } finally {
           setLoading(false);
-          setError(`Payment received (ref: ${response.reference}). Order is being processed — contact us if you don't receive confirmation.`);
-        }, 12000);
-
-        createOrderAfterPayment({ formData: form, cart, paystackReference: response.reference, total, shipping })
-          .then(order => {
-            clearTimeout(timeout);
-            // Save to localStorage so CartPage can show pending orders
-            const pending = JSON.parse(localStorage.getItem('pendingOrders') || '[]');
-            pending.push({
-              id: order.id,
-              order_number: order.order_number,
-              total: order.total,
-              created_at: order.created_at,
-              customer_email: order.customer_email,
-              order_status: 'confirmed',
-              items: cart.map(i => ({ name: i.name, size: i.size, color: i.color, quantity: i.quantity, price: i.price, image: i.image })),
-            });
-            localStorage.setItem('pendingOrders', JSON.stringify(pending));
-            setCart([]);
-            setOrderDone(order);
-          })
-          .catch(() => {
-            clearTimeout(timeout);
-            setError(`Payment received (ref: ${response.reference}) but order failed. Contact us with this reference.`);
-          })
-          .finally(() => {
-            clearTimeout(timeout);
-            setLoading(false);
-          });
+        }
       },
       onClose: () => {},
     });
@@ -381,16 +357,15 @@ function MobileHeader({ onNavigate }) {
     <div style={{ padding: '16px 20px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
       <button
         onClick={() => onNavigate?.('home')}
-        style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '17px', letterSpacing: '0.08em', color: '#000', background: 'none', border: 'none', cursor: 'pointer' }}
+        style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: '17px', letterSpacing: '0.22em', color: '#000', background: 'none', border: 'none', cursor: 'pointer' }}
       >
         SEE.COM
       </button>
 
-      {/* Logo badge — click to go to landing */}
+      {/* Recycle badge */}
       <img
         src={logoBadge}
-        alt="SEE.COM"
-        onClick={() => onNavigate?.('landing')}
+        alt="Recycle — SEE.COM"
         style={{
           position: 'absolute',
           right: '20px',
@@ -400,7 +375,6 @@ function MobileHeader({ onNavigate }) {
           height: '44px',
           objectFit: 'cover',
           borderRadius: '4px',
-          cursor: 'pointer',
         }}
       />
     </div>
