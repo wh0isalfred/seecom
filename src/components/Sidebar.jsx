@@ -2,228 +2,17 @@ import { useState, useEffect } from "react";
 
 // ADMIN item is injected dynamically only when isAdmin === true
 const BASE_MENU_ITEMS = [
-  {
-    label: "SHOP ALL",
-    children: [],
-  },
-  {
-    label: "TOPS",
-    children: ["T-Shirts"],
-  },
-  // {
-  //   label: "BOTTOMS",
-  //   children: ["Trousers", "Joggers", "Shorts", "Skirts"],
-  // },
-  // {
-  //   label: "OUTERWEAR",
-  //   children: ["Coats", "Bombers", "Puffer Jackets"],
-  // },
-  // {
-  //   label: "FOOTWEAR",
-  //   children: ["Trainers", "Boots", "Sandals"],
-  // },
-  {
-    label: "ACCESSORIES",
-    children: ["Chains"],
-  },
-  // {
-  //   label: "ARCHIVE SALE",
-  //   children: [],
-  // },
+  { label: 'SHOP ALL',    route: 'all',     children: [] },
+  { label: 'TOPS',        route: 'tshirts', children: [
+    { label: 'T-Shirts', route: 'tshirts' },
+  ]},
+  { label: 'ACCESSORIES', route: 'chains',  children: [
+    { label: 'Chains', route: 'chains' },
+  ]},
 ];
 
-const ADMIN_MENU_ITEM = {
-  label: "ADMIN",
-  children: ["Add Product"],
-};
+const ADMIN_MENU_ITEM = { label: 'ADMIN', route: 'admin', children: [] };
 
-const footerLinks = {
-  left: ["INFORMATION", "TERMS & CONDITIONS", "PRIVACY POLICY", "RETURNS"],
-  right: [
-    { label: "CONTACT", href: "#", isBold: true },
-    { label: "+234 706 577 2394", href: "tel:+2347065772394", isBold: false },
-    { label: "+234 706 577 2394", href: "tel:+2347065772394", isBold: false },
-  ],
-};
-
-function ChevronIcon({ open }) {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 14 14"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      style={{
-        transition: "transform 0.25s ease",
-        transform: open ? "rotate(180deg)" : "rotate(0deg)",
-        flexShrink: 0,
-      }}
-    >
-      <path
-        d="M2 5L7 10L12 5"
-        stroke="black"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-      <line x1="2" y1="2" x2="18" y2="18" stroke="black" strokeWidth="1.8" strokeLinecap="round" />
-      <line x1="18" y1="2" x2="2" y2="18" stroke="black" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function UserIcon({ filled = false }) {
-  return (
-    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-      <circle
-        cx="11" cy="8" r="3.5"
-        stroke="black"
-        strokeWidth="1.5"
-        fill={filled ? "black" : "none"}
-      />
-      <path
-        d="M3 19c0-4 3.6-7 8-7s8 3 8 7"
-        stroke="black"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function BagIcon({ count = 0 }) {
-  return (
-    <div style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
-      <svg width="32" height="34" viewBox="0 0 32 34" fill="none">
-        <path d="M11 13V6.5a5 5 0 0 1 10 0V13" stroke="black" strokeWidth="1.75" strokeLinecap="round" />
-        <path d="M7.5 13H24.5L26.5 30H5.5L7.5 13Z" stroke="black" strokeWidth="1.75" strokeLinejoin="round" />
-      </svg>
-      {count >= 0 && (
-        <span
-          style={{
-            position: "absolute",
-            top: "21px",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            color: "black",
-            fontSize: "12px",
-            fontWeight: "bold",
-            lineHeight: 1,
-            pointerEvents: "none",
-          }}
-        >
-          {count}
-        </span>
-      )}
-    </div>
-  );
-}
-
-// Fixed categoryMap — "Add Product" (was "Add " with trailing space/missing word)
-const categoryMap = {
-  "SHOP ALL":    "all",
-  "TOPS":        "tops",
-  "T-Shirts":    "tshirts",
-  "BOTTOMS":     "bottoms",
-  "OUTERWEAR":   "outerwear",
-  "FOOTWEAR":    "footwear",
-  "ACCESSORIES": "accessories",
-  "Chains":      "chains",
-  "ARCHIVE SALE":"archive",
-  "Add Product": "admin",   // ← was "Add " — this was the bug
-};
-
-function AccordionItem({ item, isOpen, onToggle, onNavigate }) {
-  const hasChildren = item.children && item.children.length > 0;
-
-  const handleCategoryClick = () => {
-    if (!hasChildren) {
-      const category = categoryMap[item.label] || item.label.toLowerCase();
-      onNavigate?.(category);
-    }
-  };
-
-  return (
-    <div style={{ borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
-      <button
-        onClick={hasChildren ? onToggle : handleCategoryClick}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          width: "100%",
-          background: "none",
-          border: "none",
-          padding: "16px 0",
-          cursor: "pointer",
-          textAlign: "left",
-        }}
-      >
-        <span
-          style={{
-            fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-            fontWeight: "700",
-            fontSize: "14px",
-            letterSpacing: "0.06em",
-            color: "#000",
-          }}
-        >
-          {item.label}
-        </span>
-        {hasChildren && <ChevronIcon open={isOpen} />}
-      </button>
-
-      {hasChildren && (
-        <div
-          style={{
-            overflow: "hidden",
-            maxHeight: isOpen ? `${item.children.length * 40}px` : "0px",
-            transition: "max-height 0.3s ease",
-          }}
-        >
-          {item.children.map((child) => (
-            <button
-              key={child}
-              onClick={() => {
-                const category = categoryMap[child] || child.toLowerCase();
-                onNavigate?.(category);
-              }}
-              style={{
-                display: "block",
-                width: "100%",
-                padding: "8px 0 8px 12px",
-                fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-                fontWeight: "400",
-                fontSize: "13px",
-                letterSpacing: "0.04em",
-                color: "#000",
-                transition: "color 0.15s",
-                background: "none",
-                border: "none",
-                borderLeft: "2px solid transparent",
-                textAlign: "left",
-                cursor: "pointer",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderLeftColor = "#000"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderLeftColor = "transparent"; }}
-            >
-              {child}
-            </button>
-          ))}
-          <div style={{ height: "8px" }} />
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default function Sidebar({
   isOpen,
@@ -235,7 +24,6 @@ export default function Sidebar({
   onSignOut,
   onOpenAuth,
 }) {
-  const [openIndex, setOpenIndex]       = useState(null);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [stripHeight, setStripHeight]   = useState('80dvh');
 
@@ -243,7 +31,6 @@ export default function Sidebar({
     ? [...BASE_MENU_ITEMS, ADMIN_MENU_ITEM]
     : BASE_MENU_ITEMS;
 
-  const handleToggle = (idx) => setOpenIndex(openIndex === idx ? null : idx);
 
   useEffect(() => { if (!isOpen) setShowAccountMenu(false); }, [isOpen]);
 
