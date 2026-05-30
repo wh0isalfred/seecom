@@ -56,6 +56,16 @@ function AppInner() {
     return () => window.removeEventListener('popstate', handlePopState)
   }, [])
 
+  // Stop any playing audio the moment user leaves landing
+  useEffect(() => {
+    if (currentPage !== 'landing') {
+      document.querySelectorAll('audio').forEach(a => {
+        a.pause();
+        a.currentTime = 0;
+      });
+    }
+  }, [currentPage])
+
   const goToPage = (page, params = {}) => {
     setCurrentPage(page)
     setPageParams(params)

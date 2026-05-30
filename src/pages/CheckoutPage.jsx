@@ -88,15 +88,39 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
       },
       callback: (response) => {
         setLoading(true);
+
+        // Safety net — if Supabase hangs, unblock after 12s
+        const timeout = setTimeout(() => {
+          setLoading(false);
+          setError(`Payment received (ref: ${response.reference}). Order is being processed — contact us if you don't receive confirmation.`);
+        }, 12000);
+
         createOrderAfterPayment({ formData: form, cart, paystackReference: response.reference, total, shipping })
           .then(order => {
+            clearTimeout(timeout);
+            // Save to localStorage so CartPage can show pending orders
+            const pending = JSON.parse(localStorage.getItem('pendingOrders') || '[]');
+            pending.push({
+              id: order.id,
+              order_number: order.order_number,
+              total: order.total,
+              created_at: order.created_at,
+              customer_email: order.customer_email,
+              order_status: 'confirmed',
+              items: cart.map(i => ({ name: i.name, size: i.size, color: i.color, quantity: i.quantity, price: i.price, image: i.image })),
+            });
+            localStorage.setItem('pendingOrders', JSON.stringify(pending));
             setCart([]);
             setOrderDone(order);
           })
           .catch(() => {
+            clearTimeout(timeout);
             setError(`Payment received (ref: ${response.reference}) but order failed. Contact us with this reference.`);
           })
-          .finally(() => setLoading(false));
+          .finally(() => {
+            clearTimeout(timeout);
+            setLoading(false);
+          });
       },
       onClose: () => {},
     });
