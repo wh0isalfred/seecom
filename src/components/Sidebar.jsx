@@ -237,7 +237,7 @@ export default function Sidebar({
 }) {
   const [openIndex, setOpenIndex]       = useState(null);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
-  const [stripHeight, setStripHeight]   = useState('85dvh');
+  const [stripHeight, setStripHeight]   = useState('80dvh');
 
   const menuItems = isAdmin
     ? [...BASE_MENU_ITEMS, ADMIN_MENU_ITEM]
@@ -252,11 +252,11 @@ export default function Sidebar({
       const y    = window.scrollY;
       const hero = window.innerHeight * 0.9;
       const half = hero * 0.5;
-      if      (y < half)  setStripHeight('85dvh');
+      if      (y < half)  setStripHeight('80dvh');
       else if (y >= hero) setStripHeight('100dvh');
       else {
         const p = (y - half) / (hero - half);
-        setStripHeight(`${85 + p * 15}dvh`);
+        setStripHeight(`${80 + p * 20}dvh`);
       }
     };
     window.addEventListener('scroll', onScroll, { passive: true });
