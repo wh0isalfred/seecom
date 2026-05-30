@@ -283,7 +283,7 @@ export default function Sidebar({
           {/* Hamburger — top */}
           <button
             onClick={() => onClose?.(true)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: '100%', WebkitTapHighlightColor: 'transparent' }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '12px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: '100%', minHeight: 44, WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
           >
             <svg width="16" height="10" viewBox="0 0 16 10" fill="none">
               <line x1="0" y1="1" x2="16" y2="1" stroke="#000" strokeWidth="1.5" strokeLinecap="round"/>
@@ -293,12 +293,12 @@ export default function Sidebar({
           </button>
 
           {/* Divider */}
-          <div style={{ width: 20, height: 1, backgroundColor: 'rgba(0,0,0,0.2)', marginTop: 2 }} />
+          <div style={{ width: 20, height: 1, backgroundColor: 'rgba(0,0,0,0.2)' }} />
 
           {/* Bag — below */}
           <button
             onClick={() => onNavigate?.('cart')}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, width: '100%', WebkitTapHighlightColor: 'transparent' }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '12px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, width: '100%', minHeight: 44, WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
           >
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
               <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="#000" strokeWidth="1.5" strokeLinejoin="round"/>
