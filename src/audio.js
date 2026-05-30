@@ -4,8 +4,8 @@ let _audio = null;
 const clearMediaSession = () => {
   if ('mediaSession' in navigator) {
     navigator.mediaSession.playbackState = 'none';
-    // Remove all hardware control handlers so AirPods/headphones can't resume
-    ['play', 'pause', 'stop'].forEach(action => {
+    navigator.mediaSession.metadata = null;
+    ['play', 'pause', 'stop', 'seekto', 'seekforward', 'seekbackward', 'previoustrack', 'nexttrack'].forEach(action => {
       try { navigator.mediaSession.setActionHandler(action, null); } catch {}
     });
   }
@@ -25,16 +25,12 @@ export const stopAudio = () => {
   if (_audio) {
     _audio.pause();
     _audio.currentTime = 0;
-  }
-  clearMediaSession();
-};
-
-export const destroyAudio = () => {
-  if (_audio) {
-    _audio.pause();
-    _audio.currentTime = 0;
+    // Remove src entirely so browser drops the media resource
     _audio.src = '';
+    _audio.load();
     _audio = null;
   }
   clearMediaSession();
 };
+
+export const destroyAudio = stopAudio;
