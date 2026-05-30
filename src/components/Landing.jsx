@@ -16,14 +16,14 @@ const ShirtIcon = ({ size = 24 }) => (
 );
 
 const seeComModelPath = new URL('../assets/see-com.glb', import.meta.url).href;
-const musicPath       = new URL('../assets/music.mp4',   import.meta.url).href;
+import { getAudio, stopAudio } from '../audio';
+
 
 export default function Landing({ onNavigate }) {
   const mountRef    = useRef(null);
   const rendererRef = useRef(null);
   const modelRef    = useRef(null);
   const cameraRef   = useRef(null);
-  const audioRef    = useRef(null);
 
   const [time, setTime]                   = useState({ date: "", clock: "" });
   const [hoveredLink, setHoveredLink]     = useState(null);
@@ -67,36 +67,34 @@ export default function Landing({ onNavigate }) {
     return () => window.removeEventListener('resize', h);
   }, []);
 
-  // ── Audio ──────────────────────────────────────────────────────────────────
-  // ── Audio — autoplay at 30%, fall back to first-interaction if browser blocks ──
+  // ── Audio — singleton, destroyed on unmount ──────────────────────────────
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.volume = 0.3;
+    const audio = getAudio();
+    audio.volume = volume;
 
-    audio.play().catch(() => {
-      const unlock = () => {
-        audio.play().catch(() => {});
-        window.removeEventListener('touchstart', unlock);
-        window.removeEventListener('mousedown',  unlock);
-        window.removeEventListener('keydown',    unlock);
-      };
-      window.addEventListener('touchstart', unlock, { once: true });
-      window.addEventListener('mousedown',  unlock, { once: true });
-      window.addEventListener('keydown',    unlock, { once: true });
-    });
-
-    // Stop music when user leaves the landing page
-    return () => {
-      audio.pause();
-      audio.currentTime = 0;
+    const tryPlay = () => {
+      audio.play().catch(() => {
+        const unlock = () => {
+          audio.play().catch(() => {});
+          window.removeEventListener('touchstart', unlock);
+          window.removeEventListener('mousedown',  unlock);
+          window.removeEventListener('keydown',    unlock);
+        };
+        window.addEventListener('touchstart', unlock, { once: true });
+        window.addEventListener('mousedown',  unlock, { once: true });
+        window.addEventListener('keydown',    unlock, { once: true });
+      });
     };
+
+    if (isPlaying) tryPlay();
+
+    // Hard stop and destroy when Landing unmounts
+    return () => stopAudio();
   }, []);
 
-  // Sync play/pause and volume changes after initial mount
+  // Sync play/pause and volume
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
+    const audio = getAudio();
     audio.volume = volume;
     if (isPlaying && volume > 0) audio.play().catch(() => {});
     else audio.pause();
@@ -263,10 +261,6 @@ export default function Landing({ onNavigate }) {
       paddingTop: isMobile ? 16 : 0,
       paddingBottom: isMobile ? 24 : 0,
     }}>
-
-      <audio ref={audioRef} loop crossOrigin="anonymous" preload="auto">
-        <source src={musicPath} type="audio/mpeg" />
-      </audio>
 
       {/* ── Music control ── */}
       <div

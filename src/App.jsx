@@ -13,6 +13,7 @@ import AdminPage from './pages/AdminPage'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { DiscountProvider } from './contexts/DiscountContext'
 import { generateSessionId } from './services/supabase'
+import { stopAudio } from './audio'
 
 function AppInner() {
   const { user, isAdmin, signOut, loading: authLoading } = useAuth()
@@ -56,24 +57,13 @@ function AppInner() {
     return () => window.removeEventListener('popstate', handlePopState)
   }, [])
 
-  // Stop any playing audio the moment user leaves landing
+  // Stop audio the moment user leaves landing
   useEffect(() => {
-    if (currentPage !== 'landing') {
-      document.querySelectorAll('audio').forEach(a => {
-        a.pause();
-        a.currentTime = 0;
-      });
-    }
+    if (currentPage !== 'landing') stopAudio();
   }, [currentPage])
 
   const goToPage = (page, params = {}) => {
-    // Kill audio before unmounting Landing so the element is still in the DOM
-    if (page !== 'landing') {
-      document.querySelectorAll('audio').forEach(a => {
-        a.pause();
-        a.currentTime = 0;
-      });
-    }
+    if (page !== 'landing') stopAudio();
     setCurrentPage(page)
     setPageParams(params)
     window.history.pushState(
