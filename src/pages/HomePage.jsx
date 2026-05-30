@@ -133,7 +133,7 @@ export default function HomePage({ onNavigate }) {
         style={{
           position: 'relative',
           width: '100%',
-          height: '80dvh',
+          height: '100dvh',
           backgroundColor: '#111',
           overflow: 'hidden',
         }}

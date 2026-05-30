@@ -25,7 +25,7 @@ export default function Sidebar({
   onSignOut,
   onOpenAuth,
 }) {
-  const [stripHeight, setStripHeight] = useState("80dvh");
+  const [stripHeight, setStripHeight] = useState("85dvh");
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [hoveredItem, setHoveredItem] = useState(null);
 
