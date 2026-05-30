@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Landing from './components/Landing'
 import Sidebar from './components/Sidebar'
 import HomePage from './pages/HomePage'
@@ -14,6 +14,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { DiscountProvider } from './contexts/DiscountContext'
 import { generateSessionId } from './services/supabase'
 import { stopAudio } from './audio'
+import { loadRemoteCart, saveRemoteCart, mergeCarts } from './services/cartService'
 
 function AppInner() {
   const { user, isAdmin, signOut, loading: authLoading } = useAuth()
@@ -21,16 +22,50 @@ function AppInner() {
   const [currentPage, setCurrentPage] = useState('landing')
   const [pageParams, setPageParams]   = useState({})
   const [cart, setCart] = useState(() => {
-    const saved = localStorage.getItem('cart')
-    return saved ? JSON.parse(saved) : []
+    try { return JSON.parse(localStorage.getItem('cart') || '[]') } catch { return [] }
   })
-  const [sessionId, setSessionId]     = useState(null)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const syncTimeout   = useRef(null)
+  const prevUserId    = useRef(null)
+
+  const [sessionId, setSessionId]         = useState(null)
+  const [sidebarOpen, setSidebarOpen]     = useState(false)
   const [authModalOpen, setAuthModalOpen] = useState(false)
 
+  // Persist guest cart to localStorage
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cart))
-  }, [cart])
+    if (!user) localStorage.setItem('cart', JSON.stringify(cart))
+  }, [cart, user])
+
+  // Load + merge remote cart when user logs in
+  useEffect(() => {
+    if (!user) return
+    loadRemoteCart(user.id)
+      .then(remote => {
+        setCart(prev => {
+          const local  = prev.length ? prev : JSON.parse(localStorage.getItem('cart') || '[]')
+          const merged = mergeCarts(local, remote)
+          localStorage.removeItem('cart')
+          return merged
+        })
+      })
+      .catch(console.error)
+  }, [user?.id]) // eslint-disable-line
+
+  // Debounced sync to Supabase on every cart change
+  useEffect(() => {
+    if (!user) return
+    clearTimeout(syncTimeout.current)
+    syncTimeout.current = setTimeout(() => {
+      saveRemoteCart(user.id, cart).catch(console.error)
+    }, 800)
+    return () => clearTimeout(syncTimeout.current)
+  }, [cart, user?.id]) // eslint-disable-line
+
+  // Clear cart state on logout
+  useEffect(() => {
+    if (!user && prevUserId.current) setCart([])
+    prevUserId.current = user?.id ?? null
+  }, [user?.id]) // eslint-disable-line
 
   useEffect(() => {
     let stored = localStorage.getItem('session_id')
