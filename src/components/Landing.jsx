@@ -18,7 +18,7 @@ export default function Landing({ onNavigate }) {
 
   const [ready, setReady]         = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
-  const [volume, setVolume]       = useState(0.2);
+  const [volume, setVolume]       = useState(0.3);
   const [showVol, setShowVol]     = useState(false);
   const [isMobile, setIsMobile]   = useState(window.innerWidth < 768);
 
@@ -227,13 +227,17 @@ export default function Landing({ onNavigate }) {
         </span>
       </div>
 
-      {/* Music — top right, no hover conflict */}
-      <div style={{
-        position: 'absolute', top: isMobile ? 18 : 26, right: isMobile ? 16 : 28,
-        zIndex: 10, display: 'flex', alignItems: 'center', gap: 8,
-        animation: ready ? 'fadeIn 0.8s 0.4s both' : 'none',
-        opacity: ready ? undefined : 0,
-      }}>
+      {/* Music — single hover zone wraps both button and slider */}
+      <div
+        onMouseEnter={() => !isMobile && setShowVol(true)}
+        onMouseLeave={() => !isMobile && setShowVol(false)}
+        style={{
+          position: 'absolute', top: isMobile ? 18 : 26, right: isMobile ? 16 : 28,
+          zIndex: 10, display: 'flex', alignItems: 'center', gap: 8,
+          animation: ready ? 'fadeIn 0.8s 0.4s both' : 'none',
+          opacity: ready ? undefined : 0,
+        }}
+      >
         {showVol && (
           <input
             type="range" min="0" max="1" step="0.01" value={volume}
@@ -242,19 +246,19 @@ export default function Landing({ onNavigate }) {
               setVolume(v);
               if (v > 0 && !isPlaying) setIsPlaying(true);
             }}
-            style={{ width: isMobile ? 60 : 72, accentColor: '#be1826', cursor: 'pointer', verticalAlign: 'middle' }}
+            style={{ width: isMobile ? 64 : 80, accentColor: '#be1826', cursor: 'pointer', verticalAlign: 'middle' }}
           />
         )}
         <button
           onClick={() => {
-            if (!showVol) {
-              setShowVol(true);
+            if (isMobile) {
+              // On mobile: first tap = show/hide slider, tap again to toggle play
+              if (!showVol) { setShowVol(true); return; }
+              setIsPlaying(p => !p);
             } else {
               setIsPlaying(p => !p);
             }
           }}
-          onMouseEnter={() => !isMobile && setShowVol(true)}
-          onMouseLeave={() => !isMobile && setShowVol(false)}
           aria-label="Music"
           style={{
             width: 32, height: 32, borderRadius: '50%',
@@ -263,8 +267,9 @@ export default function Landing({ onNavigate }) {
             backdropFilter: 'blur(6px)',
             color: isPlaying && volume > 0 ? '#be1826' : 'rgba(255,255,255,0.4)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', transition: 'color 0.2s, border-color 0.2s',
+            cursor: 'pointer', transition: 'color 0.2s',
             WebkitTapHighlightColor: 'transparent',
+            flexShrink: 0,
           }}
         >
           {isPlaying && volume > 0

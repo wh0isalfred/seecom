@@ -94,9 +94,9 @@ function AppInner() {
       setPageParams(window.history.state.params || {})
     }
 
-    // Warm up Supabase connection — so the first real query doesn't pay the cold-start cost
+    // Warm up Supabase connection
     import('./services/supabase').then(({ supabase }) => {
-      supabase.from('settings').select('key').limit(1).single().catch(() => {})
+      supabase.from('settings').select('key').limit(1).then(() => {}).catch(() => {})
     })
   }, [])
 
