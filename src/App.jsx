@@ -152,8 +152,9 @@ function AppInner() {
             isAdmin={isAdmin}
             user={user}
             onOpenAuth={() => setAuthModalOpen(true)}
-            onSignOut={async () => {
-              await signOut()
+            onSignOut={() => {
+              setSidebarOpen(false)
+              signOut()
               goToPage('home')
             }}
           />

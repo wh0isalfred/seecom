@@ -55,9 +55,19 @@ export function AuthProvider({ children }) {
   };
 
   const handleSignOut = async () => {
-    await signOut();
+    // Clear state immediately — don't wait for Supabase round-trip
     setUser(null);
     setProfile(null);
+    try {
+      await signOut();
+    } catch (err) {
+      // Even if the network call fails, the user is locally signed out
+      console.warn('Sign out network error (ignored):', err);
+    }
+    // Hard clear of any lingering Supabase session keys in storage
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('sb-')) localStorage.removeItem(key);
+    });
   };
 
   return (
