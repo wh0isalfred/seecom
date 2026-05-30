@@ -1,18 +1,22 @@
 import { useState, useEffect, useRef } from 'react';
 import { fetchProductById, fetchProductInventory } from '../services/products';
 import Footer from '../components/Footer';
+import logoBadge from '../assets/logo.webp';
+import { useDiscount } from '../contexts/DiscountContext';
+import { getEffectivePrice, isDiscounted, getDiscountLabel } from '../utils/discountUtils';
 
 export default function ProductDetailPage({ productId, cart, setCart, onNavigate }) {
-  const [product, setProduct]     = useState(null);
-  const [inventory, setInventory] = useState([]);
-  const [loading, setLoading]     = useState(true);
-
+  const [product, setProduct]           = useState(null);
+  const [inventory, setInventory]       = useState([]);
+  const [loading, setLoading]           = useState(true);
   const [activeImage, setActiveImage]   = useState(0);
   const [selectedSize, setSelectedSize] = useState(null);
   const [selectedColor, setSelectedColor] = useState(null);
-  const [expanded, setExpanded]         = useState(null); // 'size' | 'color' | 'description'
-  const [bagState, setBagState]         = useState('idle'); // 'idle' | 'added' | 'soldout'
+  const [expanded, setExpanded]         = useState(null);
+  const [bagState, setBagState]         = useState('idle');
   const [isDesktop, setIsDesktop]       = useState(window.innerWidth >= 820);
+  const [ready, setReady]               = useState(false);
+  const { discount }                    = useDiscount();
 
   useEffect(() => {
     const h = () => setIsDesktop(window.innerWidth >= 820);
@@ -22,19 +26,14 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
 
   useEffect(() => {
     if (!productId) return;
-    setLoading(true);
-    setSelectedSize(null);
-    setSelectedColor(null);
-    setExpanded(null);
-    setActiveImage(0);
-
+    setLoading(true); setSelectedSize(null); setSelectedColor(null); setExpanded(null); setActiveImage(0); setReady(false);
     Promise.all([fetchProductById(productId), fetchProductInventory(productId)])
       .then(([p, inv]) => {
         setProduct(p);
         setInventory(inv);
-        // Auto-select if only one size (e.g. chains / one-size products)
         const sz = Array.isArray(p?.sizes) ? p.sizes : [];
         if (sz.length === 1) setSelectedSize(sz[0]);
+        setTimeout(() => setReady(true), 60);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -43,29 +42,28 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
   if (loading) return <LoadingState />;
   if (!product)  return <NotFoundState onNavigate={onNavigate} />;
 
-  // ── Derived data ─────────────────────────────────────────
   const images = [product.image_1, product.image_2, product.image_male, product.image_female].filter(Boolean);
-  if (images.length === 0) images.push(''); // fallback placeholder
+  if (!images.length) images.push('');
 
   const sizes  = Array.isArray(product.sizes)  ? product.sizes  : [];
   const colors = Array.isArray(product.colors) ? product.colors : [];
 
+  const effectivePrice  = getEffectivePrice(product, discount);
+  const discounted      = isDiscounted(product, discount);
+  const discountLabel   = getDiscountLabel(product, discount);
+
   const stockFor = (size, color) => {
-    if (inventory.length === 0) return 999; // no inventory data → assume in stock
-    const row = inventory.find(
-      i => (!size || i.size === size) && (!color || i.color === color)
-    );
+    if (!inventory.length) return 999;
+    const row = inventory.find(i => (!size || i.size === size) && (!color || i.color === color));
     return row?.stock_quantity ?? 0;
   };
 
-  // A size is "dead" if ALL colors have 0 stock for it
-  const sizeIsOOS = (size) => {
-    if (inventory.length === 0) return false;
-    if (colors.length === 0) return stockFor(size, null) === 0;
+  const sizeIsOOS = size => {
+    if (!inventory.length) return false;
+    if (!colors.length) return stockFor(size, null) === 0;
     return colors.every(c => stockFor(size, c) === 0);
   };
 
-  // The currently selected combo
   const selectedStock = (() => {
     if (!selectedSize) return null;
     if (colors.length > 0 && !selectedColor) return null;
@@ -75,260 +73,161 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
   const isSoldOut  = selectedStock !== null && selectedStock === 0;
   const canAddToBag = selectedSize && (colors.length === 0 || selectedColor);
 
-  // ── Actions ──────────────────────────────────────────────
-  const toggle = (section) => setExpanded(p => p === section ? null : section);
+  const toggle = section => setExpanded(p => p === section ? null : section);
 
   const handleAddToBag = () => {
     if (!canAddToBag) { setExpanded('size'); return; }
-    if (isSoldOut) { setBagState('soldout'); return; }
-
+    if (isSoldOut)    { setBagState('soldout'); return; }
     const id = `${product.id}__${selectedSize}__${selectedColor ?? 'default'}`;
     setCart(prev => {
       const exists = prev.find(i => i.id === id);
       if (exists) return prev.map(i => i.id === id ? { ...i, quantity: i.quantity + 1 } : i);
-      return [...prev, {
-        id,
-        productId: product.id,
-        name: product.name,
-        price: product.discount_price || product.price,
-        image: images[0],
-        size: selectedSize,
-        color: selectedColor,
-        quantity: 1,
-      }];
+      return [...prev, { id, productId: product.id, name: product.name, price: effectivePrice, image: images[0], size: selectedSize, color: selectedColor, quantity: 1 }];
     });
-
     setBagState('added');
     setTimeout(() => setBagState('idle'), 1800);
   };
 
-  // ── Render ───────────────────────────────────────────────
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: '#fff' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh', backgroundColor: '#fff' }}>
+      <style>{`
+        @keyframes fadeIn  { from { opacity:0 } to { opacity:1 } }
+        @keyframes fadeUp  { from { opacity:0; transform:translateY(10px) } to { opacity:1; transform:translateY(0) } }
+        @keyframes clipUp  { from { clip-path:inset(0 0 100% 0); transform:translateY(60%) } to { clip-path:inset(0 0 0 0); transform:translateY(0) } }
+      `}</style>
 
-      {/* Breadcrumb header */}
-      <div style={{
-        padding: '16px 40px',
+      {/* Breadcrumb */}
+      <nav style={{
+        padding: isDesktop ? '14px 40px' : '12px 20px',
         borderBottom: '1px solid #f0f0f0',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
+        display: 'flex', alignItems: 'center', gap: 8,
+        position: 'relative',
+        animation: ready ? 'fadeIn 0.5s ease both' : 'none',
       }}>
-        <BreadCrumb label="SEE.COM" onClick={() => onNavigate?.('home')} />
-        <Chevron />
+        <button onClick={() => onNavigate?.('home')} style={crumbBtn}>SEE.COM</button>
+        <span style={{ color: '#ddd', fontSize: '10px' }}>›</span>
         {product.category && (
           <>
-            <BreadCrumb
-              label={product.category.toUpperCase()}
-              onClick={() => onNavigate?.(product.category)}
-            />
-            <Chevron />
+            <button onClick={() => onNavigate?.(product.category)} style={crumbBtn}>{product.category.toUpperCase()}</button>
+            <span style={{ color: '#ddd', fontSize: '10px' }}>›</span>
           </>
         )}
-        <span style={crumbActive}>{product.name}</span>
-      </div>
+        <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', letterSpacing: '0.1em', color: '#000', textTransform: 'uppercase' }}>{product.name}</span>
 
-      {/* Main content */}
+        {/* Logo badge */}
+        <img src={logoBadge} alt="SEE.COM" onClick={() => onNavigate?.('landing')} style={{ position: 'absolute', right: isDesktop ? '40px' : '20px', top: '50%', transform: 'translateY(-50%)', width: isDesktop ? '40px' : '34px', height: isDesktop ? '40px' : '34px', objectFit: 'cover', cursor: 'pointer' }} />
+      </nav>
+
+      {/* Main */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: isDesktop ? '1fr 420px' : '1fr',
-        flex: 1,
-        alignItems: 'start',
+        gridTemplateColumns: isDesktop ? '1fr 400px' : '1fr',
+        flex: 1, alignItems: 'start',
       }}>
+        {/* Gallery */}
+        <ImageGallery images={images} activeImage={activeImage} setActiveImage={setActiveImage} isDesktop={isDesktop} ready={ready} />
 
-        {/* ── Left: image gallery ── */}
-        <ImageGallery
-          images={images}
-          activeImage={activeImage}
-          setActiveImage={setActiveImage}
-          isDesktop={isDesktop}
-        />
-
-        {/* ── Right: product info ── */}
+        {/* Info panel */}
         <div style={{
-          position: isDesktop ? 'sticky' : 'static',
-          top: 0,
+          position: isDesktop ? 'sticky' : 'static', top: 0,
           borderLeft: isDesktop ? '1px solid #f0f0f0' : 'none',
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: isDesktop ? '100vh' : 'auto',
+          display: 'flex', flexDirection: 'column',
+          minHeight: isDesktop ? '100dvh' : 'auto',
+          opacity: ready ? 1 : 0,
+          transform: ready ? 'none' : isDesktop ? 'translateX(12px)' : 'translateY(12px)',
+          transition: 'opacity 0.6s 0.2s ease, transform 0.6s 0.2s ease',
         }}>
 
           {/* Name + price */}
-          <div style={{
-            padding: '28px 28px 20px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            gap: '16px',
-            borderBottom: '1px solid #f0f0f0',
-          }}>
+          <div style={{ padding: isDesktop ? '28px 32px 20px' : '24px 20px 16px', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
             <div>
-              <h1 style={{
-                fontFamily: "'Space Grotesk', sans-serif",
-                fontWeight: 700,
-                fontSize: '14px',
-                letterSpacing: '0.06em',
-                color: '#000',
-                margin: 0,
-                lineHeight: 1.3,
-              }}>
-                {product.name}
-              </h1>
-              {product.discount_price && (
-                <span style={{
-                  fontFamily: "'Archivo', sans-serif",
-                  fontSize: '11px',
-                  color: '#aaa',
-                  textDecoration: 'line-through',
-                  marginTop: '4px',
-                  display: 'block',
+              <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.22em', color: '#be1826', textTransform: 'uppercase', margin: '0 0 8px' }}>
+                {product.category}
+              </p>
+              <div style={{ overflow: 'hidden' }}>
+                <h1 style={{
+                  fontFamily: "'Clash Display', sans-serif", fontWeight: 600,
+                  fontSize: '17px', letterSpacing: '0.04em', color: '#000',
+                  margin: 0, lineHeight: 1.2,
+                  animation: ready ? 'clipUp 0.7s 0.3s cubic-bezier(0.16,1,0.3,1) both' : 'none',
                 }}>
+                  {product.name}
+                </h1>
+              </div>
+              {discounted && (
+                <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '11px', color: '#bbb', textDecoration: 'line-through', marginTop: 4, display: 'block' }}>
                   ₦{product.price?.toLocaleString()}
                 </span>
               )}
             </div>
-            <span style={{
-              fontFamily: "'Space Grotesk', sans-serif",
-              fontWeight: 700,
-              fontSize: '14px',
-              letterSpacing: '0.04em',
-              color: '#000',
-              whiteSpace: 'nowrap',
-            }}>
-              ₦{(product.discount_price || product.price)?.toLocaleString()}
-            </span>
+            <div style={{ textAlign: 'right' }}>
+              <span style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: '18px', letterSpacing: '0.02em', color: discounted ? '#be1826' : '#000', whiteSpace: 'nowrap' }}>
+                ₦{effectivePrice?.toLocaleString()}
+              </span>
+              {discounted && discountLabel && (
+                <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '9px', letterSpacing: '0.1em', color: '#be1826', margin: '2px 0 0' }}>{discountLabel} OFF</p>
+              )}
+            </div>
           </div>
 
-          {/* Accordion sections */}
-          <div style={{ padding: '16px 28px', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {/* Accordions */}
+          <div style={{ padding: isDesktop ? '20px 32px' : '16px 20px', flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
 
-            {/* SIZE — hidden if only one option (auto-selected above) */}
+            {/* SIZE */}
             {sizes.length > 1 && (
-              <AccordionSection
-                label="SIZE"
-                isOpen={expanded === 'size'}
-                onToggle={() => toggle('size')}
-              >
+              <Accordion label="SIZE" isOpen={expanded === 'size'} onToggle={() => toggle('size')} badge={selectedSize}>
                 <div style={{ padding: '14px 0 6px' }}>
-                  <button
-                    style={{
-                      background: 'none', border: 'none', padding: '0 0 14px',
-                      fontFamily: "'Archivo', sans-serif",
-                      fontSize: '11px', letterSpacing: '0.06em',
-                      color: '#888', textDecoration: 'underline',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    size guide
+                  <button style={{ background: 'none', border: 'none', padding: '0 0 12px', fontFamily: "'Archivo', sans-serif", fontSize: '10px', letterSpacing: '0.08em', color: '#bbb', textDecoration: 'underline', cursor: 'pointer' }}>
+                    Size guide
                   </button>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
                     {sizes.map(size => {
-                      const oos      = sizeIsOOS(size);
-                      const selected = selectedSize === size;
-                      return (
-                        <SizeButton
-                          key={size}
-                          label={size}
-                          selected={selected}
-                          oos={oos}
-                          onClick={() => { if (!oos) setSelectedSize(size); }}
-                        />
-                      );
+                      const oos = sizeIsOOS(size);
+                      return <SizeBtn key={size} label={size} selected={selectedSize === size} oos={oos} onClick={() => { if (!oos) setSelectedSize(size); }} />;
                     })}
                   </div>
                 </div>
-              </AccordionSection>
+              </Accordion>
             )}
 
-            {/* Single size label (e.g. chains) */}
             {sizes.length === 1 && (
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: '8px',
-                padding: '8px 14px', backgroundColor: '#f0f0f0',
-              }}>
-                <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '11px', letterSpacing: '0.1em', color: '#999' }}>
-                  SIZE
-                </span>
-                <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '11px', letterSpacing: '0.08em', color: '#000' }}>
-                  {sizes[0]}
-                </span>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '7px 12px', border: '1px solid #f0f0f0' }}>
+                <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '10px', letterSpacing: '0.1em', color: '#bbb' }}>SIZE</span>
+                <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '10px', letterSpacing: '0.08em', color: '#000' }}>{sizes[0]}</span>
               </div>
             )}
 
             {/* COLOR */}
             {colors.length > 0 && (
-              <AccordionSection
-                label="COLOR"
-                isOpen={expanded === 'color'}
-                onToggle={() => toggle('color')}
-                badge={selectedColor || null}
-              >
-                <div style={{ padding: '14px 0 6px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              <Accordion label="COLOR" isOpen={expanded === 'color'} onToggle={() => toggle('color')} badge={selectedColor}>
+                <div style={{ padding: '14px 0 6px', display: 'flex', flexWrap: 'wrap', gap: 7 }}>
                   {colors.map(color => {
-                    const oos = selectedSize
-                      ? stockFor(selectedSize, color) === 0
-                      : inventory.length > 0 && inventory.filter(i => i.color === color).every(i => i.stock_quantity === 0);
-                    const selected = selectedColor === color;
-                    return (
-                      <ColorButton
-                        key={color}
-                        label={color}
-                        selected={selected}
-                        oos={oos}
-                        onClick={() => { if (!oos) setSelectedColor(color); }}
-                      />
-                    );
+                    const oos = selectedSize ? stockFor(selectedSize, color) === 0 : inventory.length > 0 && inventory.filter(i => i.color === color).every(i => i.stock_quantity === 0);
+                    return <ColorBtn key={color} label={color} selected={selectedColor === color} oos={oos} onClick={() => { if (!oos) setSelectedColor(color); }} />;
                   })}
                 </div>
-              </AccordionSection>
+              </Accordion>
             )}
 
             {/* DESCRIPTION */}
             {product.description && (
-              <AccordionSection
-                label="DESCRIPTION"
-                isOpen={expanded === 'description'}
-                onToggle={() => toggle('description')}
-              >
-                <p style={{
-                  fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
-                  fontSize: '13px',
-                  lineHeight: 1.75,
-                  color: '#444',
-                  letterSpacing: '0.01em',
-                  margin: '14px 0 8px',
-                }}>
+              <Accordion label="DESCRIPTION" isOpen={expanded === 'description'} onToggle={() => toggle('description')}>
+                <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '13px', lineHeight: 1.8, color: '#666', letterSpacing: '0.01em', margin: '14px 0 6px' }}>
                   {product.description}
                 </p>
-              </AccordionSection>
+              </Accordion>
             )}
-
           </div>
 
-          {/* ADD TO BAG — pinned to bottom */}
-          <div style={{ padding: '20px 28px 28px', borderTop: '1px solid #f0f0f0' }}>
-
-            {/* Selection nudge */}
+          {/* Add to bag */}
+          <div style={{ padding: isDesktop ? '20px 32px 32px' : '16px 20px 28px', borderTop: '1px solid #f0f0f0' }}>
             {!selectedSize && sizes.length > 1 && (
-              <p style={{
-                fontFamily: "'Archivo', sans-serif",
-                fontSize: '11px', letterSpacing: '0.06em',
-                color: '#aaa', textAlign: 'center',
-                marginBottom: '12px',
-              }}>
-                SELECT A SIZE TO CONTINUE
+              <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', letterSpacing: '0.1em', color: '#bbb', textAlign: 'center', margin: '0 0 12px', textTransform: 'uppercase' }}>
+                Select a size to continue
               </p>
             )}
-
-            <AddToBagButton
-              state={bagState}
-              canAdd={canAddToBag}
-              isSoldOut={isSoldOut}
-              onClick={handleAddToBag}
-            />
+            <AddToBag state={bagState} isSoldOut={isSoldOut} onClick={handleAddToBag} />
           </div>
-
         </div>
       </div>
 
@@ -337,27 +236,20 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
   );
 }
 
-// ── Image Gallery ─────────────────────────────────────────
-function ImageGallery({ images, activeImage, setActiveImage, isDesktop }) {
+function ImageGallery({ images, activeImage, setActiveImage, isDesktop, ready }) {
   const touchStart = useRef(null);
-
-  const prev = () => setActiveImage(i => (i === 0 ? images.length - 1 : i - 1));
-  const next = () => setActiveImage(i => (i === images.length - 1 ? 0 : i + 1));
+  const prev = () => setActiveImage(i => i === 0 ? images.length - 1 : i - 1);
+  const next = () => setActiveImage(i => i === images.length - 1 ? 0 : i + 1);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
-
-      {/* Main image */}
-      <div
-        style={{
-          position: 'relative',
-          width: '100%',
-          paddingBottom: isDesktop ? '120%' : '100%',
-          backgroundColor: '#f5f5f5',
-          overflow: 'hidden',
-        }}
-        onTouchStart={(e) => { touchStart.current = e.touches[0].clientX; }}
-        onTouchEnd={(e) => {
+    <div style={{
+      display: 'flex', flexDirection: 'column',
+      opacity: ready ? 1 : 0,
+      transition: 'opacity 0.7s ease',
+    }}>
+      <div style={{ position: 'relative', width: '100%', paddingBottom: isDesktop ? '120%' : '100%', backgroundColor: '#f7f7f7', overflow: 'hidden' }}
+        onTouchStart={e => { touchStart.current = e.touches[0].clientX; }}
+        onTouchEnd={e => {
           if (touchStart.current === null) return;
           const dx = e.changedTouches[0].clientX - touchStart.current;
           if (Math.abs(dx) > 40) dx < 0 ? next() : prev();
@@ -365,77 +257,36 @@ function ImageGallery({ images, activeImage, setActiveImage, isDesktop }) {
         }}
       >
         {images.map((src, idx) => (
-          <div
-            key={idx}
-            style={{
-              position: 'absolute',
-              inset: 0,
-              backgroundImage: src ? `url(${src})` : 'none',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              opacity: activeImage === idx ? 1 : 0,
-              transition: 'opacity 0.35s ease',
-              backgroundColor: '#f5f5f5',
-            }}
-          />
+          <div key={idx} style={{
+            position: 'absolute', inset: 0,
+            backgroundImage: src ? `url(${src})` : 'none',
+            backgroundSize: 'cover', backgroundPosition: 'center',
+            opacity: activeImage === idx ? 1 : 0,
+            transition: 'opacity 0.4s ease',
+            backgroundColor: '#f7f7f7',
+          }} />
         ))}
 
-        {/* Prev/Next arrows */}
         {images.length > 1 && (
           <>
-            <button onClick={prev} style={arrowBtn('left')}>‹</button>
-            <button onClick={next} style={arrowBtn('right')}>›</button>
+            <button onClick={prev} style={arrowStyle('left')}>‹</button>
+            <button onClick={next} style={arrowStyle('right')}>›</button>
           </>
         )}
 
-        {/* Dot indicator */}
         {images.length > 1 && (
-          <div style={{
-            position: 'absolute', bottom: '16px', left: '50%',
-            transform: 'translateX(-50%)',
-            display: 'flex', gap: '6px',
-          }}>
+          <div style={{ position: 'absolute', bottom: 14, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 5 }}>
             {images.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setActiveImage(idx)}
-                style={{
-                  width: activeImage === idx ? '20px' : '6px',
-                  height: '6px',
-                  borderRadius: '3px',
-                  background: activeImage === idx ? '#000' : 'rgba(0,0,0,0.25)',
-                  border: 'none', cursor: 'pointer', padding: 0,
-                  transition: 'width 0.25s ease, background 0.25s ease',
-                }}
-              />
+              <button key={idx} onClick={() => setActiveImage(idx)} style={{ width: activeImage === idx ? 18 : 5, height: 5, borderRadius: 3, background: activeImage === idx ? '#000' : 'rgba(0,0,0,0.2)', border: 'none', cursor: 'pointer', padding: 0, transition: 'width 0.25s ease, background 0.25s ease' }} />
             ))}
           </div>
         )}
       </div>
 
-      {/* Thumbnails */}
       {images.length > 1 && (
-        <div style={{
-          display: 'flex', gap: '8px', padding: '12px 16px',
-          overflowX: 'auto',
-        }}>
+        <div style={{ display: 'flex', gap: 7, padding: '10px 14px', overflowX: 'auto' }}>
           {images.map((src, idx) => (
-            <button
-              key={idx}
-              onClick={() => setActiveImage(idx)}
-              style={{
-                flexShrink: 0,
-                width: '60px', height: '72px',
-                backgroundImage: src ? `url(${src})` : 'none',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundColor: '#f5f5f5',
-                border: `2px solid ${activeImage === idx ? '#000' : 'transparent'}`,
-                cursor: 'pointer',
-                padding: 0,
-                transition: 'border-color 0.15s',
-              }}
-            />
+            <button key={idx} onClick={() => setActiveImage(idx)} style={{ flexShrink: 0, width: 56, height: 68, backgroundImage: src ? `url(${src})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#f5f5f5', border: `2px solid ${activeImage === idx ? '#000' : 'transparent'}`, cursor: 'pointer', padding: 0, transition: 'border-color 0.15s' }} />
           ))}
         </div>
       )}
@@ -443,304 +294,92 @@ function ImageGallery({ images, activeImage, setActiveImage, isDesktop }) {
   );
 }
 
-// ── Accordion Section ─────────────────────────────────────
-function AccordionSection({ label, isOpen, onToggle, badge, children }) {
+function Accordion({ label, isOpen, onToggle, badge, children }) {
   return (
     <div>
-      {/* Toggle pill (collapsed) */}
       {!isOpen && (
-        <button
-          onClick={onToggle}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '10px',
-            padding: '9px 16px',
-            backgroundColor: '#f0f0f0',
-            border: 'none',
-            cursor: 'pointer',
-            fontFamily: "'Space Grotesk', sans-serif",
-            fontWeight: 700,
-            fontSize: '11px',
-            letterSpacing: '0.12em',
-            color: '#000',
-            transition: 'background 0.15s',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = '#e8e8e8')}
-          onMouseLeave={(e) => (e.currentTarget.style.background = '#f0f0f0')}
+        <button onClick={onToggle} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 14px', backgroundColor: '#f5f5f5', border: 'none', cursor: 'pointer', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '10px', letterSpacing: '0.14em', color: '#000', textTransform: 'uppercase', transition: 'background 0.15s' }}
+          onMouseEnter={e => e.currentTarget.style.background = '#ebebeb'}
+          onMouseLeave={e => e.currentTarget.style.background = '#f5f5f5'}
         >
           {label}
-          {badge && (
-            <span style={{
-              fontFamily: "'Archivo', sans-serif",
-              fontSize: '10px',
-              fontWeight: 400,
-              color: '#666',
-              letterSpacing: '0.04em',
-            }}>
-              {badge}
-            </span>
-          )}
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <path d="M1 3l4 4 4-4" stroke="#000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          {badge && <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', fontWeight: 400, color: '#888', letterSpacing: '0.04em' }}>{badge}</span>}
+          <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M1 3l4 4 4-4" stroke="#000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </button>
       )}
-
-      {/* Expanded box */}
       {isOpen && (
-        <div style={{
-          border: '1px solid #e0e0e0',
-          backgroundColor: '#fff',
-        }}>
-          {/* Header */}
-          <button
-            onClick={onToggle}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              width: '100%',
-              padding: '11px 16px',
-              backgroundColor: '#f0f0f0',
-              border: 'none',
-              cursor: 'pointer',
-              textAlign: 'left',
-            }}
-          >
-            <span style={{
-              fontFamily: "'Space Grotesk', sans-serif",
-              fontWeight: 700,
-              fontSize: '11px',
-              letterSpacing: '0.12em',
-              color: '#000',
-            }}>
-              {label}
-            </span>
-            {/* × close */}
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M4 4l16 16M20 4L4 20" stroke="#000" strokeWidth="1.8" strokeLinecap="round" />
-            </svg>
+        <div style={{ border: '1px solid #ebebeb' }}>
+          <button onClick={onToggle} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '10px 14px', backgroundColor: '#f5f5f5', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+            <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '10px', letterSpacing: '0.14em', color: '#000', textTransform: 'uppercase' }}>{label}</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M4 4l16 16M20 4L4 20" stroke="#000" strokeWidth="1.6" strokeLinecap="round"/></svg>
           </button>
-
-          {/* Content */}
-          <div style={{ padding: '0 16px 16px' }}>
-            {children}
-          </div>
+          <div style={{ padding: '0 14px 14px' }}>{children}</div>
         </div>
       )}
     </div>
   );
 }
 
-// ── Size Button ───────────────────────────────────────────
-function SizeButton({ label, selected, oos, onClick }) {
+function SizeBtn({ label, selected, oos, onClick }) {
   return (
-    <button
-      onClick={onClick}
-      disabled={oos}
-      style={{
-        position: 'relative',
-        width: '52px',
-        height: '52px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        border: `1px solid ${selected ? '#000' : '#d0d0d0'}`,
-        background: selected ? '#000' : '#fff',
-        cursor: oos ? 'default' : 'pointer',
-        fontFamily: "'Space Grotesk', sans-serif",
-        fontWeight: 600,
-        fontSize: '11px',
-        letterSpacing: '0.08em',
-        color: oos ? '#ccc' : selected ? '#fff' : '#000',
-        transition: 'all 0.15s',
-        overflow: 'hidden',
-      }}
-      onMouseEnter={(e) => { if (!oos && !selected) e.currentTarget.style.borderColor = '#000'; }}
-      onMouseLeave={(e) => { if (!oos && !selected) e.currentTarget.style.borderColor = '#d0d0d0'; }}
+    <button onClick={onClick} disabled={oos} style={{ position: 'relative', width: 50, height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${selected ? '#000' : '#e0e0e0'}`, background: selected ? '#000' : '#fff', cursor: oos ? 'default' : 'pointer', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '11px', letterSpacing: '0.08em', color: oos ? '#ccc' : selected ? '#fff' : '#000', transition: 'all 0.15s', overflow: 'hidden', minWidth: 48, minHeight: 48 }}
+      onMouseEnter={e => { if (!oos && !selected) e.currentTarget.style.borderColor = '#000'; }}
+      onMouseLeave={e => { if (!oos && !selected) e.currentTarget.style.borderColor = '#e0e0e0'; }}
     >
       {label}
-
-      {/* Red slash overlay for OOS */}
-      {oos && (
-        <span style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'linear-gradient(to bottom right, transparent calc(50% - 0.8px), #be1826 calc(50% - 0.8px), #be1826 calc(50% + 0.8px), transparent calc(50% + 0.8px))',
-          pointerEvents: 'none',
-        }} />
-      )}
+      {oos && <span style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom right, transparent calc(50% - 0.8px), #be1826 calc(50% - 0.8px), #be1826 calc(50% + 0.8px), transparent calc(50% + 0.8px))', pointerEvents: 'none' }} />}
     </button>
   );
 }
 
-// ── Color Button ──────────────────────────────────────────
-function ColorButton({ label, selected, oos, onClick }) {
+function ColorBtn({ label, selected, oos, onClick }) {
   return (
-    <button
-      onClick={onClick}
-      disabled={oos}
-      style={{
-        position: 'relative',
-        padding: '8px 14px',
-        border: `1px solid ${selected ? '#000' : '#d0d0d0'}`,
-        background: selected ? '#000' : '#fff',
-        cursor: oos ? 'default' : 'pointer',
-        fontFamily: "'Space Grotesk', sans-serif",
-        fontWeight: 600,
-        fontSize: '11px',
-        letterSpacing: '0.08em',
-        color: oos ? '#ccc' : selected ? '#fff' : '#000',
-        transition: 'all 0.15s',
-        overflow: 'hidden',
-      }}
-      onMouseEnter={(e) => { if (!oos && !selected) e.currentTarget.style.borderColor = '#000'; }}
-      onMouseLeave={(e) => { if (!oos && !selected) e.currentTarget.style.borderColor = '#d0d0d0'; }}
+    <button onClick={onClick} disabled={oos} style={{ position: 'relative', padding: '7px 12px', border: `1px solid ${selected ? '#000' : '#e0e0e0'}`, background: selected ? '#000' : '#fff', cursor: oos ? 'default' : 'pointer', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '10px', letterSpacing: '0.08em', color: oos ? '#ccc' : selected ? '#fff' : '#000', transition: 'all 0.15s', overflow: 'hidden' }}
+      onMouseEnter={e => { if (!oos && !selected) e.currentTarget.style.borderColor = '#000'; }}
+      onMouseLeave={e => { if (!oos && !selected) e.currentTarget.style.borderColor = '#e0e0e0'; }}
     >
       {label}
-      {oos && (
-        <span style={{
-          position: 'absolute', inset: 0,
-          background: 'linear-gradient(to bottom right, transparent calc(50% - 0.8px), #be1826 calc(50% - 0.8px), #be1826 calc(50% + 0.8px), transparent calc(50% + 0.8px))',
-          pointerEvents: 'none',
-        }} />
-      )}
+      {oos && <span style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom right, transparent calc(50% - 0.8px), #be1826 calc(50% - 0.8px), #be1826 calc(50% + 0.8px), transparent calc(50% + 0.8px))', pointerEvents: 'none' }} />}
     </button>
   );
 }
 
-// ── Add to Bag Button ─────────────────────────────────────
-function AddToBagButton({ state, canAdd, isSoldOut, onClick }) {
-  const isSoldOutDisplay = isSoldOut || state === 'soldout';
-
-  const bg = isSoldOutDisplay
-    ? '#7c4a2d'        // brown for sold out
-    : state === 'added'
-    ? '#1a6b3c'        // green flash when added
-    : '#000';          // default black
-
-  const label = isSoldOutDisplay
-    ? 'SOLD OUT'
-    : state === 'added'
-    ? 'ADDED ✓'
-    : 'ADD TO BAG';
-
+function AddToBag({ state, isSoldOut, onClick }) {
+  const soldOut = isSoldOut || state === 'soldout';
+  const bg = soldOut ? '#7c4a2d' : state === 'added' ? '#1a6b3c' : '#000';
+  const label = soldOut ? 'SOLD OUT' : state === 'added' ? 'ADDED ✓' : 'ADD TO BAG';
   return (
-    <button
-      onClick={onClick}
-      style={{
-        width: '100%',
-        padding: '16px',
-        background: bg,
-        color: '#fff',
-        border: 'none',
-        fontFamily: "'Space Grotesk', sans-serif",
-        fontWeight: 700,
-        fontSize: '12px',
-        letterSpacing: '0.18em',
-        cursor: isSoldOutDisplay ? 'not-allowed' : 'pointer',
-        transition: 'background 0.3s ease',
-      }}
-    >
+    <button onClick={onClick} style={{ width: '100%', padding: '16px', background: bg, color: '#fff', border: 'none', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '11px', letterSpacing: '0.2em', cursor: soldOut ? 'not-allowed' : 'pointer', transition: 'background 0.3s ease', minHeight: 52, WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}>
       {label}
     </button>
   );
 }
 
-// ── Loading / Not Found ───────────────────────────────────
 function LoadingState() {
   return (
-    <div style={{
-      minHeight: '100vh', display: 'flex',
-      alignItems: 'center', justifyContent: 'center',
-    }}>
-      <span style={{
-        fontFamily: "'Space Grotesk', sans-serif",
-        fontSize: '11px', letterSpacing: '0.2em', color: '#aaa',
-      }}>
-        LOADING...
-      </span>
+    <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: 24, height: 24, border: '1.5px solid #e0e0e0', borderTopColor: '#000', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </div>
   );
 }
 
 function NotFoundState({ onNavigate }) {
   return (
-    <div style={{
-      minHeight: '100vh', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center', gap: '20px',
-    }}>
-      <p style={{
-        fontFamily: "'Space Grotesk', sans-serif",
-        fontSize: '13px', letterSpacing: '0.1em', color: '#000',
-      }}>
-        PRODUCT NOT FOUND
-      </p>
-      <button
-        onClick={() => onNavigate?.('shop')}
-        style={{
-          padding: '12px 28px', background: '#000', color: '#fff',
-          border: 'none', cursor: 'pointer',
-          fontFamily: "'Space Grotesk', sans-serif",
-          fontWeight: 700, fontSize: '11px', letterSpacing: '0.14em',
-        }}
-      >
-        BACK TO SHOP
-      </button>
+    <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20 }}>
+      <p style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: '16px', letterSpacing: '0.04em', color: '#ccc' }}>Product not found</p>
+      <button onClick={() => onNavigate?.('shop')} style={{ padding: '11px 24px', background: '#000', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase' }}>Back to Shop</button>
     </div>
   );
 }
 
-// ── Helpers ───────────────────────────────────────────────
-function BreadCrumb({ label, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-        fontFamily: "'Clash Display', sans-serif",
-        fontSize: '10px', letterSpacing: '0.22em',
-        color: '#aaa', textTransform: 'uppercase',
-        transition: 'color 0.15s',
-      }}
-      onMouseEnter={(e) => (e.currentTarget.style.color = '#000')}
-      onMouseLeave={(e) => (e.currentTarget.style.color = '#aaa')}
-    >
-      {label}
-    </button>
-  );
-}
+const crumbBtn = { background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: "'Archivo', sans-serif", fontSize: '10px', letterSpacing: '0.1em', color: '#bbb', textTransform: 'uppercase', transition: 'color 0.15s' };
 
-function Chevron() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
-      <path d="M9 18l6-6-6-6" stroke="#ccc" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-const crumbActive = {
-  fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
-  fontSize: '10px', letterSpacing: '0.1em',
-  color: '#000', textTransform: 'uppercase',
-};
-
-const arrowBtn = (side) => ({
-  position: 'absolute',
-  top: '50%',
-  [side]: '12px',
+const arrowStyle = side => ({
+  position: 'absolute', top: '50%', [side]: '10px',
   transform: 'translateY(-50%)',
-  width: '36px', height: '36px',
-  borderRadius: '50%',
-  background: 'rgba(255,255,255,0.85)',
-  border: 'none',
-  cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  fontSize: '22px',
-  color: '#000',
-  zIndex: 2,
-  transition: 'background 0.15s',
+  width: 34, height: 34, borderRadius: '50%',
+  background: 'rgba(255,255,255,0.88)', border: 'none',
+  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+  fontSize: '20px', color: '#000', zIndex: 2, transition: 'background 0.15s',
 });

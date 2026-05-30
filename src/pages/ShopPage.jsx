@@ -5,246 +5,182 @@ import { fetchProducts } from '../services/products';
 import { useResponsiveGrid } from '../utils/responsiveGrid';
 import logoBadge from '../assets/logo.webp';
 
+function ViewToggle({ showPrice, setShowPrice }) {
+  return (
+    <div style={{ display: 'inline-flex', border: '1px solid #000', borderRadius: '24px', padding: '4px' }}>
+      <button onClick={() => setShowPrice(false)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '20px', border: 'none', background: showPrice ? 'transparent' : '#000', cursor: 'pointer', color: showPrice ? '#000' : '#fff', transition: 'all 0.2s' }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3" stroke="currentColor" strokeWidth="1.5"/><path d="M5 20c0-3.314 3.582-6 7-6s7 2.686 7 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+      </button>
+      <button onClick={() => setShowPrice(true)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '20px', border: 'none', background: showPrice ? '#000' : 'transparent', cursor: 'pointer', color: showPrice ? '#fff' : '#000', transition: 'all 0.2s' }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"/></svg>
+      </button>
+    </div>
+  );
+}
+
 export default function ShopPage({ onNavigate }) {
-  const [showPrice, setShowPrice] = useState(false);
-  const [products, setProducts] = useState([]);
+  const [showPrice, setShowPrice]           = useState(false);
+  const [products, setProducts]             = useState([]);
   const [displayedProducts, setDisplayedProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [hasMore, setHasMore] = useState(true);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [loading, setLoading]               = useState(true);
+  const [hasMore, setHasMore]               = useState(true);
+  const [currentIndex, setCurrentIndex]     = useState(0);
+  const [ready, setReady]                   = useState(false);
+  const [isMobile, setIsMobile]             = useState(window.innerWidth < 768);
   const observerTarget = useRef(null);
   const gridColumns = useResponsiveGrid();
-
   const PRODUCTS_PER_PAGE = 25;
 
-  // Fetch all products once
   useEffect(() => {
-    const loadAllProducts = async () => {
-      setLoading(true);
-      try {
-        const allProducts = await fetchProducts(null, null, 1000);
-        setProducts(allProducts);
-        setDisplayedProducts(allProducts.slice(0, PRODUCTS_PER_PAGE));
-        setCurrentIndex(PRODUCTS_PER_PAGE);
-        setHasMore(allProducts.length > PRODUCTS_PER_PAGE);
-      } catch (error) {
-        console.error('Error loading products:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadAllProducts();
+    const h = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', h);
+    setTimeout(() => setReady(true), 60);
+    return () => window.removeEventListener('resize', h);
   }, []);
 
-  // Infinite scroll handler
+  useEffect(() => {
+    fetchProducts(null, null, 1000)
+      .then(all => {
+        setProducts(all);
+        setDisplayedProducts(all.slice(0, PRODUCTS_PER_PAGE));
+        setCurrentIndex(PRODUCTS_PER_PAGE);
+        setHasMore(all.length > PRODUCTS_PER_PAGE);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
   const loadMore = useCallback(() => {
     if (!hasMore || currentIndex >= products.length) return;
-
-    const newIndex = currentIndex + PRODUCTS_PER_PAGE;
-    setDisplayedProducts(products.slice(0, newIndex));
-    setCurrentIndex(newIndex);
-    setHasMore(newIndex < products.length);
+    const next = currentIndex + PRODUCTS_PER_PAGE;
+    setDisplayedProducts(products.slice(0, next));
+    setCurrentIndex(next);
+    setHasMore(next < products.length);
   }, [currentIndex, products, hasMore]);
 
-  // Intersection Observer for infinite scroll
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loading) {
-          loadMore();
-        }
-      },
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting && hasMore && !loading) loadMore(); },
       { threshold: 0.1 }
     );
-
-    if (observerTarget.current) {
-      observer.observe(observerTarget.current);
-    }
-
-    return () => {
-      if (observerTarget.current) {
-        observer.unobserve(observerTarget.current);
-      }
-    };
+    if (observerTarget.current) obs.observe(observerTarget.current);
+    return () => { if (observerTarget.current) obs.unobserve(observerTarget.current); };
   }, [hasMore, loading, loadMore]);
 
   return (
-    <div style={{ marginTop: 0, padding: 0, display: 'flex', flexDirection: 'column' }}>
-      {/* Header with clickable logo */}
-      <div
-        style={{
-          padding: '20px 40px 10px',
-          backgroundColor: '#fff',
-          textAlign: 'center',
-          position: 'relative',
-        }}
-      >
-        <div
-          onClick={() => onNavigate?.('home')}
-          style={{ cursor: 'pointer', display: 'inline-block' }}
-        >
-          <div
-            style={{
-              fontFamily: "'Archivo', sans-serif",
-              fontWeight: 500,
-              fontSize: '38px',
-              letterSpacing: '0.05em',
-              color: '#000',
-            }}
-          >
-            SEE.COM
-          </div>
-        </div>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh', backgroundColor: '#fff' }}>
+      <style>{`
+        @keyframes fadeDown { from { opacity:0; transform:translateY(-8px) } to { opacity:1; transform:translateY(0) } }
+        @keyframes fadeUp   { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }
+        @keyframes lineGrow { from { transform:scaleX(0) } to { transform:scaleX(1) } }
+      `}</style>
 
-        {/* Recycle badge */}
+      {/* ── HEADER ── */}
+      <header style={{
+        padding: isMobile ? '16px 20px' : '20px 40px',
+        borderBottom: '1px solid #f0f0f0',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        position: 'relative',
+        animation: ready ? 'fadeDown 0.6s ease both' : 'none',
+      }}>
+        <button
+          onClick={() => onNavigate?.('home')}
+          style={{
+            fontFamily: "'Clash Display', sans-serif",
+            fontWeight: 600, fontSize: isMobile ? '18px' : '22px',
+            letterSpacing: '0.22em', color: '#000',
+            background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+          }}
+        >
+          SEE.COM
+        </button>
+
         <img
           src={logoBadge}
-          alt="Recycle — SEE.COM"
+          alt="SEE.COM"
+          onClick={() => onNavigate?.('landing')}
           style={{
-            position: 'absolute',
-            right: '40px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            width: '56px',
-            height: '56px',
-            objectFit: 'cover',
-            borderRadius: '4px',
+            position: 'absolute', right: isMobile ? '20px' : '40px',
+            top: '50%', transform: 'translateY(-50%)',
+            width: isMobile ? '40px' : '48px', height: isMobile ? '40px' : '48px',
+            objectFit: 'cover', cursor: 'pointer',
           }}
         />
-      </div>
+      </header>
 
-      {/* Products section */}
-      <main style={{ backgroundColor: '#fff', padding: '48px 40px', margin: 0 }}>
-        {/* Header with Title and Toggle */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
-          <h2
-            style={{
-              fontFamily: "'Space Grotesk', sans-serif",
-              fontWeight: 700,
-              fontSize: window.innerWidth >= 1024 ? '18px' : window.innerWidth >= 768 ? '15px' : '13px',
-              letterSpacing: '0.12em',
-              color: '#000',
-              margin: 0,
-            }}
-          >
-            ALL PRODUCTS
-          </h2>
+      {/* ── MAIN ── */}
+      <main style={{
+        flex: 1,
+        padding: isMobile ? '40px 20px' : '64px 40px',
+        animation: ready ? 'fadeUp 0.7s 0.1s ease both' : 'none',
+      }}>
 
-          {/* Toggle Button - Smaller Pill Shape */}
-          <div
-            style={{
-              display: 'inline-flex',
-              border: '1px solid #000',
-              borderRadius: '24px',
-              padding: '4px',
-              gap: '0',
-              width: 'fit-content',
-            }}
-          >
-            {/* Person Icon (Model View) */}
-            <button
-              onClick={() => setShowPrice(false)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '32px',
-                height: '32px',
-                borderRadius: '20px',
-                border: 'none',
-                background: showPrice ? 'transparent' : '#000',
-                cursor: 'pointer',
-                color: showPrice ? '#000' : '#fff',
-                transition: 'all 0.2s',
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="8" r="3" stroke="currentColor" strokeWidth="1.5" />
-                <path
-                  d="M5 20c0-3.314 3.582-6 7-6s7 2.686 7 6"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </button>
-
-            {/* Filled Circle (Price View) */}
-            <button
-              onClick={() => setShowPrice(true)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '32px',
-                height: '32px',
-                borderRadius: '20px',
-                border: 'none',
-                background: showPrice ? '#000' : 'transparent',
-                cursor: 'pointer',
-                color: showPrice ? '#fff' : '#000',
-                transition: 'all 0.2s',
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="12" cy="12" r="8" />
-              </svg>
-            </button>
+        {/* Section label + controls */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '40px' }}>
+          <div>
+            <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.24em', color: '#bbb', textTransform: 'uppercase', margin: '0 0 8px' }}>
+              All pieces
+            </p>
+            <h1 style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: isMobile ? '20px' : '26px', letterSpacing: '0.06em', color: '#000', margin: 0 }}>
+              SHOP ALL
+            </h1>
+            <div style={{
+              height: 1, backgroundColor: '#000', marginTop: 10,
+              transformOrigin: 'left',
+              animation: ready ? 'lineGrow 0.8s 0.3s cubic-bezier(0.16,1,0.3,1) both' : 'none',
+            }} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <ViewToggle showPrice={showPrice} setShowPrice={setShowPrice} />
+            {!loading && products.length > 0 && (
+              <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', letterSpacing: '0.1em', color: '#ccc', textTransform: 'uppercase' }}>
+                {products.length}
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Product Grid */}
+        {/* Grid */}
         {loading && displayedProducts.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '48px', color: '#999' }}>
-            LOADING PRODUCTS...
+          <div style={{ height: 320, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.22em', color: '#ddd', textTransform: 'uppercase' }}>—</span>
           </div>
         ) : displayedProducts.length > 0 ? (
           <>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: gridColumns,
-                gap: '24px',
-              }}
-            >
-              {displayedProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  showPrice={showPrice}
-                  onProductClick={(id) => onNavigate?.('product', { productId: id })}
-                />
+            <div style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: isMobile ? '16px' : '24px' }}>
+              {displayedProducts.map((product, i) => (
+                <div key={product.id} style={{
+                  opacity: ready ? 1 : 0,
+                  transform: ready ? 'translateY(0)' : 'translateY(16px)',
+                  transition: `opacity 0.6s ${0.05 + i * 0.03}s ease, transform 0.6s ${0.05 + i * 0.03}s ease`,
+                }}>
+                  <ProductCard
+                    product={product}
+                    showPrice={showPrice}
+                    onProductClick={id => onNavigate?.('product', { productId: id })}
+                  />
+                </div>
               ))}
             </div>
 
-            {/* Infinite scroll trigger */}
-            <div
-              ref={observerTarget}
-              style={{
-                padding: '40px 0',
-                textAlign: 'center',
-                color: '#999',
-              }}
-            >
+            <div ref={observerTarget} style={{ padding: '60px 0', textAlign: 'center' }}>
               {hasMore ? (
-                <div style={{ fontSize: '12px', letterSpacing: '0.05em' }}>
-                  LOADING MORE...
-                </div>
+                <div style={{ width: 24, height: 24, border: '1.5px solid #e0e0e0', borderTopColor: '#000', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
               ) : (
-                <div style={{ fontSize: '12px', letterSpacing: '0.05em' }}>
-                  ALL {products.length} PRODUCTS LOADED
-                </div>
+                <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.22em', color: '#ccc', textTransform: 'uppercase', margin: 0 }}>
+                  {products.length} pieces
+                </p>
               )}
             </div>
           </>
         ) : (
-          <div style={{ textAlign: 'center', padding: '48px', color: '#999' }}>
-            NO PRODUCTS AVAILABLE
+          <div style={{ height: 320, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.22em', color: '#ccc', textTransform: 'uppercase', margin: 0 }}>No products available</p>
           </div>
         )}
       </main>
 
-      {/* Footer */}
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
       <Footer />
     </div>
   );

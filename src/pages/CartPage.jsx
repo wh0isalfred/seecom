@@ -2,169 +2,112 @@ import { useState, useEffect } from 'react';
 import Footer from '../components/Footer';
 import logoBadge from '../assets/logo.webp';
 
-// Cart item shape (set by ProductDetailPage when adding to cart):
-// { id: string, productId: string, name: string, price: number,
-//   image: string, size: string, color: string, quantity: number }
-
-const SHIPPING_THRESHOLD = 50000; // free shipping above ₦50,000
-const FLAT_SHIPPING      = 3500;  // ₦3,500 flat rate below threshold
+const SHIPPING_THRESHOLD = 50000;
+const FLAT_SHIPPING      = 3500;
+const fmt = n => `₦${n.toLocaleString()}`;
 
 export default function CartPage({ cart = [], setCart, onNavigate }) {
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 900);
+  const [isMobile, setIsMobile]   = useState(window.innerWidth < 640);
+  const [ready, setReady]         = useState(false);
+  const [pendingOrders, setPendingOrders] = useState(() =>
+    JSON.parse(localStorage.getItem('pendingOrders') || '[]')
+  );
 
   useEffect(() => {
-    const handle = () => setIsDesktop(window.innerWidth >= 900);
-    window.addEventListener('resize', handle);
-    return () => window.removeEventListener('resize', handle);
+    const h = () => { setIsDesktop(window.innerWidth >= 900); setIsMobile(window.innerWidth < 640); };
+    window.addEventListener('resize', h);
+    setTimeout(() => setReady(true), 60);
+    return () => window.removeEventListener('resize', h);
   }, []);
 
-  // ── Cart operations ─────────────────────────────────────
-  const updateQty = (id, delta) => {
-    setCart((prev) =>
-      prev
-        .map((item) =>
-          item.id === id ? { ...item, quantity: item.quantity + delta } : item
-        )
-        .filter((item) => item.quantity > 0)
-    );
-  };
+  // Sync pending orders — remove delivered
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem('pendingOrders') || '[]');
+    if (stored.length === 0) return;
+    import('../services/supabase').then(({ supabase }) => {
+      const ids = stored.map(o => o.id).filter(Boolean);
+      if (!ids.length) return;
+      supabase.from('orders').select('id, order_status').in('id', ids).then(({ data }) => {
+        if (!data) return;
+        const active = stored.filter(o => {
+          const live = data.find(d => d.id === o.id);
+          return !live || !['delivered', 'cancelled'].includes(live.order_status);
+        });
+        localStorage.setItem('pendingOrders', JSON.stringify(active));
+        setPendingOrders(active);
+      });
+    });
+  }, []);
 
-  const removeItem = (id) => {
-    setCart((prev) => prev.filter((item) => item.id !== id));
-  };
+  const updateQty = (id, delta) => setCart(prev => prev.map(i => i.id === id ? { ...i, quantity: i.quantity + delta } : i).filter(i => i.quantity > 0));
+  const removeItem = id => setCart(prev => prev.filter(i => i.id !== id));
 
-  // ── Totals ───────────────────────────────────────────────
-  const subtotal  = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const subtotal  = cart.reduce((s, i) => s + i.price * i.quantity, 0);
   const shipping  = subtotal === 0 ? 0 : subtotal >= SHIPPING_THRESHOLD ? 0 : FLAT_SHIPPING;
   const total     = subtotal + shipping;
-  const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const itemCount = cart.reduce((s, i) => s + i.quantity, 0);
 
-  const fmt = (n) => `₦${n.toLocaleString()}`;
-
-  // ── Empty state ──────────────────────────────────────────
-  if (cart.length === 0) {
+  if (cart.length === 0 && pendingOrders.length === 0) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-        <PageHeader onNavigate={onNavigate} />
-
-        <div
-          style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '80px 40px',
-            gap: '28px',
-          }}
-        >
-          {/* Bag outline illustration */}
-          <svg width="64" height="68" viewBox="0 0 64 68" fill="none" opacity="0.18">
-            <path d="M22 26V13a10 10 0 0 1 20 0V26" stroke="#000" strokeWidth="2.5" strokeLinecap="round" />
-            <path d="M8 26h48l5 40H3L8 26Z" stroke="#000" strokeWidth="2.5" strokeLinejoin="round" />
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh', backgroundColor: '#fff' }}>
+        <PageHeader onNavigate={onNavigate} isMobile={isMobile} ready={ready} />
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 24, padding: '60px 24px', animation: ready ? 'fadeUp 0.6s ease both' : 'none' }}>
+          <svg width="48" height="52" viewBox="0 0 48 52" fill="none" opacity="0.12">
+            <path d="M16 20V10a8 8 0 0116 0v10" stroke="#000" strokeWidth="2" strokeLinecap="round"/>
+            <path d="M6 20h36l4 30H2L6 20z" stroke="#000" strokeWidth="2" strokeLinejoin="round"/>
           </svg>
-
           <div style={{ textAlign: 'center' }}>
-            <p
-              style={{
-                fontFamily: "'Space Grotesk', sans-serif",
-                fontWeight: 700,
-                fontSize: '13px',
-                letterSpacing: '0.14em',
-                color: '#000',
-                marginBottom: '10px',
-              }}
-            >
-              YOUR BAG IS EMPTY
-            </p>
-            <p
-              style={{
-                fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
-                fontSize: '13px',
-                color: '#999',
-                letterSpacing: '0.02em',
-              }}
-            >
-              Add something to get started.
-            </p>
+            <p style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: '16px', letterSpacing: '0.06em', color: '#000', margin: '0 0 8px' }}>Your bag is empty</p>
+            <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '13px', color: '#bbb', letterSpacing: '0.02em', margin: 0 }}>Add something to get started.</p>
           </div>
-
-          <button
-            onClick={() => onNavigate?.('shop')}
-            style={{
-              padding: '13px 36px',
-              background: '#000',
-              color: '#fff',
-              border: 'none',
-              fontFamily: "'Space Grotesk', sans-serif",
-              fontWeight: 700,
-              fontSize: '11px',
-              letterSpacing: '0.16em',
-              cursor: 'pointer',
-              transition: 'background 0.2s',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = '#be1826')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = '#000')}
-          >
-            SHOP ALL
-          </button>
+          <button onClick={() => onNavigate?.('shop')} style={{ padding: '12px 32px', background: '#000', color: '#fff', border: 'none', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '10px', letterSpacing: '0.18em', cursor: 'pointer', transition: 'background 0.2s', textTransform: 'uppercase' }}
+            onMouseEnter={e => e.currentTarget.style.background = '#be1826'}
+            onMouseLeave={e => e.currentTarget.style.background = '#000'}
+          >Shop All</button>
         </div>
-
         <Footer />
+        <style>{`@keyframes fadeUp { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }`}</style>
       </div>
     );
   }
 
-  // ── Filled cart ──────────────────────────────────────────
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: '#fff' }}>
-      <PageHeader onNavigate={onNavigate} />
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh', backgroundColor: '#fff' }}>
+      <style>{`
+        @keyframes fadeDown { from { opacity:0; transform:translateY(-8px) } to { opacity:1; transform:translateY(0) } }
+        @keyframes fadeUp   { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }
+        @keyframes pulse    { 0%,100% { opacity:1 } 50% { opacity:0.35 } }
+      `}</style>
 
-      {/* Title row */}
-      <div
-        style={{
-          padding: '32px 40px 20px',
-          display: 'flex',
-          alignItems: 'baseline',
-          gap: '12px',
-          borderBottom: '1px solid #f0f0f0',
-        }}
-      >
-        <h1
-          style={{
-            fontFamily: "'Space Grotesk', sans-serif",
-            fontWeight: 700,
-            fontSize: 'clamp(16px, 2vw, 22px)',
-            letterSpacing: '0.1em',
-            color: '#000',
-            margin: 0,
-          }}
-        >
-          YOUR BAG
-        </h1>
-        <span
-          style={{
-            fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
-            fontSize: '12px',
-            letterSpacing: '0.06em',
-            color: '#aaa',
-          }}
-        >
-          {itemCount} {itemCount === 1 ? 'ITEM' : 'ITEMS'}
-        </span>
+      <PageHeader onNavigate={onNavigate} isMobile={isMobile} ready={ready} />
+
+      {/* Title */}
+      <div style={{
+        padding: isMobile ? '28px 20px 16px' : '36px 40px 20px',
+        borderBottom: '1px solid #f0f0f0',
+        animation: ready ? 'fadeUp 0.5s 0.05s ease both' : 'none',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+          <h1 style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: isMobile ? '22px' : '28px', letterSpacing: '0.04em', color: '#000', margin: 0 }}>
+            Your Bag
+          </h1>
+          {itemCount > 0 && (
+            <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '11px', letterSpacing: '0.1em', color: '#bbb', textTransform: 'uppercase' }}>
+              {itemCount} {itemCount === 1 ? 'item' : 'items'}
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Main layout */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: isDesktop ? '1fr 360px' : '1fr',
-          gap: 0,
-          flex: 1,
-          alignItems: 'start',
-        }}
-      >
-        {/* ── Left: item list ── */}
+      {/* Layout */}
+      <div style={{
+        display: isDesktop ? 'grid' : 'block',
+        gridTemplateColumns: isDesktop ? '1fr 340px' : undefined,
+        flex: 1, alignItems: 'start',
+        animation: ready ? 'fadeUp 0.6s 0.1s ease both' : 'none',
+      }}>
+        {/* Items */}
         <div style={{ padding: isDesktop ? '0 0 60px' : '0 0 40px' }}>
           {cart.map((item, idx) => (
             <CartItem
@@ -174,397 +117,172 @@ export default function CartPage({ cart = [], setCart, onNavigate }) {
               onUpdateQty={updateQty}
               onRemove={removeItem}
               onProductClick={() => onNavigate?.('product', { productId: item.productId })}
-              fmt={fmt}
+              isMobile={isMobile}
             />
           ))}
-
-          {/* Continue shopping */}
-          <div style={{ padding: '24px 40px 0' }}>
-            <button
-              onClick={() => onNavigate?.('shop')}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
-                fontSize: '11px',
-                letterSpacing: '0.1em',
-                color: '#888',
-                textTransform: 'uppercase',
-                padding: 0,
-                transition: 'color 0.2s',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#000')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#888')}
+          <div style={{ padding: isMobile ? '20px 20px 0' : '20px 40px 0' }}>
+            <button onClick={() => onNavigate?.('shop')} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'Archivo', sans-serif", fontSize: '10px', letterSpacing: '0.14em', color: '#bbb', textTransform: 'uppercase', padding: 0, transition: 'color 0.2s' }}
+              onMouseEnter={e => e.currentTarget.style.color = '#000'}
+              onMouseLeave={e => e.currentTarget.style.color = '#bbb'}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M19 12H5M5 12l7 7M5 12l7-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M5 12l7 7M5 12l7-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
               Continue Shopping
             </button>
           </div>
         </div>
 
-        {/* ── Right: order summary ── */}
-        <div
-          style={{
-            position: isDesktop ? 'sticky' : 'static',
-            top: 0,
-            borderLeft: isDesktop ? '1px solid #f0f0f0' : 'none',
-            borderTop: isDesktop ? 'none' : '1px solid #f0f0f0',
-            padding: '32px 40px 40px',
-            backgroundColor: '#fff',
-          }}
-        >
-          <p
-            style={{
-              fontFamily: "'Space Grotesk', sans-serif",
-              fontWeight: 700,
-              fontSize: '11px',
-              letterSpacing: '0.16em',
-              color: '#000',
-              marginBottom: '24px',
-            }}
-          >
-            ORDER SUMMARY
-          </p>
+        {/* Summary */}
+        <div style={{
+          position: isDesktop ? 'sticky' : 'static', top: 0,
+          borderLeft: isDesktop ? '1px solid #f0f0f0' : 'none',
+          borderTop: isDesktop ? 'none' : '1px solid #f0f0f0',
+          padding: isMobile ? '28px 20px 32px' : '32px 40px 40px',
+        }}>
+          <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.24em', color: '#bbb', textTransform: 'uppercase', margin: '0 0 20px' }}>Order Summary</p>
 
-          {/* Line items */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '24px' }}>
-            <SummaryLine label="Subtotal" value={fmt(subtotal)} />
-            <SummaryLine
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+            <SummaryRow label="Subtotal" value={fmt(subtotal)} />
+            <SummaryRow
               label="Shipping"
-              value={
-                subtotal >= SHIPPING_THRESHOLD
-                  ? 'FREE'
-                  : fmt(FLAT_SHIPPING)
-              }
-              valueColor={subtotal >= SHIPPING_THRESHOLD ? '#16a34a' : '#000'}
+              value={subtotal >= SHIPPING_THRESHOLD ? 'FREE' : fmt(FLAT_SHIPPING)}
+              accent={subtotal >= SHIPPING_THRESHOLD}
             />
           </div>
 
-          {/* Shipping note */}
           {subtotal < SHIPPING_THRESHOLD && subtotal > 0 && (
-            <div
-              style={{
-                padding: '10px 14px',
-                backgroundColor: '#f9f9f9',
-                borderLeft: '3px solid #e0e0e0',
-                marginBottom: '20px',
-              }}
-            >
-              <p
-                style={{
-                  fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
-                  fontSize: '11px',
-                  color: '#666',
-                  letterSpacing: '0.02em',
-                  margin: 0,
-                  lineHeight: 1.5,
-                }}
-              >
-                Add {fmt(SHIPPING_THRESHOLD - subtotal)} more for{' '}
-                <span style={{ color: '#16a34a', fontWeight: 600 }}>free shipping</span>
+            <div style={{ padding: '10px 12px', backgroundColor: '#f9f9f9', borderLeft: '2px solid #e8e8e8', marginBottom: 16 }}>
+              <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '11px', color: '#888', margin: 0, lineHeight: 1.5 }}>
+                Add {fmt(SHIPPING_THRESHOLD - subtotal)} for <span style={{ color: '#16a34a', fontWeight: 600 }}>free shipping</span>
               </p>
             </div>
           )}
 
-          {/* Divider */}
-          <div style={{ height: '1px', background: '#f0f0f0', marginBottom: '20px' }} />
-
-          {/* Total */}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'baseline',
-              marginBottom: '28px',
-            }}
-          >
-            <span
-              style={{
-                fontFamily: "'Space Grotesk', sans-serif",
-                fontWeight: 700,
-                fontSize: '13px',
-                letterSpacing: '0.1em',
-                color: '#000',
-              }}
-            >
-              TOTAL
-            </span>
-            <span
-              style={{
-                fontFamily: "'Space Grotesk', sans-serif",
-                fontWeight: 700,
-                fontSize: '18px',
-                letterSpacing: '0.04em',
-                color: '#000',
-              }}
-            >
-              {fmt(total)}
-            </span>
+          <div style={{ height: 1, background: '#f0f0f0', margin: '0 0 16px' }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 24 }}>
+            <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', letterSpacing: '0.16em', color: '#888', textTransform: 'uppercase' }}>Total</span>
+            <span style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: '22px', letterSpacing: '0.02em', color: '#000' }}>{fmt(total)}</span>
           </div>
 
-          {/* Checkout button */}
-          <button
-            onClick={() => onNavigate?.('checkout')}
-            style={{
-              width: '100%',
-              padding: '15px',
-              background: '#be1826',
-              color: '#fff',
-              border: 'none',
-              fontFamily: "'Space Grotesk', sans-serif",
-              fontWeight: 700,
-              fontSize: '12px',
-              letterSpacing: '0.16em',
-              cursor: 'pointer',
-              transition: 'background 0.2s',
-              marginBottom: '12px',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = '#a3111f')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = '#be1826')}
+          <button onClick={() => onNavigate?.('checkout')} style={{ width: '100%', padding: '15px', background: '#be1826', color: '#fff', border: 'none', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '11px', letterSpacing: '0.18em', cursor: 'pointer', transition: 'background 0.2s', marginBottom: 12 }}
+            onMouseEnter={e => e.currentTarget.style.background = '#a3111f'}
+            onMouseLeave={e => e.currentTarget.style.background = '#be1826'}
           >
-            PROCEED TO CHECKOUT
+            Proceed to Checkout
           </button>
 
-          {/* Trust note */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              marginTop: '16px',
-            }}
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L3 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z" stroke="#bbb" strokeWidth="1.5" strokeLinejoin="round" />
-            </svg>
-            <span
-              style={{
-                fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
-                fontSize: '10px',
-                letterSpacing: '0.06em',
-                color: '#bbb',
-                textTransform: 'uppercase',
-              }}
-            >
-              Secure Checkout
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M12 2L3 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z" stroke="#ccc" strokeWidth="1.5" strokeLinejoin="round"/></svg>
+            <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.1em', color: '#ccc', textTransform: 'uppercase' }}>Secure Checkout</span>
           </div>
         </div>
       </div>
+
+      {/* Pending Orders */}
+      {pendingOrders.length > 0 && (
+        <div style={{ borderTop: '2px solid #000', padding: isMobile ? '36px 20px' : '48px 40px' }}>
+          <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.24em', color: '#bbb', textTransform: 'uppercase', margin: '0 0 24px' }}>Pending Delivery</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {pendingOrders.map((order, oi) => (
+              <div key={order.id || oi} style={{ border: '1px solid #f0f0f0', padding: isMobile ? '16px' : '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+                  <div>
+                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '12px', letterSpacing: '0.06em', color: '#000', margin: 0 }}>{order.order_number}</p>
+                    <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', color: '#ccc', margin: '3px 0 0', letterSpacing: '0.04em' }}>
+                      {order.created_at ? new Date(order.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
+                    </p>
+                  </div>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', border: '1px solid #fde68a', backgroundColor: '#fef9e8' }}>
+                    <div style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#f59e0b', animation: 'pulse 2s infinite' }} />
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '8px', letterSpacing: '0.12em', color: '#92400e', textTransform: 'uppercase' }}>Awaiting delivery</span>
+                  </div>
+                </div>
+                {(order.items || []).map((item, ii) => (
+                  <div key={ii} style={{ display: 'grid', gridTemplateColumns: '44px 1fr auto', gap: 10, alignItems: 'center', padding: '8px 0', borderTop: '1px solid #f8f8f8' }}>
+                    <div style={{ width: 44, height: 52, backgroundColor: '#f5f5f5', backgroundImage: item.image ? `url(${item.image})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.7 }} />
+                    <div>
+                      <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '11px', color: '#666', margin: 0 }}>{item.name}</p>
+                      <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', color: '#ccc', margin: '2px 0 0', letterSpacing: '0.04em' }}>{[item.size, item.color].filter(Boolean).join(' / ')} × {item.quantity}</p>
+                    </div>
+                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '11px', color: '#aaa', margin: 0 }}>{fmt(item.price * item.quantity)}</p>
+                  </div>
+                ))}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: 10, borderTop: '1px solid #f5f5f5', marginTop: 4 }}>
+                  <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '12px', color: '#000' }}>{fmt(order.total)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>
   );
 }
 
-// ── Sub-components ────────────────────────────────────────
-
-function PageHeader({ onNavigate }) {
+function PageHeader({ onNavigate, isMobile, ready }) {
   return (
-    <div
-      style={{
-        padding: '18px 40px',
-        borderBottom: '1px solid #f0f0f0',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        position: 'relative',
-      }}
-    >
-      <button
-        onClick={() => onNavigate?.('home')}
-        style={{
-          fontFamily: "'Clash Display', sans-serif",
-          fontWeight: 600,
-          fontSize: '18px',
-          letterSpacing: '0.22em',
-          color: '#000',
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          padding: 0,
-        }}
-      >
+    <header style={{
+      padding: isMobile ? '16px 20px' : '18px 40px',
+      borderBottom: '1px solid #f0f0f0',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      position: 'relative',
+      animation: ready ? 'fadeDown 0.5s ease both' : 'none',
+    }}>
+      <button onClick={() => onNavigate?.('home')} style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: isMobile ? '16px' : '20px', letterSpacing: '0.22em', color: '#000', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
         SEE.COM
       </button>
-
-      {/* Recycle badge */}
-      <img
-        src={logoBadge}
-        alt="Recycle — SEE.COM"
-        style={{
-          position: 'absolute',
-          right: '40px',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          width: '48px',
-          height: '48px',
-          objectFit: 'cover',
-          borderRadius: '4px',
-        }}
-      />
-    </div>
+      <img src={logoBadge} alt="SEE.COM" onClick={() => onNavigate?.('landing')} style={{ position: 'absolute', right: isMobile ? '20px' : '40px', top: '50%', transform: 'translateY(-50%)', width: isMobile ? '36px' : '44px', height: isMobile ? '36px' : '44px', objectFit: 'cover', cursor: 'pointer' }} />
+    </header>
   );
 }
 
-function CartItem({ item, isLast, onUpdateQty, onRemove, onProductClick, fmt }) {
+function CartItem({ item, isLast, onUpdateQty, onRemove, onProductClick, isMobile }) {
   const [removing, setRemoving] = useState(false);
-
-  const handleRemove = () => {
-    setRemoving(true);
-    setTimeout(() => onRemove(item.id), 220);
-  };
+  const handleRemove = () => { setRemoving(true); setTimeout(() => onRemove(item.id), 220); };
 
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '100px 1fr',
-        gap: '20px',
-        padding: '28px 40px',
-        borderBottom: isLast ? 'none' : '1px solid #f5f5f5',
-        opacity: removing ? 0 : 1,
-        transform: removing ? 'translateX(-8px)' : 'none',
-        transition: 'opacity 0.22s ease, transform 0.22s ease',
-      }}
-    >
-      {/* Thumbnail */}
-      <div
-        onClick={onProductClick}
-        style={{
-          width: '100px',
-          height: '120px',
-          backgroundColor: '#f5f5f5',
-          backgroundImage: item.image ? `url(${item.image})` : 'none',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          cursor: 'pointer',
-          flexShrink: 0,
-        }}
-      />
-
-      {/* Details */}
+    <div style={{
+      display: 'grid', gridTemplateColumns: isMobile ? '80px 1fr' : '96px 1fr',
+      gap: isMobile ? '14px' : '20px',
+      padding: isMobile ? '20px 20px' : '24px 40px',
+      borderBottom: isLast ? 'none' : '1px solid #f5f5f5',
+      opacity: removing ? 0 : 1,
+      transform: removing ? 'translateX(-6px)' : 'none',
+      transition: 'opacity 0.22s ease, transform 0.22s ease',
+    }}>
+      <div onClick={onProductClick} style={{ width: isMobile ? 80 : 96, height: isMobile ? 96 : 116, backgroundColor: '#f5f5f5', backgroundImage: item.image ? `url(${item.image})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center', cursor: 'pointer', flexShrink: 0 }} />
       <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
         <div>
-          {/* Name + remove */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '8px' }}>
-            <button
-              onClick={onProductClick}
-              style={{
-                fontFamily: "'Space Grotesk', sans-serif",
-                fontWeight: 600,
-                fontSize: '13px',
-                letterSpacing: '0.04em',
-                color: '#000',
-                background: 'none',
-                border: 'none',
-                padding: 0,
-                cursor: 'pointer',
-                textAlign: 'left',
-                lineHeight: 1.3,
-              }}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: 6 }}>
+            <button onClick={onProductClick} style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px', letterSpacing: '0.02em', color: '#000', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', lineHeight: 1.3 }}>{item.name}</button>
+            <button onClick={handleRemove} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ddd', padding: '2px', flexShrink: 0, transition: 'color 0.15s' }}
+              onMouseEnter={e => e.currentTarget.style.color = '#be1826'}
+              onMouseLeave={e => e.currentTarget.style.color = '#ddd'}
             >
-              {item.name}
-            </button>
-
-            <button
-              onClick={handleRemove}
-              title="Remove"
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: '#ccc',
-                display: 'flex',
-                alignItems: 'center',
-                padding: '2px',
-                flexShrink: 0,
-                transition: 'color 0.15s',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#be1826')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#ccc')}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M4 4l16 16M20 4L4 20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              </svg>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M4 4l16 16M20 4L4 20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
             </button>
           </div>
-
-          {/* Variant tags */}
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
-            {item.size && <Tag label={item.size} />}
-            {item.color && <Tag label={item.color} />}
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+            {item.size  && <span style={{ padding: '2px 8px', border: '1px solid #ebebeb', fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.1em', color: '#999', textTransform: 'uppercase' }}>{item.size}</span>}
+            {item.color && <span style={{ padding: '2px 8px', border: '1px solid #ebebeb', fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.1em', color: '#999', textTransform: 'uppercase' }}>{item.color}</span>}
           </div>
         </div>
-
-        {/* Bottom row: qty + price */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          {/* Quantity stepper */}
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              border: '1px solid #e0e0e0',
-              height: '34px',
-            }}
-          >
-            <StepBtn
-              onClick={() => onUpdateQty(item.id, -1)}
-              disabled={item.quantity <= 1}
-              label="−"
-            />
-            <span
-              style={{
-                minWidth: '36px',
-                textAlign: 'center',
-                fontFamily: "'Space Grotesk', sans-serif",
-                fontWeight: 600,
-                fontSize: '13px',
-                color: '#000',
-                userSelect: 'none',
-              }}
-            >
-              {item.quantity}
-            </span>
-            <StepBtn
-              onClick={() => onUpdateQty(item.id, 1)}
-              label="+"
-            />
+          <div style={{ display: 'inline-flex', alignItems: 'center', border: '1px solid #ebebeb', height: 32 }}>
+            <button onClick={() => onUpdateQty(item.id, -1)} disabled={item.quantity <= 1} style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: item.quantity <= 1 ? 'not-allowed' : 'pointer', fontSize: '14px', color: item.quantity <= 1 ? '#ddd' : '#000', transition: 'background 0.15s' }}
+              onMouseEnter={e => { if (item.quantity > 1) e.currentTarget.style.background = '#f5f5f5'; }}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+            >−</button>
+            <span style={{ minWidth: 28, textAlign: 'center', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '12px', color: '#000', userSelect: 'none' }}>{item.quantity}</span>
+            <button onClick={() => onUpdateQty(item.id, 1)} style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', color: '#000', transition: 'background 0.15s' }}
+              onMouseEnter={e => e.currentTarget.style.background = '#f5f5f5'}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+            >+</button>
           </div>
-
-          {/* Price */}
           <div style={{ textAlign: 'right' }}>
-            <div
-              style={{
-                fontFamily: "'Space Grotesk', sans-serif",
-                fontWeight: 700,
-                fontSize: '14px',
-                letterSpacing: '0.02em',
-                color: '#000',
-              }}
-            >
-              {fmt(item.price * item.quantity)}
-            </div>
-            {item.quantity > 1 && (
-              <div
-                style={{
-                  fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
-                  fontSize: '10px',
-                  letterSpacing: '0.04em',
-                  color: '#aaa',
-                  marginTop: '2px',
-                }}
-              >
-                {fmt(item.price)} each
-              </div>
-            )}
+            <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '13px', color: '#000', margin: 0 }}>{fmt(item.price * item.quantity)}</p>
+            {item.quantity > 1 && <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', color: '#ccc', margin: '1px 0 0' }}>{fmt(item.price)} each</p>}
           </div>
         </div>
       </div>
@@ -572,77 +290,11 @@ function CartItem({ item, isLast, onUpdateQty, onRemove, onProductClick, fmt }) 
   );
 }
 
-function StepBtn({ onClick, disabled, label }) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        width: '34px',
-        height: '34px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'none',
-        border: 'none',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        fontSize: '16px',
-        color: disabled ? '#ddd' : '#000',
-        transition: 'background 0.15s',
-        userSelect: 'none',
-        flexShrink: 0,
-      }}
-      onMouseEnter={(e) => { if (!disabled) e.currentTarget.style.background = '#f5f5f5'; }}
-      onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; }}
-    >
-      {label}
-    </button>
-  );
-}
-
-function Tag({ label }) {
-  return (
-    <span
-      style={{
-        padding: '3px 8px',
-        border: '1px solid #e8e8e8',
-        fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
-        fontSize: '10px',
-        letterSpacing: '0.08em',
-        color: '#666',
-        textTransform: 'uppercase',
-      }}
-    >
-      {label}
-    </span>
-  );
-}
-
-function SummaryLine({ label, value, valueColor = '#000' }) {
+function SummaryRow({ label, value, accent }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <span
-        style={{
-          fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
-          fontSize: '12px',
-          letterSpacing: '0.06em',
-          color: '#888',
-          textTransform: 'uppercase',
-        }}
-      >
-        {label}
-      </span>
-      <span
-        style={{
-          fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
-          fontSize: '13px',
-          letterSpacing: '0.04em',
-          color: valueColor,
-          fontWeight: 500,
-        }}
-      >
-        {value}
-      </span>
+      <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', letterSpacing: '0.12em', color: '#bbb', textTransform: 'uppercase' }}>{label}</span>
+      <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '13px', color: accent ? '#16a34a' : '#000', fontWeight: accent ? 600 : 400 }}>{value}</span>
     </div>
   );
 }
