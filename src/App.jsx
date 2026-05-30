@@ -186,7 +186,7 @@ function AppInner() {
             }}
           />
 
-          <div style={{ marginLeft: '44px' }}>
+          <div style={{ marginLeft: '36px' }}>
 
             {currentPage === 'home' && sessionId && (
               <HomePage

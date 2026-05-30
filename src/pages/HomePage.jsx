@@ -179,7 +179,7 @@ export default function HomePage({ onNavigate }) {
           onClick={() => onNavigate?.('landing')}
           style={{
             position: 'absolute', bottom: 0, right: 0,
-            width: isMobile ? '56%' : '45%', height: '44px',
+            width: isMobile ? '56%' : '45%', height: '36px',
             backgroundColor: '#be1826',
             display: 'flex', alignItems: 'center', paddingLeft: '24px',
             zIndex: 2, cursor: 'pointer', overflow: 'hidden',
@@ -212,7 +212,7 @@ export default function HomePage({ onNavigate }) {
         </div>
       </section>
 
-      {/* ── MARQUEE — barely there ── */}
+      {/* ── MARQUEE ── */}
       <div style={{ borderTop: '1px solid #f0f0f0', borderBottom: '1px solid #f0f0f0', padding: '9px 0', overflow: 'hidden', whiteSpace: 'nowrap', backgroundColor: '#fff' }}>
         <div style={{
           display: 'inline-block',
@@ -223,7 +223,7 @@ export default function HomePage({ onNavigate }) {
           color: '#bbb',
           textTransform: 'uppercase',
         }}>
-          {Array(12).fill('SEE.COM · New Drop · Abuja · Limited Pieces · Free Delivery Over ₦50K · ').join('')}
+          {Array(12).fill('SEE.COM · New Drop · Abuja · Limited Pieces · Free Delivery Over ₦40K · ').join('')}
         </div>
       </div>
 
@@ -231,7 +231,7 @@ export default function HomePage({ onNavigate }) {
       <section
         ref={arrivalsRef}
         style={{
-          padding: isMobile ? '64px 20px 56px' : '96px 40px 80px',
+          padding: isMobile ? '64px 20px 56px' : '28px 40px 80px',
           ...reveal(arrivalsInView),
         }}
       >
@@ -247,7 +247,7 @@ export default function HomePage({ onNavigate }) {
               </h2>
             </div>
             {/* Animated underline */}
-            <div style={{ height: 1, backgroundColor: '#000', marginTop: 10, animation: arrivalsInView ? 'lineGrow 0.8s 0.4s cubic-bezier(0.16,1,0.3,1) both' : 'none', transformOrigin: 'left', transform: arrivalsInView ? 'scaleX(1)' : 'scaleX(0)' }} />
+            <div style={{ height: 1, backgroundColor: '#be1826', marginTop: 10, animation: arrivalsInView ? 'lineGrow 0.8s 0.4s cubic-bezier(0.16,1,0.3,1) both' : 'none', transformOrigin: 'left', transform: arrivalsInView ? 'scaleX(1)' : 'scaleX(0)' }} />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, ...reveal(arrivalsInView, 0.2) }}>
             <ViewToggle showPrice={showPrice} setShowPrice={setShowPrice} />
@@ -343,7 +343,7 @@ export default function HomePage({ onNavigate }) {
           gap: 16,
         }}>
           {/* Left: heading */}
-          <div style={{ overflow: 'hidden' }}>
+          <div style={{ overflow: 'hidden', borderLeft: '3px solid #be1826', paddingLeft: 16 }}>
             <h2 style={{
               fontFamily: "'Clash Display', sans-serif",
               fontWeight: 700,

@@ -271,7 +271,7 @@ export default function Sidebar({
       {!isOpen && (
         <div style={{
           position: 'fixed', left: 0, top: 0,
-          width: 44,
+          width: 36,
           height: stripHeight,
           backgroundColor: '#be1826',
           zIndex: 9999,
