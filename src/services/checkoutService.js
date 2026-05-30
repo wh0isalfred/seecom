@@ -15,7 +15,8 @@ export const createOrderAfterPayment = async ({ formData, cart, paystackReferenc
   const orderNumber  = generateOrderNumber();
 
   // 1 — Create order row
-  const { data: order, error: orderError } = await supabase
+  // Use .select() without .single() — .single() throws silently if RLS blocks RETURNING
+  const { data: orderRows, error: orderError } = await supabase
     .from('orders')
     .insert([{
       order_number:      orderNumber,
@@ -32,10 +33,12 @@ export const createOrderAfterPayment = async ({ formData, cart, paystackReferenc
       payment_status:    'paid',
       paystack_reference: paystackReference,
     }])
-    .select()
-    .single();
+    .select();
 
   if (orderError) throw orderError;
+  if (!orderRows || orderRows.length === 0) throw new Error('Order insert returned no data — check RLS SELECT policy on orders table');
+
+  const order = orderRows[0];
 
   // 2 — Insert order items
   const orderItems = cart.map(item => ({
