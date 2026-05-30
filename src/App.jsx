@@ -42,6 +42,13 @@ function AppInner() {
   const [sessionId, setSessionId]         = useState(null)
   const [sidebarOpen, setSidebarOpen]     = useState(false)
   const [authModalOpen, setAuthModalOpen] = useState(false)
+  const [isMobile, setIsMobile]           = useState(window.innerWidth < 768)
+
+  useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
 
   // Persist guest cart to localStorage
   useEffect(() => {
@@ -179,7 +186,7 @@ function AppInner() {
             }}
           />
 
-          <div style={{ marginLeft: '44px' }}>
+          <div style={{ marginLeft: isMobile ? '0' : '44px' }}>
 
             {currentPage === 'home' && sessionId && (
               <HomePage
