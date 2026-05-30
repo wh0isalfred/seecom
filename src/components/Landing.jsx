@@ -18,7 +18,7 @@ export default function Landing({ onNavigate }) {
 
   const [ready, setReady]         = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
-  const [volume, setVolume]       = useState(0.2);
+  const [volume, setVolume]       = useState(0.3);
   const [showVol, setShowVol]     = useState(false);
   const [isMobile, setIsMobile]   = useState(window.innerWidth < 768);
 
@@ -322,7 +322,7 @@ export default function Landing({ onNavigate }) {
           letterSpacing: '0.3em',
           color: '#fff',
         }}>
-          SHOP NOW
+          see.SHOP
         </span>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
           <path d="M5 12h14M13 6l6 6-6 6" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>

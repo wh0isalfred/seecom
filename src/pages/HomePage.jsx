@@ -56,7 +56,6 @@ function ViewToggle({ showPrice, setShowPrice }) {
 }
 
 export default function HomePage({ onNavigate }) {
-  const [pastHero, setPastHero]               = useState(false);
   const [showPrice, setShowPrice]             = useState(false);
   const [products, setProducts]               = useState([]);
   const [loading, setLoading]                 = useState(true);
@@ -83,11 +82,7 @@ export default function HomePage({ onNavigate }) {
     document.documentElement.style.cssText = 'margin:0;padding:0;';
     document.body.style.cssText = 'margin:0;padding:0;overflow-x:hidden;';
     const t = setTimeout(() => setHeroReady(true), 80);
-    const onScroll = () => {
-      if (heroRef.current) setPastHero(heroRef.current.getBoundingClientRect().bottom <= 0);
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => { window.removeEventListener('scroll', onScroll); clearTimeout(t); };
+    return () => { clearTimeout(t); };
   }, []);
 
   useEffect(() => {
@@ -216,23 +211,6 @@ export default function HomePage({ onNavigate }) {
           </span>
         </div>
       </section>
-
-      {/* ── STICKY STRIP ── */}
-      <div style={{
-        position: 'fixed', top: 0, left: 0, right: 0, height: '44px',
-        display: 'flex', alignItems: 'stretch', zIndex: 50,
-        transform: pastHero ? 'translateY(0)' : 'translateY(-100%)',
-        transition: 'transform 0.3s ease',
-        pointerEvents: pastHero ? 'auto' : 'none',
-      }}>
-        <div style={{ flex: '0 0 55%' }} />
-        <div
-          onClick={() => onNavigate?.('landing')}
-          style={{ flex: 1, backgroundColor: '#be1826', display: 'flex', alignItems: 'center', paddingLeft: '24px', cursor: 'pointer' }}
-        >
-          <span style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: '17px', color: '#fff', letterSpacing: '0.22em' }}>SEE.COM</span>
-        </div>
-      </div>
 
       {/* ── MARQUEE — barely there ── */}
       <div style={{ borderTop: '1px solid #f0f0f0', borderBottom: '1px solid #f0f0f0', padding: '9px 0', overflow: 'hidden', whiteSpace: 'nowrap', backgroundColor: '#fff' }}>
