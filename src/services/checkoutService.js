@@ -11,6 +11,15 @@ const generateOrderNumber = () => {
  * Creates the order, inserts items, reduces inventory — all in one shot.
  */
 export const createOrderAfterPayment = async ({ formData, cart, paystackReference, total, shipping }) => {
+  // Race against a 10s timeout — prevents silent infinite hang
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('Order creation timed out — check Supabase RLS SELECT policy on orders')), 10000)
+  );
+
+  return Promise.race([_createOrder({ formData, cart, paystackReference, total, shipping }), timeoutPromise]);
+};
+
+const _createOrder = async ({ formData, cart, paystackReference, total, shipping }) => {
   const subtotal     = total - shipping;
   const orderNumber  = generateOrderNumber();
 
