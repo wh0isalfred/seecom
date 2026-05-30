@@ -18,7 +18,7 @@ export default function Landing({ onNavigate }) {
 
   const [ready, setReady]         = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
-  const [volume, setVolume]       = useState(0.3);
+  const [volume, setVolume]       = useState(0.2);
   const [showVol, setShowVol]     = useState(false);
   const [isMobile, setIsMobile]   = useState(window.innerWidth < 768);
 
