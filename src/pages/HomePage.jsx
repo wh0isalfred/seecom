@@ -400,14 +400,19 @@ export default function HomePage({ onNavigate }) {
           ...reveal(shopGridInView),
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '40px' }}>
-          <div style={{ overflow: 'hidden' }}>
-            <h2 style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: isMobile ? '20px' : '26px', letterSpacing: '0.08em', color: '#000', margin: 0, ...clipReveal(shopGridInView, 0) }}>
-              SHOP ALL
-            </h2>
-          </div>
-          <div style={{ ...reveal(shopGridInView, 0.15) }}>
-            <ViewToggle showPrice={showPrice} setShowPrice={setShowPrice} />
+        <div style={{ marginBottom: '40px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ overflow: 'hidden' }}>
+                <h2 style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: isMobile ? '20px' : '26px', letterSpacing: '0.08em', color: '#000', margin: 0, ...clipReveal(shopGridInView, 0) }}>
+                  SHOP ALL
+                </h2>
+              </div>
+              <div style={{ height: 1, backgroundColor: '#be1826', marginTop: 10, animation: shopGridInView ? 'lineGrow 0.8s 0.4s cubic-bezier(0.16,1,0.3,1) both' : 'none', transformOrigin: 'left', transform: shopGridInView ? 'scaleX(1)' : 'scaleX(0)' }} />
+            </div>
+            <div style={{ ...reveal(shopGridInView, 0.15) }}>
+              <ViewToggle showPrice={showPrice} setShowPrice={setShowPrice} />
+            </div>
           </div>
         </div>
 
