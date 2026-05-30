@@ -235,6 +235,82 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
               </p>
             )}
             <AddToBag state={bagState} isSoldOut={isSoldOut} onClick={handleAddToBag} />
+
+            {/* ── Trust signals ── */}
+            <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 0, borderTop: '1px solid #f5f5f5', paddingTop: 16 }}>
+
+              {/* Delivery */}
+              <TrustRow
+                icon={
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+                    <circle cx="5.5" cy="18.5" r="1.5" stroke="currentColor" strokeWidth="1.4"/>
+                    <circle cx="18.5" cy="18.5" r="1.5" stroke="currentColor" strokeWidth="1.4"/>
+                  </svg>
+                }
+                label="Delivery"
+                value="Abuja: up to 2 days · Other states: up to 5 days"
+              />
+
+              {/* Returns */}
+              <TrustRow
+                icon={
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path d="M3 10h10a5 5 0 010 10H7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+                    <path d="M6 7l-3 3 3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                }
+                label="Returns"
+                value="1-day return window · Tags must be on · Call to initiate"
+              />
+
+              {/* Free shipping */}
+              <TrustRow
+                icon={
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2L3 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+                  </svg>
+                }
+                label="Free shipping"
+                value="On all orders over ₦40,000"
+              />
+
+              {/* Contact */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 0', borderBottom: '1px solid #f5f5f5' }}>
+                <div style={{ flexShrink: 0, marginTop: 1, color: '#bbb' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 11 19.79 19.79 0 01.11 2.38 2 2 0 012.11.2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92v2z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', letterSpacing: '0.1em', color: '#bbb', textTransform: 'uppercase', margin: '0 0 3px' }}>
+                    Need help?
+                  </p>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <a
+                      href="tel:+2347065772394"
+                      style={{ fontFamily: "'Archivo', sans-serif", fontSize: '12px', color: '#000', textDecoration: 'none', letterSpacing: '0.02em', transition: 'color 0.15s' }}
+                      onMouseEnter={e => e.currentTarget.style.color = '#be1826'}
+                      onMouseLeave={e => e.currentTarget.style.color = '#000'}
+                    >
+                      Call us
+                    </a>
+                    <span style={{ color: '#e0e0e0', fontSize: '12px' }}>·</span>
+                    <a
+                      href="https://wa.me/2347065772394"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontFamily: "'Archivo', sans-serif", fontSize: '12px', color: '#000', textDecoration: 'none', letterSpacing: '0.02em', transition: 'color 0.15s' }}
+                      onMouseEnter={e => e.currentTarget.style.color = '#25D366'}
+                      onMouseLeave={e => e.currentTarget.style.color = '#000'}
+                    >
+                      WhatsApp
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+            </div>
           </div>
         </div>
       </div>
@@ -474,6 +550,18 @@ function AddToBag({ state, isSoldOut, onClick }) {
     <button onClick={onClick} style={{ width: '100%', padding: '16px', background: bg, color: '#fff', border: 'none', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '11px', letterSpacing: '0.2em', cursor: soldOut ? 'not-allowed' : 'pointer', transition: 'background 0.3s ease', minHeight: 52, WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}>
       {label}
     </button>
+  );
+}
+
+function TrustRow({ icon, label, value }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 0', borderBottom: '1px solid #f5f5f5' }}>
+      <div style={{ flexShrink: 0, marginTop: 1, color: '#bbb' }}>{icon}</div>
+      <div style={{ flex: 1 }}>
+        <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', letterSpacing: '0.1em', color: '#bbb', textTransform: 'uppercase', margin: '0 0 3px' }}>{label}</p>
+        <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '12px', color: '#555', letterSpacing: '0.02em', margin: 0, lineHeight: 1.5 }}>{value}</p>
+      </div>
+    </div>
   );
 }
 

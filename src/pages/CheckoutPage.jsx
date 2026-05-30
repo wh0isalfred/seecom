@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { createOrderAfterPayment } from '../services/checkoutService';
 import logoBadge from '../assets/logo.webp';
 
-const SHIPPING_THRESHOLD = 50000;
+const SHIPPING_THRESHOLD = 40000;
 const FLAT_SHIPPING      = 3500;
 const fmt = n => `₦${(n || 0).toLocaleString()}`;
 
@@ -342,9 +342,20 @@ function PayButton({ onPay, loading, total }) {
 
 function PaystackBadge() {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, marginTop: 10 }}>
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M12 2L3 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z" stroke="#ccc" strokeWidth="1.5" strokeLinejoin="round"/></svg>
-      <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.1em', color: '#ccc', textTransform: 'uppercase' }}>Secured by Paystack</span>
+    <div style={{ marginTop: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, marginBottom: 14 }}>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M12 2L3 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z" stroke="#ccc" strokeWidth="1.5" strokeLinejoin="round"/></svg>
+        <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.1em', color: '#ccc', textTransform: 'uppercase' }}>Secured by Paystack</span>
+      </div>
+      <div style={{ borderTop: '1px solid #f5f5f5', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', color: '#bbb', margin: 0, lineHeight: 1.5 }}>
+          🚚 Abuja: up to 2 days · Other states: up to 5 days
+        </p>
+        <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', color: '#bbb', margin: 0, lineHeight: 1.5 }}>
+          ↩ 1-day returns · Tags must be on ·{' '}
+          <a href="https://wa.me/2347065772394" target="_blank" rel="noopener noreferrer" style={{ color: '#bbb', textDecoration: 'underline', textUnderlineOffset: '2px' }}>WhatsApp us</a>
+        </p>
+      </div>
     </div>
   );
 }
