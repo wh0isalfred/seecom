@@ -1,20 +1,31 @@
-import { useState, useEffect, useRef } from 'react'
-import Landing from './components/Landing'
-import Sidebar from './components/Sidebar'
-import HomePage from './pages/HomePage'
-import TshirtsPage from './pages/TshirtsPage'
-import ChainsPage from './pages/ChainsPage'
-import ShopPage from './pages/ShopPage'
-import CartPage from './pages/CartPage'
-import AuthModal from './components/AuthModal'
-import ProductDetailPage from './pages/ProductDetailPage'
-import CheckoutPage from './pages/CheckoutPage'
-import AdminPage from './pages/AdminPage'
+import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { DiscountProvider } from './contexts/DiscountContext'
 import { generateSessionId } from './services/supabase'
 import { stopAudio } from './audio'
 import { loadRemoteCart, saveRemoteCart, mergeCarts } from './services/cartService'
+
+// ── Lazy-loaded pages — each gets its own JS chunk ────────────────────────────
+// Landing is isolated so Three.js (~600KB) only downloads when needed
+const Landing           = lazy(() => import('./components/Landing'))
+const Sidebar           = lazy(() => import('./components/Sidebar'))
+const AuthModal         = lazy(() => import('./components/AuthModal'))
+const HomePage          = lazy(() => import('./pages/HomePage'))
+const ShopPage          = lazy(() => import('./pages/ShopPage'))
+const TshirtsPage       = lazy(() => import('./pages/TshirtsPage'))
+const ChainsPage        = lazy(() => import('./pages/ChainsPage'))
+const CartPage          = lazy(() => import('./pages/CartPage'))
+const CheckoutPage      = lazy(() => import('./pages/CheckoutPage'))
+const ProductDetailPage = lazy(() => import('./pages/ProductDetailPage'))
+const AdminPage         = lazy(() => import('./pages/AdminPage'))
+
+// Minimal fallback — invisible, no layout shift
+const PageFallback = () => (
+  <div style={{ minHeight: '100dvh', backgroundColor: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ width: 20, height: 20, border: '1.5px solid #f0f0f0', borderTopColor: '#000', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+    <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+  </div>
+)
 
 function AppInner() {
   const { user, isAdmin, signOut, loading: authLoading } = useAuth()
@@ -82,6 +93,11 @@ function AppInner() {
       setCurrentPage(window.history.state.page)
       setPageParams(window.history.state.params || {})
     }
+
+    // Warm up Supabase connection — so the first real query doesn't pay the cold-start cost
+    import('./services/supabase').then(({ supabase }) => {
+      supabase.from('settings').select('key').limit(1).single().catch(() => {})
+    })
   }, [])
 
   useEffect(() => {
@@ -139,6 +155,7 @@ function AppInner() {
   if (!sessionId && currentPage !== 'landing') return null
 
   return (
+    <Suspense fallback={<PageFallback />}>
     <div style={{ margin: 0, padding: 0, width: '100%' }}>
 
       {currentPage === 'landing' && (
@@ -248,6 +265,7 @@ function AppInner() {
         </>
       )}
     </div>
+    </Suspense>
   )
 }
 

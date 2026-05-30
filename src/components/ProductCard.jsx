@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useDiscount } from '../contexts/DiscountContext';
 import { getEffectivePrice, isDiscounted, getDiscountLabel } from '../utils/discountUtils';
+import { thumbImage } from '../utils/imageUtils';
 
 export default function ProductCard({ product, showPrice, onProductClick }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -14,7 +15,7 @@ export default function ProductCard({ product, showPrice, onProductClick }) {
   const discounted     = isDiscounted(product, discount);
   const discountLabel  = getDiscountLabel(product, discount);
 
-  const images = [product.image_1, product.image_2, product.image_male, product.image_female].filter(Boolean);
+  const images = [product.image_1, product.image_2, product.image_male, product.image_female].filter(Boolean).map(thumbImage);
 
   const handlePrevImage = (e) => {
     e.stopPropagation();
