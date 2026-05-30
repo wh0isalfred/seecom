@@ -231,7 +231,7 @@ export default function HomePage({ onNavigate }) {
       <section
         ref={arrivalsRef}
         style={{
-          padding: isMobile ? '64px 20px 56px' : '28px 40px 80px',
+          padding: isMobile ? '20px 20px 56px' : '28px 40px 80px',
           ...reveal(arrivalsInView),
         }}
       >
