@@ -280,7 +280,22 @@ export default function Sidebar({
           paddingTop: 14,
           transition: 'height 0.4s cubic-bezier(0.4,0,0.2,1)',
         }}>
-          {/* Bag */}
+          {/* Hamburger — top */}
+          <button
+            onClick={() => onClose?.(true)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: '100%', WebkitTapHighlightColor: 'transparent' }}
+          >
+            <svg width="16" height="10" viewBox="0 0 16 10" fill="none">
+              <line x1="0" y1="1" x2="16" y2="1" stroke="#000" strokeWidth="1.5" strokeLinecap="round"/>
+              <line x1="2" y1="5" x2="16" y2="5" stroke="#000" strokeWidth="1.5" strokeLinecap="round"/>
+              <line x1="0" y1="9" x2="16" y2="9" stroke="#000" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+          </button>
+
+          {/* Divider */}
+          <div style={{ width: 20, height: 1, backgroundColor: 'rgba(0,0,0,0.2)', marginTop: 2 }} />
+
+          {/* Bag — below */}
           <button
             onClick={() => onNavigate?.('cart')}
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, width: '100%', WebkitTapHighlightColor: 'transparent' }}
@@ -293,21 +308,6 @@ export default function Sidebar({
             {cartCount > 0 && (
               <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 9, color: '#000', lineHeight: 1 }}>{cartCount}</span>
             )}
-          </button>
-
-          {/* Divider */}
-          <div style={{ width: 20, height: 1, backgroundColor: 'rgba(0,0,0,0.2)', marginTop: 6 }} />
-
-          {/* Hamburger — just below the bag */}
-          <button
-            onClick={() => onClose?.(true)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '10px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: '100%', WebkitTapHighlightColor: 'transparent' }}
-          >
-            <svg width="16" height="10" viewBox="0 0 16 10" fill="none">
-              <line x1="0" y1="1" x2="16" y2="1" stroke="#000" strokeWidth="1.5" strokeLinecap="round"/>
-              <line x1="2" y1="5" x2="16" y2="5" stroke="#000" strokeWidth="1.5" strokeLinecap="round"/>
-              <line x1="0" y1="9" x2="16" y2="9" stroke="#000" strokeWidth="1.5" strokeLinecap="round"/>
-            </svg>
           </button>
         </div>
       )}
