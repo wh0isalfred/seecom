@@ -235,8 +235,9 @@ export default function Sidebar({
   onSignOut,
   onOpenAuth,
 }) {
-  const [openIndex, setOpenIndex] = useState(null);
+  const [openIndex, setOpenIndex]       = useState(null);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
+  const [stripHeight, setStripHeight]   = useState('85dvh');
 
   const menuItems = isAdmin
     ? [...BASE_MENU_ITEMS, ADMIN_MENU_ITEM]
@@ -246,22 +247,44 @@ export default function Sidebar({
 
   useEffect(() => { if (!isOpen) setShowAccountMenu(false); }, [isOpen]);
 
+  useEffect(() => {
+    const onScroll = () => {
+      const y    = window.scrollY;
+      const hero = window.innerHeight * 0.9;
+      const half = hero * 0.5;
+      if      (y < half)  setStripHeight('85dvh');
+      else if (y >= hero) setStripHeight('100dvh');
+      else {
+        const p = (y - half) / (hero - half);
+        setStripHeight(`${85 + p * 15}dvh`);
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   const navigate = (route) => { onNavigate?.(route); onClose?.(false); };
 
   return (
     <>
-      {/* ── Compact static trigger — bag + hamburger ── */}
+      {/* ── Red strip ── */}
       {!isOpen && (
         <div style={{
           position: 'fixed', left: 0, top: 0,
-          width: 44, zIndex: 9999,
+          width: 44,
+          height: stripHeight,
+          backgroundColor: '#be1826',
+          zIndex: 9999,
           display: 'flex', flexDirection: 'column',
           alignItems: 'center',
-          paddingTop: 12, paddingBottom: 12, gap: 2,
-          backgroundColor: '#be1826',
+          paddingTop: 14,
+          transition: 'height 0.4s cubic-bezier(0.4,0,0.2,1)',
         }}>
           {/* Bag */}
-          <button onClick={() => onNavigate?.('cart')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, width: '100%', WebkitTapHighlightColor: 'transparent' }}>
+          <button
+            onClick={() => onNavigate?.('cart')}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, width: '100%', WebkitTapHighlightColor: 'transparent' }}
+          >
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
               <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="#000" strokeWidth="1.5" strokeLinejoin="round"/>
               <line x1="3" y1="6" x2="21" y2="6" stroke="#000" strokeWidth="1.5"/>
@@ -273,10 +296,13 @@ export default function Sidebar({
           </button>
 
           {/* Divider */}
-          <div style={{ width: 20, height: 1, backgroundColor: 'rgba(0,0,0,0.2)' }} />
+          <div style={{ width: 20, height: 1, backgroundColor: 'rgba(0,0,0,0.2)', marginTop: 6 }} />
 
-          {/* Hamburger */}
-          <button onClick={() => onClose?.(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '10px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: '100%', WebkitTapHighlightColor: 'transparent' }}>
+          {/* Hamburger — just below the bag */}
+          <button
+            onClick={() => onClose?.(true)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '10px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: '100%', WebkitTapHighlightColor: 'transparent' }}
+          >
             <svg width="16" height="10" viewBox="0 0 16 10" fill="none">
               <line x1="0" y1="1" x2="16" y2="1" stroke="#000" strokeWidth="1.5" strokeLinecap="round"/>
               <line x1="2" y1="5" x2="16" y2="5" stroke="#000" strokeWidth="1.5" strokeLinecap="round"/>

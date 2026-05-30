@@ -186,7 +186,7 @@ function AppInner() {
             }}
           />
 
-          <div style={{ marginLeft: isMobile ? '0' : '44px' }}>
+          <div style={{ marginLeft: '44px' }}>
 
             {currentPage === 'home' && sessionId && (
               <HomePage
