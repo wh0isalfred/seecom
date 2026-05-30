@@ -1,10 +1,38 @@
 import { useState, useEffect } from 'react';
 import Footer from '../components/Footer';
 import logoBadge from '../assets/logo.webp';
+import { supabase } from '../services/supabase';
 
 const SHIPPING_THRESHOLD = 40000;
 const FLAT_SHIPPING      = 3500;
 const fmt = n => `₦${n.toLocaleString()}`;
+
+// Grace window in days before auto-close
+const GRACE_DAYS = { abuja: 5, other: 8 };
+
+const isAbuja = state => {
+  const s = (state || '').toLowerCase();
+  return s.includes('abuja') || s.includes('fct');
+};
+
+const getAutoCloseDate = (shippedAt, state) => {
+  if (!shippedAt) return null;
+  const days = isAbuja(state) ? GRACE_DAYS.abuja : GRACE_DAYS.other;
+  const d = new Date(shippedAt);
+  d.setDate(d.getDate() + days);
+  return d;
+};
+
+const STATUS_LABEL = {
+  pending:           { label: 'Order Placed',         color: '#92400e', bg: '#fef3c7' },
+  confirmed:         { label: 'Confirmed',             color: '#1e40af', bg: '#dbeafe' },
+  processing:        { label: 'Being Prepared',        color: '#0369a1', bg: '#e0f2fe' },
+  shipped:           { label: 'Shipped',               color: '#5b21b6', bg: '#ede9fe' },
+  out_for_delivery:  { label: 'Out for Delivery 🚚',   color: '#9d174d', bg: '#fce7f3' },
+  delivered:         { label: 'Delivered ✓',           color: '#166534', bg: '#dcfce7' },
+  investigating:     { label: 'Issue Reported',        color: '#c2410c', bg: '#fff7ed' },
+  cancelled:         { label: 'Cancelled',             color: '#991b1b', bg: '#fee2e2' },
+};
 
 export default function CartPage({ cart = [], setCart, onNavigate }) {
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 900);
@@ -21,23 +49,43 @@ export default function CartPage({ cart = [], setCart, onNavigate }) {
     return () => window.removeEventListener('resize', h);
   }, []);
 
-  // Sync pending orders — remove delivered
+  // Sync pending orders — load live status from Supabase
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem('pendingOrders') || '[]');
     if (stored.length === 0) return;
-    import('../services/supabase').then(({ supabase }) => {
-      const ids = stored.map(o => o.id).filter(Boolean);
-      if (!ids.length) return;
-      supabase.from('orders').select('id, order_status').in('id', ids).then(({ data }) => {
+    const ids = stored.map(o => o.id).filter(Boolean);
+    if (!ids.length) return;
+
+    supabase
+      .from('orders')
+      .select('id, order_status, tracking_number, carrier, shipped_at, out_for_delivery_at, customer_confirmed_at, shipping_state')
+      .in('id', ids)
+      .then(({ data }) => {
         if (!data) return;
-        const active = stored.filter(o => {
-          const live = data.find(d => d.id === o.id);
-          return !live || !['delivered', 'cancelled'].includes(live.order_status);
-        });
+
+        const now = Date.now();
+        const active = stored
+          .map(o => {
+            const live = data.find(d => d.id === o.id);
+            if (!live) return o;
+
+            // Auto-close if past grace window
+            const autoClose = getAutoCloseDate(live.shipped_at, live.shipping_state);
+            if (autoClose && now > autoClose.getTime() && !['delivered','cancelled'].includes(live.order_status)) {
+              supabase.from('orders').update({ order_status: 'delivered', updated_at: new Date().toISOString() }).eq('id', o.id);
+              return null;
+            }
+
+            // Remove if already delivered or cancelled
+            if (['delivered', 'cancelled'].includes(live.order_status)) return null;
+
+            return { ...o, ...live };
+          })
+          .filter(Boolean);
+
         localStorage.setItem('pendingOrders', JSON.stringify(active));
         setPendingOrders(active);
       });
-    });
   }, []);
 
   const updateQty = (id, delta) => setCart(prev => prev.map(i => i.id === id ? { ...i, quantity: i.quantity + delta } : i).filter(i => i.quantity > 0));
@@ -194,36 +242,30 @@ export default function CartPage({ cart = [], setCart, onNavigate }) {
       {/* Pending Orders */}
       {pendingOrders.length > 0 && (
         <div style={{ borderTop: '2px solid #000', padding: isMobile ? '36px 20px' : '48px 40px' }}>
-          <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.24em', color: '#bbb', textTransform: 'uppercase', margin: '0 0 24px' }}>Pending Delivery</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.24em', color: '#bbb', textTransform: 'uppercase', margin: '0 0 24px' }}>Your Orders</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {pendingOrders.map((order, oi) => (
-              <div key={order.id || oi} style={{ border: '1px solid #f0f0f0', padding: isMobile ? '16px' : '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
-                  <div>
-                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '12px', letterSpacing: '0.06em', color: '#000', margin: 0 }}>{order.order_number}</p>
-                    <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', color: '#ccc', margin: '3px 0 0', letterSpacing: '0.04em' }}>
-                      {order.created_at ? new Date(order.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
-                    </p>
-                  </div>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', border: '1px solid #fde68a', backgroundColor: '#fef9e8' }}>
-                    <div style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#f59e0b', animation: 'pulse 2s infinite' }} />
-                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '8px', letterSpacing: '0.12em', color: '#92400e', textTransform: 'uppercase' }}>Awaiting delivery</span>
-                  </div>
-                </div>
-                {(order.items || []).map((item, ii) => (
-                  <div key={ii} style={{ display: 'grid', gridTemplateColumns: '44px 1fr auto', gap: 10, alignItems: 'center', padding: '8px 0', borderTop: '1px solid #f8f8f8' }}>
-                    <div style={{ width: 44, height: 52, backgroundColor: '#f5f5f5', backgroundImage: item.image ? `url(${item.image})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.7 }} />
-                    <div>
-                      <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '11px', color: '#666', margin: 0 }}>{item.name}</p>
-                      <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', color: '#ccc', margin: '2px 0 0', letterSpacing: '0.04em' }}>{[item.size, item.color].filter(Boolean).join(' / ')} × {item.quantity}</p>
-                    </div>
-                    <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '11px', color: '#aaa', margin: 0 }}>{fmt(item.price * item.quantity)}</p>
-                  </div>
-                ))}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: 10, borderTop: '1px solid #f5f5f5', marginTop: 4 }}>
-                  <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '12px', color: '#000' }}>{fmt(order.total)}</span>
-                </div>
-              </div>
+              <PendingOrderCard
+                key={order.id || oi}
+                order={order}
+                isMobile={isMobile}
+                onConfirm={async () => {
+                  try {
+                    await supabase.from('orders').update({ order_status: 'delivered', customer_confirmed_at: new Date().toISOString() }).eq('id', order.id);
+                    const updated = pendingOrders.filter(o => o.id !== order.id);
+                    localStorage.setItem('pendingOrders', JSON.stringify(updated));
+                    setPendingOrders(updated);
+                  } catch (e) { console.error(e); }
+                }}
+                onReportIssue={() => {
+                  const msg = encodeURIComponent(`Hi, I have an issue with my order ${order.order_number}. I haven't received it yet.`);
+                  window.open(`https://wa.me/2347065772394?text=${msg}`, '_blank');
+                  // Also mark as investigating in Supabase
+                  supabase.from('orders').update({ order_status: 'investigating', issue_reported_at: new Date().toISOString() }).eq('id', order.id).then(() => {
+                    setPendingOrders(prev => prev.map(o => o.id === order.id ? { ...o, order_status: 'investigating' } : o));
+                  });
+                }}
+              />
             ))}
           </div>
         </div>
@@ -299,6 +341,103 @@ function CartItem({ item, isLast, onUpdateQty, onRemove, onProductClick, isMobil
             {item.quantity > 1 && <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', color: '#ccc', margin: '1px 0 0' }}>{fmt(item.price)} each</p>}
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function PendingOrderCard({ order, isMobile, onConfirm, onReportIssue }) {
+  const [confirming, setConfirming] = useState(false);
+  const status    = order.order_status || 'confirmed';
+  const statusCfg = STATUS_LABEL[status] || STATUS_LABEL.confirmed;
+  const showConfirm = ['shipped', 'out_for_delivery'].includes(status);
+  const isInvestigating = status === 'investigating';
+
+  const handleConfirm = async () => {
+    setConfirming(true);
+    await onConfirm();
+    setConfirming(false);
+  };
+
+  return (
+    <div style={{ border: '1px solid #f0f0f0', overflow: 'hidden' }}>
+      {/* Header */}
+      <div style={{ padding: isMobile ? '14px 16px' : '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8, borderBottom: '1px solid #f8f8f8' }}>
+        <div>
+          <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '12px', letterSpacing: '0.06em', color: '#000', margin: 0 }}>{order.order_number}</p>
+          <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', color: '#ccc', margin: '3px 0 0' }}>
+            {order.created_at ? new Date(order.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
+          </p>
+        </div>
+        {/* Live status badge */}
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', backgroundColor: statusCfg.bg, border: `1px solid ${statusCfg.color}22` }}>
+          {showConfirm && <div style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: statusCfg.color, animation: 'pulse 2s infinite' }} />}
+          <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '8px', letterSpacing: '0.12em', color: statusCfg.color, textTransform: 'uppercase' }}>
+            {statusCfg.label}
+          </span>
+        </div>
+      </div>
+
+      {/* Tracking info if available */}
+      {order.tracking_number && (
+        <div style={{ padding: '8px 20px', backgroundColor: '#f9fafb', borderBottom: '1px solid #f0f0f0' }}>
+          <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', color: '#888', margin: 0 }}>
+            {order.carrier && <><strong>{order.carrier}</strong> · </>}
+            Tracking: <strong>{order.tracking_number}</strong>
+          </p>
+        </div>
+      )}
+
+      {/* Items */}
+      <div style={{ padding: '0 20px' }}>
+        {(order.items || []).map((item, ii) => (
+          <div key={ii} style={{ display: 'grid', gridTemplateColumns: '40px 1fr auto', gap: 10, alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f8f8f8' }}>
+            <div style={{ width: 40, height: 48, backgroundColor: '#f5f5f5', backgroundImage: item.image ? `url(${item.image})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.75 }} />
+            <div>
+              <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '11px', color: '#555', margin: 0 }}>{item.name}</p>
+              <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', color: '#ccc', margin: '2px 0 0' }}>{[item.size, item.color].filter(Boolean).join(' / ')} × {item.quantity}</p>
+            </div>
+            <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '11px', color: '#aaa', margin: 0 }}>{fmt(item.price * item.quantity)}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Total + actions */}
+      <div style={{ padding: '12px 20px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+        <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '13px', color: '#000' }}>{fmt(order.total)}</span>
+
+        {/* Customer actions — only shown when shipped or out for delivery */}
+        {showConfirm && !isInvestigating && (
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button
+              onClick={onReportIssue}
+              style={{ padding: '8px 14px', background: 'none', border: '1px solid #e0e0e0', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '9px', letterSpacing: '0.1em', color: '#888', cursor: 'pointer', textTransform: 'uppercase', transition: 'all 0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#be1826'; e.currentTarget.style.color = '#be1826'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#e0e0e0'; e.currentTarget.style.color = '#888'; }}
+            >
+              Report Issue
+            </button>
+            <button
+              onClick={handleConfirm}
+              disabled={confirming}
+              style={{ padding: '8px 16px', background: '#000', border: 'none', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '9px', letterSpacing: '0.1em', color: '#fff', cursor: confirming ? 'default' : 'pointer', textTransform: 'uppercase', opacity: confirming ? 0.6 : 1, transition: 'background 0.15s' }}
+              onMouseEnter={e => { if (!confirming) e.currentTarget.style.background = '#16a34a'; }}
+              onMouseLeave={e => { if (!confirming) e.currentTarget.style.background = '#000'; }}
+            >
+              {confirming ? '...' : 'Confirm Received'}
+            </button>
+          </div>
+        )}
+
+        {/* Issue reported state */}
+        {isInvestigating && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '11px', color: '#c2410c' }}>Issue reported — we'll be in touch</span>
+            <a href="https://wa.me/2347065772394" target="_blank" rel="noopener noreferrer" style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '9px', letterSpacing: '0.1em', color: '#25D366', textDecoration: 'none', textTransform: 'uppercase' }}>
+              WhatsApp →
+            </a>
+          </div>
+        )}
       </div>
     </div>
   );

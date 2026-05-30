@@ -10,11 +10,26 @@ import {
 
 // ── Status config ────────────────────────────────────────────────────────────
 const ORDER_STATUS = {
-  pending:   { label: 'Pending',   bg: '#fef3c7', color: '#92400e' },
-  confirmed: { label: 'Confirmed', bg: '#dbeafe', color: '#1e40af' },
-  shipped:   { label: 'Shipped',   bg: '#ede9fe', color: '#5b21b6' },
-  delivered: { label: 'Delivered', bg: '#dcfce7', color: '#166534' },
-  cancelled: { label: 'Cancelled', bg: '#fee2e2', color: '#991b1b' },
+  pending:           { label: 'Pending',           bg: '#fef3c7', color: '#92400e' },
+  confirmed:         { label: 'Confirmed',          bg: '#dbeafe', color: '#1e40af' },
+  processing:        { label: 'Processing',         bg: '#e0f2fe', color: '#0369a1' },
+  shipped:           { label: 'Shipped',            bg: '#ede9fe', color: '#5b21b6' },
+  out_for_delivery:  { label: 'Out for Delivery',   bg: '#fce7f3', color: '#9d174d' },
+  delivered:         { label: 'Delivered',          bg: '#dcfce7', color: '#166534' },
+  investigating:     { label: 'Investigating',      bg: '#fff7ed', color: '#c2410c' },
+  cancelled:         { label: 'Cancelled',          bg: '#fee2e2', color: '#991b1b' },
+};
+
+// What status the admin can move to from each current status
+const NEXT_STEPS = {
+  pending:          ['confirmed', 'cancelled'],
+  confirmed:        ['processing', 'cancelled'],
+  processing:       ['shipped'],
+  shipped:          ['out_for_delivery'],
+  out_for_delivery: [],
+  delivered:        [],
+  investigating:    ['shipped', 'out_for_delivery', 'delivered', 'cancelled'],
+  cancelled:        [],
 };
 const PAYMENT_STATUS = {
   pending: { label: 'Unpaid', bg: '#fef3c7', color: '#92400e' },
@@ -41,7 +56,7 @@ export default function AdminPage({ onNavigate }) {
       {/* Sticky header */}
       <div style={{ backgroundColor: '#fff', borderBottom: '1px solid #ebebeb', padding: '0 40px', position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '52px' }}>
-          <button onClick={() => onNavigate?.('home')} style={logoBtn}>see.com</button>
+          <button onClick={() => onNavigate?.('home')} style={logoBtn}>SEE.COM</button>
           <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', letterSpacing: '0.14em', color: '#ccc', textTransform: 'uppercase' }}>Admin</span>
         </div>
         {/* Tabs — scrollable on mobile */}
@@ -164,12 +179,12 @@ function DashboardTab({ setTab, isMobile }) {
 
 // ── ORDERS ───────────────────────────────────────────────────────────────────
 function OrdersTab({ isMobile = false }) {
-  const [orders, setOrders]       = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [filter, setFilter]       = useState('all');
-  const [expanded, setExpanded]   = useState(null);
-  const [saving, setSaving]       = useState({});
-  const [tracking, setTracking]   = useState({});
+  const [orders, setOrders]     = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [filter, setFilter]     = useState('all');
+  const [expanded, setExpanded] = useState(null);
+  const [saving, setSaving]     = useState({});
+  const [tracking, setTracking] = useState({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -180,15 +195,38 @@ function OrdersTab({ isMobile = false }) {
 
   useEffect(() => { load(); }, [load]);
 
-  const filtered = filter === 'all' ? orders : orders.filter(o => o.order_status === filter);
-
+  // ── Status update — only allow valid next steps ──
   const handleStatus = async (orderId, status) => {
     setSaving(s => ({ ...s, [orderId]: true }));
+    const updates = { order_status: status };
+    if (status === 'shipped')           updates.shipped_at = new Date().toISOString();
+    if (status === 'out_for_delivery')  updates.out_for_delivery_at = new Date().toISOString();
+    if (status === 'delivered')         updates.delivered_at = new Date().toISOString();
     try {
-      await updateOrderStatus(orderId, status);
-      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, order_status: status } : o));
+      await updateOrderStatus(orderId, status, updates);
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...updates } : o));
     } catch (e) { console.error(e); }
     setSaving(s => ({ ...s, [orderId]: false }));
+  };
+
+  // ── Save tracking + auto-advance to Shipped ──
+  const handleTracking = async (orderId) => {
+    const t = tracking[orderId] || {};
+    if (!t.number) return;
+    setSaving(s => ({ ...s, [`track_${orderId}`]: true }));
+    const updates = {
+      tracking_number: t.number,
+      carrier: t.carrier || '',
+      order_status: 'shipped',
+      shipped_at: new Date().toISOString(),
+    };
+    try {
+      await saveTrackingInfo(orderId, t.number, t.carrier || '');
+      await updateOrderStatus(orderId, 'shipped', updates);
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...updates } : o));
+      setTracking(t2 => ({ ...t2, [orderId]: undefined }));
+    } catch (e) { console.error(e); }
+    setSaving(s => ({ ...s, [`track_${orderId}`]: false }));
   };
 
   const handlePayment = async (orderId, status) => {
@@ -200,156 +238,285 @@ function OrdersTab({ isMobile = false }) {
     setSaving(s => ({ ...s, [`pay_${orderId}`]: false }));
   };
 
-  const handleTracking = async (orderId) => {
-    const t = tracking[orderId] || {};
-    if (!t.number) return;
-    setSaving(s => ({ ...s, [`track_${orderId}`]: true }));
-    try {
-      await saveTrackingInfo(orderId, t.number, t.carrier || '');
-      setOrders(prev => prev.map(o => o.id === orderId
-        ? { ...o, tracking_number: t.number, carrier: t.carrier, order_status: 'shipped' }
-        : o
-      ));
-    } catch (e) { console.error(e); }
-    setSaving(s => ({ ...s, [`track_${orderId}`]: false }));
+  // ── Days since shipped (for confidence signal) ──
+  const daysSince = (dateStr) => {
+    if (!dateStr) return null;
+    return Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
   };
 
-  const filterCounts = {
-    all: orders.length,
-    pending:   orders.filter(o => o.order_status === 'pending').length,
-    confirmed: orders.filter(o => o.order_status === 'confirmed').length,
-    shipped:   orders.filter(o => o.order_status === 'shipped').length,
-    delivered: orders.filter(o => o.order_status === 'delivered').length,
+  const isAbuja = (order) => {
+    const s = (order.shipping_state || '').toLowerCase();
+    return s.includes('abuja') || s.includes('fct');
   };
+
+  const getRisk = (order) => {
+    if (!['shipped', 'out_for_delivery'].includes(order.order_status)) return null;
+    const days = daysSince(order.shipped_at);
+    if (days === null) return null;
+    const max = isAbuja(order) ? 2 : 5;
+    if (days > max + 2) return 'high';
+    if (days > max)     return 'medium';
+    return null;
+  };
+
+  // Filter counts
+  const filterKeys = ['all', 'pending', 'confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered', 'investigating'];
+  const filterCounts = Object.fromEntries(
+    filterKeys.map(k => [k, k === 'all' ? orders.length : orders.filter(o => o.order_status === k).length])
+  );
+
+  const filtered = filter === 'all' ? orders : orders.filter(o => o.order_status === filter);
 
   if (loading) return <LoadingBlock />;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* Filter pills */}
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-        {Object.entries(filterCounts).map(([key, count]) => (
-          <button key={key} onClick={() => setFilter(key)} style={{
-            padding: '6px 14px', border: '1px solid', borderRadius: '20px',
-            fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700,
-            fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase',
-            cursor: 'pointer', transition: 'all 0.15s',
-            background: filter === key ? '#000' : '#fff',
-            color: filter === key ? '#fff' : '#888',
-            borderColor: filter === key ? '#000' : '#e0e0e0',
-          }}>
-            {key === 'all' ? 'All' : ORDER_STATUS[key]?.label} ({count})
-          </button>
-        ))}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+      {/* Filter pills — scrollable */}
+      <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
+        {filterKeys.map(key => {
+          const count = filterCounts[key];
+          const cfg   = ORDER_STATUS[key];
+          return (
+            <button key={key} onClick={() => setFilter(key)} style={{
+              flexShrink: 0,
+              padding: '5px 12px', border: '1px solid', borderRadius: '20px',
+              fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700,
+              fontSize: '9px', letterSpacing: '0.1em', textTransform: 'uppercase',
+              cursor: 'pointer', transition: 'all 0.15s',
+              background: filter === key ? (cfg?.bg || '#000') : '#fff',
+              color:      filter === key ? (cfg?.color || '#fff') : '#aaa',
+              borderColor: filter === key ? (cfg?.color || '#000') : '#e0e0e0',
+            }}>
+              {key === 'all' ? 'All' : cfg?.label} ({count})
+            </button>
+          );
+        })}
       </div>
 
-      {filtered.length === 0 ? <Empty message="No orders in this category" /> : (
+      {filtered.length === 0 ? <Empty message="No orders here" /> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {filtered.map(order => {
             const isExpanded = expanded === order.id;
             const statusCfg  = ORDER_STATUS[order.order_status] || ORDER_STATUS.pending;
             const paymentCfg = PAYMENT_STATUS[order.payment_status] || PAYMENT_STATUS.pending;
+            const risk       = getRisk(order);
+            const daysShipped = daysSince(order.shipped_at);
+            const nextSteps  = NEXT_STEPS[order.order_status] || [];
+            const needsTracking = order.order_status === 'processing' || (order.order_status === 'confirmed' && !order.tracking_number);
 
             return (
-              <div key={order.id} style={{ backgroundColor: '#fff', border: '1px solid #ebebeb' }}>
+              <div key={order.id} style={{
+                backgroundColor: '#fff',
+                border: `1px solid ${risk === 'high' ? '#fecaca' : risk === 'medium' ? '#fed7aa' : '#ebebeb'}`,
+                borderLeft: risk ? `3px solid ${risk === 'high' ? '#be1826' : '#f59e0b'}` : '1px solid #ebebeb',
+              }}>
                 {/* Summary row */}
                 <button
                   onClick={() => setExpanded(isExpanded ? null : order.id)}
-                  style={{ width: '100%', background: 'none', border: 'none', padding: '16px 20px', cursor: 'pointer', textAlign: 'left' }}
+                  style={{ width: '100%', background: 'none', border: 'none', padding: '14px 20px', cursor: 'pointer', textAlign: 'left' }}
                 >
-                  <div style={{ display: isMobile ? 'flex' : 'grid', flexDirection: isMobile ? 'column' : undefined, gridTemplateColumns: isMobile ? undefined : '1.5fr 2fr 1fr 1fr 1fr 1fr 24px', alignItems: isMobile ? 'flex-start' : 'center', gap: '8px' }}>
-                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '12px', letterSpacing: '0.06em' }}>
-                      {order.order_number}
-                    </span>
-                    <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '12px', color: '#666' }}>
-                      {order.customer_name || order.customer_email}
-                    </span>
-                    <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '11px', color: '#999' }}>
-                      {fmtDate(order.created_at)}
-                    </span>
-                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '12px' }}>
-                      {fmt(order.total)}
-                    </span>
-                    <Badge label={statusCfg.label} bg={statusCfg.bg} color={statusCfg.color} />
-                    <Badge label={paymentCfg.label} bg={paymentCfg.bg} color={paymentCfg.color} />
-                    <span style={{ color: '#aaa', fontSize: '16px', fontWeight: 400, transition: 'transform 0.2s', display: 'inline-block', transform: isExpanded ? 'rotate(180deg)' : 'none' }}>›</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr auto' : '1.4fr 1.8fr 0.8fr 0.9fr 1fr 1fr 20px', alignItems: 'center', gap: '8px' }}>
+                    <div>
+                      <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '12px', letterSpacing: '0.06em', display: 'block' }}>
+                        {order.order_number}
+                      </span>
+                      {isMobile && (
+                        <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '11px', color: '#999' }}>
+                          {order.customer_name || order.customer_email}
+                        </span>
+                      )}
+                    </div>
+                    {!isMobile && <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '12px', color: '#666' }}>{order.customer_name || order.customer_email}</span>}
+                    {!isMobile && <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '11px', color: '#999' }}>{fmtDate(order.created_at)}</span>}
+                    {!isMobile && <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '12px' }}>{fmt(order.total)}</span>}
+                    {!isMobile && <Badge label={statusCfg.label} bg={statusCfg.bg} color={statusCfg.color} />}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {isMobile && <Badge label={statusCfg.label} bg={statusCfg.bg} color={statusCfg.color} />}
+                      {/* Risk indicator */}
+                      {risk && (
+                        <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '8px', letterSpacing: '0.1em', color: risk === 'high' ? '#be1826' : '#f59e0b', textTransform: 'uppercase' }}>
+                          {daysShipped}d
+                        </span>
+                      )}
+                    </div>
+                    <span style={{ color: '#aaa', fontSize: '14px', transition: 'transform 0.2s', display: 'inline-block', transform: isExpanded ? 'rotate(90deg)' : 'none', textAlign: 'right' }}>›</span>
                   </div>
                 </button>
 
-                {/* Expanded detail */}
-                {isExpanded && (
+                {/* Expanded */}
+                <div style={{
+                  overflow: 'hidden',
+                  maxHeight: isExpanded ? '1200px' : '0',
+                  transition: 'max-height 0.35s ease',
+                }}>
                   <div style={{ borderTop: '1px solid #f0f0f0', padding: '20px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '24px' }}>
-                    {/* Items */}
+
+                    {/* Left: items */}
                     <div>
                       <p style={sectionLabel}>Items</p>
                       {(order.order_items || []).map((item, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f5f5f5' }}>
                           <div>
                             <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '12px' }}>{item.product_name}</div>
-                            <div style={{ fontFamily: "'Archivo', sans-serif", fontSize: '11px', color: '#999', marginTop: '2px' }}>
+                            <div style={{ fontFamily: "'Archivo', sans-serif", fontSize: '11px', color: '#999', marginTop: 2 }}>
                               {item.size} / {item.color} × {item.quantity}
                             </div>
                           </div>
-                          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '12px' }}>
-                            {fmt(item.total_price)}
-                          </div>
+                          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '12px' }}>{fmt(item.total_price)}</div>
                         </div>
                       ))}
-                    </div>
 
-                    {/* Right: customer + actions */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                       {/* Customer info */}
-                      <div>
+                      <div style={{ marginTop: 16 }}>
                         <p style={sectionLabel}>Customer</p>
                         <p style={infoText}>{order.customer_name}</p>
                         <p style={infoText}>{order.customer_email}</p>
                         {order.customer_phone && <p style={infoText}>{order.customer_phone}</p>}
                         {order.shipping_address && (
-                          <p style={{ ...infoText, marginTop: '6px', color: '#888', lineHeight: 1.5 }}>
+                          <p style={{ ...infoText, marginTop: 6, color: '#888', lineHeight: 1.5 }}>
                             {order.shipping_address}, {order.shipping_city}, {order.shipping_state}
                           </p>
                         )}
                       </div>
+                    </div>
 
-                      {/* Order status */}
-                      <div>
-                        <p style={sectionLabel}>Update Order Status</p>
-                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                          {Object.entries(ORDER_STATUS).map(([key, cfg]) => (
-                            <button
-                              key={key}
-                              onClick={() => handleStatus(order.id, key)}
-                              disabled={saving[order.id] || order.order_status === key}
-                              style={{
-                                padding: '5px 10px', border: '1px solid', borderRadius: '2px',
-                                fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '9px',
-                                letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer',
-                                background: order.order_status === key ? cfg.bg : '#fff',
-                                color: order.order_status === key ? cfg.color : '#888',
-                                borderColor: order.order_status === key ? cfg.color : '#e0e0e0',
-                                opacity: saving[order.id] ? 0.5 : 1,
-                              }}
-                            >
-                              {cfg.label}
-                            </button>
-                          ))}
+                    {/* Right: actions */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+                      {/* Risk warning */}
+                      {risk && (
+                        <div style={{ padding: '10px 12px', backgroundColor: risk === 'high' ? '#fff5f5' : '#fffbeb', borderLeft: `3px solid ${risk === 'high' ? '#be1826' : '#f59e0b'}` }}>
+                          <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '10px', letterSpacing: '0.1em', color: risk === 'high' ? '#be1826' : '#92400e', margin: '0 0 2px', textTransform: 'uppercase' }}>
+                            {risk === 'high' ? '⚠ Overdue' : '⚡ Running late'}
+                          </p>
+                          <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '11px', color: '#666', margin: 0, lineHeight: 1.5 }}>
+                            Shipped {daysShipped} day{daysShipped !== 1 ? 's' : ''} ago · {isAbuja(order) ? 'Abuja (max 2 days)' : 'Outside Abuja (max 5 days)'}
+                          </p>
                         </div>
+                      )}
+
+                      {/* Delivery progress */}
+                      <div>
+                        <p style={sectionLabel}>Delivery Progress</p>
+                        <DeliveryProgress status={order.order_status} />
                       </div>
+
+                      {/* Tracking */}
+                      <div>
+                        <p style={sectionLabel}>Tracking</p>
+                        {order.tracking_number ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '12px', color: '#16a34a' }}>
+                              {order.carrier && `${order.carrier} · `}{order.tracking_number}
+                            </span>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            <input
+                              placeholder="Tracking number"
+                              value={tracking[order.id]?.number || ''}
+                              onChange={e => setTracking(t => ({ ...t, [order.id]: { ...t[order.id], number: e.target.value } }))}
+                              style={{ ...inputStyle, flex: 1, minWidth: '120px' }}
+                            />
+                            <input
+                              placeholder="Carrier (optional)"
+                              value={tracking[order.id]?.carrier || ''}
+                              onChange={e => setTracking(t => ({ ...t, [order.id]: { ...t[order.id], carrier: e.target.value } }))}
+                              style={{ ...inputStyle, width: '110px' }}
+                            />
+                            <button onClick={() => handleTracking(order.id)} disabled={saving[`track_${order.id}`] || !tracking[order.id]?.number} style={smallBtn}>
+                              {saving[`track_${order.id}`] ? '...' : 'Save & Ship'}
+                            </button>
+                          </div>
+                        )}
+                        {needsTracking && !order.tracking_number && (
+                          <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', color: '#f59e0b', margin: '6px 0 0', letterSpacing: '0.04em' }}>
+                            Add tracking to mark as Shipped
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Next steps — only valid transitions */}
+                      {nextSteps.length > 0 && (
+                        <div>
+                          <p style={sectionLabel}>Next Step</p>
+                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                            {nextSteps.map(key => {
+                              const cfg = ORDER_STATUS[key];
+                              const isShip = key === 'shipped';
+                              // Disable ship button if no tracking
+                              const disabled = saving[order.id] || (isShip && !order.tracking_number);
+                              return (
+                                <button
+                                  key={key}
+                                  onClick={() => handleStatus(order.id, key)}
+                                  disabled={disabled}
+                                  title={isShip && !order.tracking_number ? 'Add tracking number first' : ''}
+                                  style={{
+                                    padding: '8px 16px', border: '1px solid',
+                                    fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700,
+                                    fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase',
+                                    cursor: disabled ? 'not-allowed' : 'pointer',
+                                    background: cfg.bg, color: cfg.color, borderColor: cfg.color,
+                                    opacity: disabled ? 0.5 : 1, transition: 'opacity 0.15s',
+                                  }}
+                                >
+                                  {saving[order.id] ? '...' : `→ ${cfg.label}`}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Customer confirmation status */}
+                      {['shipped', 'out_for_delivery'].includes(order.order_status) && (
+                        <div style={{ padding: '10px 12px', backgroundColor: '#f8faff', border: '1px solid #e0e7ff' }}>
+                          <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '9px', letterSpacing: '0.12em', color: '#4338ca', margin: '0 0 3px', textTransform: 'uppercase' }}>
+                            Awaiting customer confirmation
+                          </p>
+                          <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '11px', color: '#666', margin: 0, lineHeight: 1.5 }}>
+                            Customer will see a "Confirm Received" button. Auto-closes after grace period.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Investigating — show issue report */}
+                      {order.order_status === 'investigating' && (
+                        <div style={{ padding: '10px 12px', backgroundColor: '#fff7ed', border: '1px solid #fed7aa' }}>
+                          <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '9px', letterSpacing: '0.12em', color: '#c2410c', margin: '0 0 3px', textTransform: 'uppercase' }}>
+                            ⚠ Customer reported an issue
+                          </p>
+                          <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '11px', color: '#666', margin: 0, lineHeight: 1.5 }}>
+                            Contact the customer and resolve before marking delivered.
+                          </p>
+                          {order.customer_phone && (
+                            <a
+                              href={`https://wa.me/${order.customer_phone.replace(/\D/g,'').replace(/^0/, '234')}`}
+                              target="_blank" rel="noopener noreferrer"
+                              style={{ display: 'inline-block', marginTop: 8, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '10px', letterSpacing: '0.1em', color: '#16a34a', textDecoration: 'none' }}
+                            >
+                              WhatsApp Customer →
+                            </a>
+                          )}
+                        </div>
+                      )}
 
                       {/* Payment status */}
                       <div>
-                        <p style={sectionLabel}>Payment Status</p>
-                        <div style={{ display: 'flex', gap: '6px' }}>
+                        <p style={sectionLabel}>Payment</p>
+                        <div style={{ display: 'flex', gap: 6 }}>
                           {Object.entries(PAYMENT_STATUS).map(([key, cfg]) => (
                             <button
                               key={key}
                               onClick={() => handlePayment(order.id, key)}
                               disabled={saving[`pay_${order.id}`] || order.payment_status === key}
                               style={{
-                                padding: '5px 10px', border: '1px solid', borderRadius: '2px',
-                                fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '9px',
-                                letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer',
+                                padding: '5px 10px', border: '1px solid',
+                                fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700,
+                                fontSize: '9px', letterSpacing: '0.08em', textTransform: 'uppercase',
+                                cursor: 'pointer',
                                 background: order.payment_status === key ? cfg.bg : '#fff',
                                 color: order.payment_status === key ? cfg.color : '#888',
                                 borderColor: order.payment_status === key ? cfg.color : '#e0e0e0',
@@ -361,41 +528,9 @@ function OrdersTab({ isMobile = false }) {
                           ))}
                         </div>
                       </div>
-
-                      {/* Tracking */}
-                      <div>
-                        <p style={sectionLabel}>Tracking</p>
-                        {order.tracking_number ? (
-                          <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '12px', color: '#16a34a' }}>
-                            {order.carrier && `${order.carrier} · `}{order.tracking_number}
-                          </p>
-                        ) : (
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <input
-                              placeholder="Tracking number"
-                              value={tracking[order.id]?.number || ''}
-                              onChange={e => setTracking(t => ({ ...t, [order.id]: { ...t[order.id], number: e.target.value } }))}
-                              style={{ ...inputStyle, flex: 1 }}
-                            />
-                            <input
-                              placeholder="Carrier"
-                              value={tracking[order.id]?.carrier || ''}
-                              onChange={e => setTracking(t => ({ ...t, [order.id]: { ...t[order.id], carrier: e.target.value } }))}
-                              style={{ ...inputStyle, width: '90px' }}
-                            />
-                            <button
-                              onClick={() => handleTracking(order.id)}
-                              disabled={saving[`track_${order.id}`]}
-                              style={smallBtn}
-                            >
-                              {saving[`track_${order.id}`] ? '...' : 'Save'}
-                            </button>
-                          </div>
-                        )}
-                      </div>
                     </div>
                   </div>
-                )}
+                </div>
               </div>
             );
           })}
@@ -405,7 +540,43 @@ function OrdersTab({ isMobile = false }) {
   );
 }
 
-// ── INVENTORY ────────────────────────────────────────────────────────────────
+// Delivery progress stepper
+function DeliveryProgress({ status }) {
+  const steps = ['confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered'];
+  const labels = { confirmed: 'Confirmed', processing: 'Processing', shipped: 'Shipped', out_for_delivery: 'Out for Delivery', delivered: 'Delivered' };
+  const currentIdx = steps.indexOf(status);
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+      {steps.map((step, i) => {
+        const done    = currentIdx >= i;
+        const current = currentIdx === i;
+        const cfg     = ORDER_STATUS[step];
+        return (
+          <div key={step} style={{ display: 'flex', alignItems: 'center', flex: i < steps.length - 1 ? 1 : 0 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+              <div style={{
+                width: 10, height: 10, borderRadius: '50%',
+                backgroundColor: done ? cfg.color : '#e0e0e0',
+                border: current ? `2px solid ${cfg.color}` : '2px solid transparent',
+                boxShadow: current ? `0 0 0 3px ${cfg.bg}` : 'none',
+                transition: 'all 0.3s',
+                flexShrink: 0,
+              }} />
+              <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '8px', letterSpacing: '0.06em', color: done ? cfg.color : '#ccc', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                {labels[step]}
+              </span>
+            </div>
+            {i < steps.length - 1 && (
+              <div style={{ flex: 1, height: 1, backgroundColor: done && currentIdx > i ? cfg.color : '#e8e8e8', margin: '0 4px', marginBottom: 16, transition: 'background-color 0.3s' }} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+
 function InventoryTab({ isMobile = false }) {
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading]     = useState(true);
@@ -936,7 +1107,7 @@ function LoadingBlock() {
 }
 
 // ── Styles ───────────────────────────────────────────────────────────────────
-const logoBtn  = { fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: '15px', letterSpacing: '0.22em', background: 'none', border: 'none', cursor: 'pointer', color: '#000', padding: 0, textTransform: 'lowercase' };
+const logoBtn  = { fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '15px', letterSpacing: '0.1em', background: 'none', border: 'none', cursor: 'pointer', color: '#000', padding: 0 };
 const tableStyle = { width: '100%', borderCollapse: 'collapse' };
 const thRowStyle = { borderBottom: '1px solid #f5f5f5' };
 const trStyle  = { borderBottom: '1px solid #f9f9f9', transition: 'background 0.1s' };

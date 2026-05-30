@@ -37,12 +37,6 @@ export const fetchAllOrders = async () => {
   return data || [];
 };
 
-export const updateOrderStatus = async (orderId, status) => {
-  const { error } = await supabase
-    .from('orders').update({ order_status: status }).eq('id', orderId);
-  if (error) throw error;
-};
-
 export const updatePaymentStatus = async (orderId, status) => {
   const { error } = await supabase
     .from('orders').update({ payment_status: status }).eq('id', orderId);
@@ -129,4 +123,37 @@ export const updateProductDetails = async (productId, updates) => {
     .single();
   if (error) throw error;
   return data;
+};
+
+// ── DELIVERY FLOW ──────────────────────────────────────────────────────────
+export const updateOrderStatus = async (orderId, status, extraFields = {}) => {
+  const { error } = await supabase
+    .from('orders')
+    .update({ order_status: status, updated_at: new Date().toISOString(), ...extraFields })
+    .eq('id', orderId);
+  if (error) throw error;
+};
+
+export const customerConfirmDelivery = async (orderId) => {
+  const { error } = await supabase
+    .from('orders')
+    .update({
+      order_status: 'delivered',
+      customer_confirmed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', orderId);
+  if (error) throw error;
+};
+
+export const customerReportIssue = async (orderId) => {
+  const { error } = await supabase
+    .from('orders')
+    .update({
+      order_status: 'investigating',
+      issue_reported_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', orderId);
+  if (error) throw error;
 };
