@@ -81,8 +81,13 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
           .then(order => {
             clearTimeout(timeout);
             const pending = JSON.parse(localStorage.getItem('pendingOrders') || '[]');
-            pending.push({ id: order.id, order_number: order.order_number, total: order.total, created_at: order.created_at, customer_email: order.customer_email, order_status: 'confirmed', items: cart.map(i => ({ name: i.name, size: i.size, color: i.color, quantity: i.quantity, price: i.price, image: i.image })) });
+            const newOrder = { id: order.id, order_number: order.order_number, total: order.total, created_at: order.created_at, customer_email: order.customer_email, order_status: 'confirmed', items: cart.map(i => ({ name: i.name, size: i.size, color: i.color, quantity: i.quantity, price: i.price, image: i.image })) };
+            pending.push(newOrder);
             localStorage.setItem('pendingOrders', JSON.stringify(pending));
+            // Also store order IDs separately — survives pendingOrders key being cleared
+            const guestRefs = JSON.parse(localStorage.getItem('guestOrderIds') || '[]');
+            if (!guestRefs.includes(order.id)) guestRefs.push(order.id);
+            localStorage.setItem('guestOrderIds', JSON.stringify(guestRefs));
             setCart([]);
             setOrderDone(order);
           })

@@ -49,43 +49,76 @@ export default function CartPage({ cart = [], setCart, onNavigate }) {
     return () => window.removeEventListener('resize', h);
   }, []);
 
-  // Sync pending orders — load live status from Supabase
+  // Load pending orders — from Supabase if logged in, localStorage if guest
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem('pendingOrders') || '[]');
-    if (stored.length === 0) return;
-    const ids = stored.map(o => o.id).filter(Boolean);
-    if (!ids.length) return;
+    const loadOrders = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
 
-    supabase
-      .from('orders')
-      .select('id, order_status, tracking_number, carrier, shipped_at, out_for_delivery_at, customer_confirmed_at, shipping_state')
-      .in('id', ids)
-      .then(({ data }) => {
-        if (!data) return;
+      if (session?.user) {
+        // Logged in — fetch all active orders live from Supabase
+        const { data } = await supabase
+          .from('orders')
+          .select('id, order_number, total, created_at, order_status, tracking_number, carrier, shipped_at, shipping_state, order_items(name:product_name, size, color, quantity, price:price_per_item, image:product_image_url)')
+          .eq('customer_email', session.user.email)
+          .not('order_status', 'in', '("delivered","cancelled")')
+          .order('created_at', { ascending: false });
 
-        const now = Date.now();
-        const active = stored
-          .map(o => {
-            const live = data.find(d => d.id === o.id);
-            if (!live) return o;
+        if (data) {
+          const normalised = data.map(o => ({
+            ...o,
+            items: (o.order_items || []).map(i => ({ ...i })),
+          }));
+          setPendingOrders(normalised);
+          localStorage.setItem('pendingOrders', JSON.stringify(normalised));
+        }
+      } else {
+        // Guest — sync status from Supabase using stored IDs
+        let stored = JSON.parse(localStorage.getItem('pendingOrders') || '[]');
 
-            // Auto-close if past grace window
-            const autoClose = getAutoCloseDate(live.shipped_at, live.shipping_state);
-            if (autoClose && now > autoClose.getTime() && !['delivered','cancelled'].includes(live.order_status)) {
-              supabase.from('orders').update({ order_status: 'delivered', updated_at: new Date().toISOString() }).eq('id', o.id);
-              return null;
+        // Recovery: if pendingOrders was cleared, rebuild from guestOrderIds
+        if (stored.length === 0) {
+          const guestIds = JSON.parse(localStorage.getItem('guestOrderIds') || '[]');
+          if (guestIds.length > 0) {
+            const { data: recovered } = await supabase
+              .from('orders')
+              .select('id, order_number, total, created_at, order_status, tracking_number, carrier, shipped_at, shipping_state, order_items(name:product_name, size, color, quantity, price:price_per_item, image:product_image_url)')
+              .in('id', guestIds)
+              .not('order_status', 'in', '("delivered","cancelled")');
+            if (recovered?.length) {
+              stored = recovered.map(o => ({ ...o, items: o.order_items || [] }));
+              localStorage.setItem('pendingOrders', JSON.stringify(stored));
             }
+          }
+        }
 
-            // Remove if already delivered or cancelled
-            if (['delivered', 'cancelled'].includes(live.order_status)) return null;
+        if (!stored.length) return;
+        const ids = stored.map(o => o.id).filter(Boolean);
+        if (!ids.length) return;
 
-            return { ...o, ...live };
-          })
-          .filter(Boolean);
+        const { data } = await supabase
+          .from('orders')
+          .select('id, order_status, tracking_number, carrier, shipped_at, shipping_state')
+          .in('id', ids);
+
+        if (!data) return;
+        const now = Date.now();
+        const active = stored.map(o => {
+          const live = data.find(d => d.id === o.id);
+          if (!live) return o;
+          const autoClose = getAutoCloseDate(live.shipped_at, live.shipping_state);
+          if (autoClose && now > autoClose.getTime()) {
+            supabase.from('orders').update({ order_status: 'delivered', updated_at: new Date().toISOString() }).eq('id', o.id);
+            return null;
+          }
+          if (['delivered', 'cancelled'].includes(live.order_status)) return null;
+          return { ...o, ...live };
+        }).filter(Boolean);
 
         localStorage.setItem('pendingOrders', JSON.stringify(active));
         setPendingOrders(active);
-      });
+      }
+    };
+    loadOrders().catch(console.error);
   }, []);
 
   const updateQty = (id, delta) => setCart(prev => prev.map(i => i.id === id ? { ...i, quantity: i.quantity + delta } : i).filter(i => i.quantity > 0));
