@@ -7,7 +7,6 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 // browser/dev-server environments, causing all queries to never resolve.
 export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
-    lock: async (_name, _timeout, fn) => await fn(),
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: false,

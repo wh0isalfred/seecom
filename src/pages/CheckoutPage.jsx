@@ -86,9 +86,10 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
             setCart([]);
             setOrderDone(order);
           })
-          .catch(() => {
+          .catch((err) => {
             clearTimeout(timeout);
-            setError(`Payment received (ref: ${response.reference}) but order failed. Contact us.`);
+            console.error('Order creation error:', err);
+            setError(`Payment received (ref: ${response.reference}) but order failed. Contact us. Error: ${err?.message || JSON.stringify(err)}`);
           })
           .finally(() => { clearTimeout(timeout); setLoading(false); });
       },

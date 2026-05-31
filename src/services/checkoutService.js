@@ -44,8 +44,8 @@ const _createOrder = async ({ formData, cart, paystackReference, total, shipping
     }])
     .select();
 
-  if (orderError) throw orderError;
-  if (!orderRows || orderRows.length === 0) throw new Error('Order insert returned no data — check RLS SELECT policy on orders table');
+  if (orderError) { console.error('Order insert error:', orderError); throw orderError; }
+  if (!orderRows || orderRows.length === 0) { console.error('Order insert returned no rows'); throw new Error('Order insert returned no data — check RLS SELECT policy on orders table'); }
 
   const order = orderRows[0];
 
@@ -66,7 +66,7 @@ const _createOrder = async ({ formData, cart, paystackReference, total, shipping
     .from('order_items')
     .insert(orderItems);
 
-  if (itemsError) throw itemsError;
+  if (itemsError) { console.error('Order items insert error:', itemsError); throw itemsError; }
 
   // 3 — Reduce inventory for each item
   for (const item of cart) {
