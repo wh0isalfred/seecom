@@ -231,7 +231,7 @@ export default function HomePage({ onNavigate }) {
       <section
         ref={arrivalsRef}
         style={{
-          padding: isMobile ? '20px 20px 56px' : '28px 40px 80px',
+          padding: isMobile ? '20px 12px 56px' : '28px 40px 80px',
           ...reveal(arrivalsInView),
         }}
       >
@@ -262,7 +262,7 @@ export default function HomePage({ onNavigate }) {
             <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.22em', color: '#ddd', textTransform: 'uppercase' }}>—</span>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: isMobile ? '16px' : '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: isMobile ? '10px' : '24px' }}>
             {products.map((p, i) => (
               <div key={p.id} style={{
                 opacity: arrivalsInView ? 1 : 0,
@@ -396,7 +396,7 @@ export default function HomePage({ onNavigate }) {
       <section
         ref={shopGridRef}
         style={{
-          padding: isMobile ? '64px 20px' : '96px 40px',
+          padding: isMobile ? '40px 12px' : '96px 40px',
           ...reveal(shopGridInView),
         }}
       >
@@ -421,7 +421,7 @@ export default function HomePage({ onNavigate }) {
             <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.22em', color: '#ddd', textTransform: 'uppercase' }}>—</span>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: isMobile ? '16px' : '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: isMobile ? '10px' : '24px' }}>
             {shopAllProducts.map(p => (
               <ProductCard key={p.id} product={p} showPrice={showPrice} onProductClick={id => onNavigate?.('product', { productId: id })} />
             ))}

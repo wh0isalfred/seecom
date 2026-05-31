@@ -171,14 +171,14 @@ export default function TshirtsPage({ onNavigate }) {
       </div>
 
       {/* ── GRID ── */}
-      <main style={{ flex: 1, padding: isMobile ? '40px 20px' : '64px 40px' }}>
+      <main style={{ flex: 1, padding: isMobile ? '24px 12px' : '64px 40px' }}>
         {loading && displayedProducts.length === 0 ? (
           <div style={{ height: 320, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.22em', color: '#ddd', textTransform: 'uppercase' }}>—</span>
           </div>
         ) : displayedProducts.length > 0 ? (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: isMobile ? '16px' : '24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: isMobile ? '10px' : '24px' }}>
               {displayedProducts.map((p, i) => (
                 <div key={p.id} style={{
                   opacity: ready ? 1 : 0,

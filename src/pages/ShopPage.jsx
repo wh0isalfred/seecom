@@ -111,7 +111,7 @@ export default function ShopPage({ onNavigate }) {
       {/* ── MAIN ── */}
       <main style={{
         flex: 1,
-        padding: isMobile ? '40px 20px' : '64px 40px',
+        padding: isMobile ? '24px 12px' : '64px 40px',
         animation: ready ? 'fadeUp 0.7s 0.1s ease both' : 'none',
       }}>
 
@@ -147,7 +147,7 @@ export default function ShopPage({ onNavigate }) {
           </div>
         ) : displayedProducts.length > 0 ? (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: isMobile ? '16px' : '24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: isMobile ? '10px' : '24px' }}>
               {displayedProducts.map((product, i) => (
                 <div key={product.id} style={{
                   opacity: ready ? 1 : 0,
