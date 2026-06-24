@@ -141,7 +141,7 @@ export default function Sidebar({
               WebkitTapHighlightColor: 'transparent',
             }}
           >
-            SEE.COM
+            See.Com
           </button>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 20, opacity: isOpen ? 1 : 0, transition: 'opacity 0.5s 0.2s ease' }}>

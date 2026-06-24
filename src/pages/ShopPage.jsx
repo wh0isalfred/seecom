@@ -3,7 +3,7 @@ import ProductCard from '../components/ProductCard';
 import Footer from '../components/Footer';
 import { fetchProducts } from '../services/products';
 import { useResponsiveGrid } from '../utils/responsiveGrid';
-import logoBadge from '../assets/logo.webp';
+import logoBadge from '../assets/badge.webp';
 
 function ViewToggle({ showPrice, setShowPrice }) {
   return (

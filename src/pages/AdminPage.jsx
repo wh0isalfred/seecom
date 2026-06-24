@@ -65,7 +65,7 @@ export default function AdminPage({ onNavigate }) {
       <div style={{ backgroundColor: '#fff', borderBottom: '1px solid #f0f0f0', position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', height: 52 }}>
           <button onClick={() => onNavigate?.('home')} style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: 16, letterSpacing: '0.22em', background: 'none', border: 'none', cursor: 'pointer', color: '#000', padding: 0 }}>
-            SEE.COM
+            See.Com
           </button>
           <span style={{ fontSize: 10, letterSpacing: '0.18em', color: '#ccc', textTransform: 'uppercase' }}>Admin</span>
         </div>

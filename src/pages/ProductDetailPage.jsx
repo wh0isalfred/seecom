@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { fetchProductById, fetchProductInventory } from '../services/products';
 import Footer from '../components/Footer';
-import logoBadge from '../assets/logo.webp';
+import logoBadge from '../assets/badge.webp';
 import { useDiscount } from '../contexts/DiscountContext';
 import { getEffectivePrice, isDiscounted, getDiscountLabel } from '../utils/discountUtils';
 
@@ -272,7 +272,7 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
                   </svg>
                 }
                 label="Free shipping"
-                value="On all orders over ₦40,000"
+                value="On all orders over ₦100,000"
               />
 
               {/* Contact */}

@@ -223,7 +223,7 @@ export default function Landing({ onNavigate }) {
           letterSpacing: '0.26em',
           color: '#fff',
         }}>
-          SEE.COM
+          See.Com
         </span>
       </div>
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import heroImage     from '../assets/see.png';
+import heroImage     from '../assets/logo.webp';
 import shopAllImage  from '../assets/shopallchain.jpeg';
 import lookbookImage from '../assets/lookbook3.webp';
 import { fetchProducts } from '../services/products';
@@ -195,7 +195,7 @@ export default function HomePage({ onNavigate }) {
             display: 'inline-block',
             animation: heroReady ? 'clipUp 0.8s 1.3s cubic-bezier(0.16,1,0.3,1) both' : 'none',
           }}>
-            SEE.COM
+            See.Com
           </span>
         </div>
 
