@@ -86,17 +86,20 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
           { display_name: 'Address', variable_name: 'address', value: `${form.address}, ${form.city}, ${form.state}` },
         ],
       },
-      callback: async (response) => {
+      callback: function (response) {
+        // Paystack rejects async callbacks — call an async handler inside instead
         setLoading(true);
-        try {
-          const order = await createOrderAfterPayment({ formData: form, cart, paystackReference: response.reference, total, shipping });
-          setCart([]);
-          setOrderDone(order);
-        } catch {
-          setError(`Payment received (ref: ${response.reference}) but order failed. Contact us with this reference.`);
-        } finally {
-          setLoading(false);
-        }
+        createOrderAfterPayment({ formData: form, cart, paystackReference: response.reference, total, shipping })
+          .then(order => {
+            setCart([]);
+            setOrderDone(order);
+          })
+          .catch(() => {
+            setError(`Payment received (ref: ${response.reference}) but order failed. Contact us with this reference.`);
+          })
+          .finally(() => {
+            setLoading(false);
+          });
       },
       onClose: () => {},
     });
