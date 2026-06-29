@@ -56,12 +56,14 @@ export default function CartPage({ cart = [], setCart, onNavigate }) {
 
       if (session?.user) {
         // Logged in — fetch all active orders live from Supabase
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('orders')
           .select('id, order_number, total, created_at, order_status, tracking_number, carrier, shipped_at, shipping_state, order_items(name:product_name, size, color, quantity, price:price_per_item, image:product_image_url)')
           .eq('customer_email', session.user.email)
-          .not('order_status', 'in', '("delivered","cancelled")')
+          .not('order_status', 'in', '(delivered,cancelled)')
           .order('created_at', { ascending: false });
+
+        if (error) { console.error('Order load error:', error); return; }
 
         if (data) {
           const normalised = data.map(o => ({
@@ -79,11 +81,12 @@ export default function CartPage({ cart = [], setCart, onNavigate }) {
         if (stored.length === 0) {
           const guestIds = JSON.parse(localStorage.getItem('guestOrderIds') || '[]');
           if (guestIds.length > 0) {
-            const { data: recovered } = await supabase
+            const { data: recovered, error: recErr } = await supabase
               .from('orders')
               .select('id, order_number, total, created_at, order_status, tracking_number, carrier, shipped_at, shipping_state, order_items(name:product_name, size, color, quantity, price:price_per_item, image:product_image_url)')
               .in('id', guestIds)
-              .not('order_status', 'in', '("delivered","cancelled")');
+              .not('order_status', 'in', '(delivered,cancelled)');
+            if (recErr) console.error('Guest order recovery error:', recErr);
             if (recovered?.length) {
               stored = recovered.map(o => ({ ...o, items: o.order_items || [] }));
               localStorage.setItem('pendingOrders', JSON.stringify(stored));
