@@ -91,6 +91,25 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
         setLoading(true);
         createOrderAfterPayment({ formData: form, cart, paystackReference: response.reference, total, shipping })
           .then(order => {
+            // Save to localStorage so the order shows on the cart page
+            const pending = JSON.parse(localStorage.getItem('pendingOrders') || '[]');
+            const newOrder = {
+              id: order.id,
+              order_number: order.order_number,
+              total: order.total,
+              created_at: order.created_at,
+              customer_email: order.customer_email,
+              order_status: order.order_status || 'confirmed',
+              items: cart.map(i => ({ name: i.name, size: i.size, color: i.color, quantity: i.quantity, price: i.price, image: i.image })),
+            };
+            pending.push(newOrder);
+            localStorage.setItem('pendingOrders', JSON.stringify(pending));
+
+            // Separate key — survives pendingOrders being cleared
+            const guestIds = JSON.parse(localStorage.getItem('guestOrderIds') || '[]');
+            if (!guestIds.includes(order.id)) guestIds.push(order.id);
+            localStorage.setItem('guestOrderIds', JSON.stringify(guestIds));
+
             setCart([]);
             setOrderDone(order);
           })

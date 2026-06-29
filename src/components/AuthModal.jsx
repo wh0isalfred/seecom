@@ -134,11 +134,15 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
           <>
             <Logo />
             <Divider />
-            <h2 style={heading}>CHECK YOUR EMAIL</h2>
+            <h2 style={heading}>Account Created</h2>
+            <p style={sub}>
+              Your account has been created successfully. You can now log in using your email and password.
+            </p>
+            {/* <h2 style={heading}>CHECK YOUR EMAIL</h2>
             <p style={sub}>
               We sent a confirmation link to <strong>{email}</strong>.
               Click it to activate your account, then log in.
-            </p>
+            </p> */}
             <button style={primaryBtn(false)} onClick={() => switchMode('login')}>
               BACK TO LOGIN
             </button>
