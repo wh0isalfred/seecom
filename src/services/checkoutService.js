@@ -19,27 +19,37 @@ export const createOrderAfterPayment = async ({ formData, cart, paystackReferenc
   return Promise.race([_createOrder({ formData, cart, paystackReference, total, shipping }), timeoutPromise]);
 };
 
-const _createOrder = async ({ formData, cart, paystackReference, total, shipping }) => {
-  const subtotal     = total - shipping;
-  const orderNumber  = generateOrderNumber();
 
+const _createOrder = async ({ formData, cart, paystackReference, total, shipping }) => {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const isGuestOrder = !session;
+
+  const subtotal = total - shipping;
+  const orderNumber = generateOrderNumber();
+  
   // 1 — Create order row
   // Use .select() without .single() — .single() throws silently if RLS blocks RETURNING
   const { data: orderRows, error: orderError } = await supabase
     .from('orders')
     .insert([{
-      order_number:      orderNumber,
-      customer_name:     `${formData.firstName} ${formData.lastName}`.trim(),
-      customer_email:    formData.email,
-      customer_phone:    formData.phone,
-      shipping_address:  formData.address,
-      shipping_city:     formData.city,
-      shipping_state:    formData.state,
+      order_number: orderNumber,
+      customer_name: `${formData.firstName} ${formData.lastName}`.trim(),
+      customer_email: formData.email,
+      customer_phone: formData.phone,
+      shipping_address: formData.address,
+      shipping_city: formData.city,
+      shipping_state: formData.state,
+
+      is_guest_order: isGuestOrder,
+
       subtotal,
-      shipping_cost:     shipping,
+      shipping_cost: shipping,
       total,
-      order_status:      'confirmed',
-      payment_status:    'paid',
+      order_status: 'confirmed',
+      payment_status: 'paid',
       paystack_reference: paystackReference,
     }])
     .select();

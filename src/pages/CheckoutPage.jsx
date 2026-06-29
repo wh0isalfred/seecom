@@ -95,12 +95,20 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
             const pending = JSON.parse(localStorage.getItem('pendingOrders') || '[]');
             const newOrder = {
               id: order.id,
+              confirm_token: order.confirm_token, // <-- Add this line
               order_number: order.order_number,
               total: order.total,
               created_at: order.created_at,
               customer_email: order.customer_email,
               order_status: order.order_status || 'confirmed',
-              items: cart.map(i => ({ name: i.name, size: i.size, color: i.color, quantity: i.quantity, price: i.price, image: i.image })),
+              items: cart.map(i => ({
+                name: i.name,
+                size: i.size,
+                color: i.color,
+                quantity: i.quantity,
+                price: i.price,
+                image: i.image
+              })),
             };
             pending.push(newOrder);
             localStorage.setItem('pendingOrders', JSON.stringify(pending));

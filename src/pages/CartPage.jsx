@@ -286,35 +286,73 @@ export default function CartPage({ cart = [], setCart, onNavigate }) {
                 order={order}
                 isMobile={isMobile}
                 onConfirm={async () => {
-                  try {
-                    console.log("Confirming order:", order);
+  try {
+    console.log("Confirming order:", order);
 
-                    const { data, error } = await supabase
-                      .from("orders")
-                      .update({
-                        order_status: "delivered",
-                        customer_confirmed_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString(),
-                      })
-                      .eq("id", order.id)
-                      .select();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-                    console.log("Updated rows:", data);
-                    console.log("Supabase error:", error);
+    if (session) {
+      // Logged-in customer
+      const { data, error } = await supabase
+        .from("orders")
+        .update({
+          order_status: "delivered",
+          customer_confirmed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", order.id)
+        .eq("customer_email", session.user.email)
+        .select();
 
-                    if (error) {
-                      alert(error.message);
-                      return;
-                    }
+      console.log("Logged-in update:", data);
+      console.log("Logged-in error:", error);
 
-                    const updated = pendingOrders.filter(o => o.id !== order.id);
-                    localStorage.setItem("pendingOrders", JSON.stringify(updated));
-                    setPendingOrders(updated);
+      if (error) {
+        alert(error.message);
+        return;
+      }
+    } else {
+      // Guest customer
+      const { data, error } = await supabase.rpc(
+        "confirm_guest_order",
+        {
+          p_order_id: order.id,
+          p_token: order.confirm_token,
+        }
+      );
 
-                  } catch (e) {
-                    console.error("Unexpected error:", e);
-                  }
-                }}
+      console.log("Guest RPC result:", data);
+      console.log("Guest RPC error:", error);
+
+      if (error) {
+        alert(error.message);
+        return;
+      }
+
+      if (!data) {
+        alert("Unable to confirm this order.");
+        return;
+      }
+    }
+
+    const updated = pendingOrders.filter(
+      (o) => o.id !== order.id
+    );
+
+    localStorage.setItem(
+      "pendingOrders",
+      JSON.stringify(updated)
+    );
+
+    setPendingOrders(updated);
+
+  } catch (e) {
+    console.error("Unexpected error:", e);
+    alert("Something went wrong.");
+  }
+}}
                 onReportIssue={() => {
                   const msg = encodeURIComponent(`Hi, I have an issue with my order ${order.order_number}. I haven't received it yet.`);
                   window.open(`https://wa.me/2347065772394?text=${msg}`, '_blank');
