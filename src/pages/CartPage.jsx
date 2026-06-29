@@ -3,7 +3,7 @@ import Footer from '../components/Footer';
 import logoBadge from '../assets/badge.webp';
 import { supabase } from '../services/supabase';
 
-const SHIPPING_THRESHOLD = 40000;
+const SHIPPING_THRESHOLD = 100000;
 const FLAT_SHIPPING      = 3500;
 const fmt = n => `₦${n.toLocaleString()}`;
 

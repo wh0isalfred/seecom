@@ -223,7 +223,7 @@ export default function HomePage({ onNavigate }) {
           color: '#bbb',
           textTransform: 'uppercase',
         }}>
-          {Array(12).fill('SEE.COM · New Drop · Abuja · Limited Pieces · Free Delivery Over ₦40K · ').join('')}
+          {Array(12).fill('SEE.COM · New Drop · Abuja · Limited Pieces · Free Delivery Over ₦100K · ').join('')}
         </div>
       </div>
 

@@ -194,11 +194,11 @@ export default function Landing({ onNavigate }) {
       renderer.dispose();
     };
   }, []);
-
+// #0c0c0c
   return (
     <div style={{
       position: 'relative', width: '100vw', height: '100dvh',
-      overflow: 'hidden', backgroundColor: '#0c0c0c',
+      overflow: 'hidden', backgroundColor: '#ffffff',
       userSelect: 'none',
     }}>
       <style>{`
@@ -221,7 +221,7 @@ export default function Landing({ onNavigate }) {
           fontWeight: 600,
           fontSize: isMobile ? 18 : 22,
           letterSpacing: '0.26em',
-          color: '#fff',
+          color: '#0c0c0c',
         }}>
           See.Com
         </span>
