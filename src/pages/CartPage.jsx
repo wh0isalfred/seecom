@@ -287,11 +287,33 @@ export default function CartPage({ cart = [], setCart, onNavigate }) {
                 isMobile={isMobile}
                 onConfirm={async () => {
                   try {
-                    await supabase.from('orders').update({ order_status: 'delivered', customer_confirmed_at: new Date().toISOString() }).eq('id', order.id);
+                    console.log("Confirming order:", order);
+
+                    const { data, error } = await supabase
+                      .from("orders")
+                      .update({
+                        order_status: "delivered",
+                        customer_confirmed_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
+                      })
+                      .eq("id", order.id)
+                      .select();
+
+                    console.log("Updated rows:", data);
+                    console.log("Supabase error:", error);
+
+                    if (error) {
+                      alert(error.message);
+                      return;
+                    }
+
                     const updated = pendingOrders.filter(o => o.id !== order.id);
-                    localStorage.setItem('pendingOrders', JSON.stringify(updated));
+                    localStorage.setItem("pendingOrders", JSON.stringify(updated));
                     setPendingOrders(updated);
-                  } catch (e) { console.error(e); }
+
+                  } catch (e) {
+                    console.error("Unexpected error:", e);
+                  }
                 }}
                 onReportIssue={() => {
                   const msg = encodeURIComponent(`Hi, I have an issue with my order ${order.order_number}. I haven't received it yet.`);
