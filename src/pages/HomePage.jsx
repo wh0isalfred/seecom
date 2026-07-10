@@ -170,7 +170,7 @@ export default function HomePage({ onNavigate }) {
             margin: 0,
             animation: heroReady ? 'clipUp 0.9s 1s cubic-bezier(0.16,1,0.3,1) both' : 'none',
           }}>
-            Streetwear — Abuja
+            {/* Streetwear — Abuja */}
           </p>
         </div>
 
