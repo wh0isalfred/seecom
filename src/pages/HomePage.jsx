@@ -195,7 +195,7 @@ export default function HomePage({ onNavigate }) {
             display: 'inline-block',
             animation: heroReady ? 'clipUp 0.8s 1.3s cubic-bezier(0.16,1,0.3,1) both' : 'none',
           }}>
-            See.Com
+            see.Com
           </span>
         </div>
 

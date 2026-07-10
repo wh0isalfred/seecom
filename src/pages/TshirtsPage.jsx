@@ -121,7 +121,7 @@ export default function TshirtsPage({ onNavigate }) {
           display: 'flex', alignItems: 'center', gap: 8, zIndex: 2,
           opacity: ready ? 1 : 0, transition: 'opacity 0.5s ease',
         }}>
-          <button onClick={() => onNavigate?.('home')} style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: '12px', letterSpacing: '0.22em', color: 'rgba(255,255,255,0.4)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>SEE.COM</button>
+          <button onClick={() => onNavigate?.('home')} style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: '12px', letterSpacing: '0.22em', color: 'rgba(255,255,255,0.4)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>see.COM</button>
           <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px' }}>›</span>
           <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', letterSpacing: '0.14em', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>T-Shirts</span>
         </div>

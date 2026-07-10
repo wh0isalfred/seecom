@@ -109,7 +109,7 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
         position: 'relative',
         animation: ready ? 'fadeIn 0.5s ease both' : 'none',
       }}>
-        <button onClick={() => onNavigate?.('home')} style={crumbBtn}>SEE.COM</button>
+        <button onClick={() => onNavigate?.('home')} style={crumbBtn}>see.COM</button>
         <span style={{ color: '#ddd', fontSize: '10px' }}>›</span>
         {product.category && (
           <>

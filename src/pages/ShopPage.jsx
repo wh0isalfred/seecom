@@ -92,7 +92,7 @@ export default function ShopPage({ onNavigate }) {
             background: 'none', border: 'none', cursor: 'pointer', padding: 0,
           }}
         >
-          SEE.COM
+          see.COM
         </button>
 
         <img

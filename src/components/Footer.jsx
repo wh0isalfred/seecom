@@ -43,7 +43,7 @@ export default function Footer() {
               marginBottom: '24px',
             }}
           >
-            See.Com
+            see.Com
           </div>
 
           {/* Social Links */}
