@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import heroVideo     from '../assets/hero_video.mp4';
+import heroImage     from '../assets/logo.webp';
 import shopAllImage  from '../assets/shopallsection.jpeg';
 import lookbookImage from '../assets/lookbook3.webp';
 import { fetchProducts } from '../services/products';
@@ -133,29 +133,14 @@ export default function HomePage({ onNavigate }) {
           overflow: 'hidden',
         }}
       >
-        {/* Hero video — starts scaled, zooms to normal, muted + looping autoplay */}
+        {/* Hero image — starts scaled, zooms to normal */}
         <div style={{
           position: 'absolute', inset: 0,
-          overflow: 'hidden',
+          backgroundImage: `url(${heroImage})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
           animation: heroReady ? 'heroImgIn 1.6s cubic-bezier(0.25,0.1,0.25,1) both' : 'none',
-        }}>
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: isMobile ? 'contain' : 'cover',
-              objectPosition: 'center',
-              backgroundColor: '#111',
-            }}
-          >
-            <source src={heroVideo} type="video/mp4" />
-          </video>
-        </div>
+        }} />
 
         {/* Black curtain — slides up to reveal the image */}
         <div style={{
