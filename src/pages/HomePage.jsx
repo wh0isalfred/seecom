@@ -505,7 +505,7 @@ export default function HomePage({ onNavigate }) {
           borderLeft: isMobile ? 'none' : '1px solid #f0f0f0',
         }}>
           <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.22em', color: '#be1826', textTransform: 'uppercase', margin: '0 0 18px', ...reveal(editorialInView, 0.1) }}>
-            The brand
+            .com
           </p>
           <div style={{ overflow: 'hidden', marginBottom: 20 }}>
             <h2 style={{
@@ -514,7 +514,7 @@ export default function HomePage({ onNavigate }) {
               letterSpacing: '-0.01em', color: '#000', lineHeight: 1.15, margin: 0,
               ...clipReveal(editorialInView, 0.2),
             }}>
-              Built for people<br />who refuse ordinary.
+              Noone is more<br />tapped in that you!
             </h2>
           </div>
           <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '13px', color: '#999', lineHeight: 1.7, margin: '0 0 28px', maxWidth: '340px', ...reveal(editorialInView, 0.35) }}>
