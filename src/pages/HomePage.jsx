@@ -136,31 +136,53 @@ export default function HomePage({ onNavigate }) {
         }}
       >
         {/* Hero video — starts scaled, zooms to normal, muted + looping autoplay */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          overflow: 'hidden',
-          animation: heroReady ? 'heroImgIn 1.6s cubic-bezier(0.25,0.1,0.25,1) both' : 'none',
-        }}>
-          <video
-            key={isMobile ? 'mobile' : 'desktop'}
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-            poster={heroPoster}
-            fetchpriority="high"
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: isMobile ? 'contain' : 'cover',
-              objectPosition: 'center',
-              backgroundColor: '#111',
-            }}
-          >
-            <source src={isMobile ? heroVideoMobile : heroVideoDesktop} type="video/mp4" />
-          </video>
-        </div>
+        {isMobile ? (
+          <div style={{
+            position: 'absolute', inset: 0,
+            display: 'flex', flexDirection: 'column',
+            animation: heroReady ? 'heroImgIn 1.6s cubic-bezier(0.25,0.1,0.25,1) both' : 'none',
+          }}>
+            {/* Top bar — blends the page black into the video's white top edge */}
+            <div style={{ flex: 1, background: 'linear-gradient(to bottom, #111 0%, #fefefe 100%)' }} />
+            <div style={{ width: '100%', aspectRatio: '1920 / 1004', flexShrink: 0 }}>
+              <video
+                key="mobile"
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="auto"
+                poster={heroPoster}
+                fetchpriority="high"
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              >
+                <source src={heroVideoMobile} type="video/mp4" />
+              </video>
+            </div>
+            {/* Bottom bar — continues the video's white edge down into the page black / vignette */}
+            <div style={{ flex: 1, background: 'linear-gradient(to bottom, #fefefe 0%, #111 100%)' }} />
+          </div>
+        ) : (
+          <div style={{
+            position: 'absolute', inset: 0,
+            overflow: 'hidden',
+            animation: heroReady ? 'heroImgIn 1.6s cubic-bezier(0.25,0.1,0.25,1) both' : 'none',
+          }}>
+            <video
+              key="desktop"
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+              poster={heroPoster}
+              fetchpriority="high"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
+            >
+              <source src={heroVideoDesktop} type="video/mp4" />
+            </video>
+          </div>
+        )}
 
         {/* Black curtain — slides up to reveal the image */}
         <div style={{
@@ -243,7 +265,7 @@ export default function HomePage({ onNavigate }) {
           color: '#bbb',
           textTransform: 'uppercase',
         }}>
-          {Array(12).fill('see.Com · New Drop · Limited Pieces · Free Delivery Over ₦100K · ').join('')}
+          {Array(12).fill('SEE.COM · New Drop · Abuja · Limited Pieces · Free Delivery Over ₦100K · ').join('')}
         </div>
       </div>
 
@@ -505,7 +527,7 @@ export default function HomePage({ onNavigate }) {
           borderLeft: isMobile ? 'none' : '1px solid #f0f0f0',
         }}>
           <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.22em', color: '#be1826', textTransform: 'uppercase', margin: '0 0 18px', ...reveal(editorialInView, 0.1) }}>
-            .com
+            The brand
           </p>
           <div style={{ overflow: 'hidden', marginBottom: 20 }}>
             <h2 style={{
@@ -514,7 +536,7 @@ export default function HomePage({ onNavigate }) {
               letterSpacing: '-0.01em', color: '#000', lineHeight: 1.15, margin: 0,
               ...clipReveal(editorialInView, 0.2),
             }}>
-              Noone is more<br />tapped in that you!
+              Built for people<br />who refuse ordinary.
             </h2>
           </div>
           <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '13px', color: '#999', lineHeight: 1.7, margin: '0 0 28px', maxWidth: '340px', ...reveal(editorialInView, 0.35) }}>
