@@ -288,7 +288,7 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
                   </p>
                   <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                     <a
-                      href="tel:+2347065772394"
+                      href="tel:+234 916 769 9583"
                       style={{ fontFamily: "'Archivo', sans-serif", fontSize: '12px', color: '#000', textDecoration: 'none', letterSpacing: '0.02em', transition: 'color 0.15s' }}
                       onMouseEnter={e => e.currentTarget.style.color = '#be1826'}
                       onMouseLeave={e => e.currentTarget.style.color = '#000'}
@@ -297,7 +297,7 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
                     </a>
                     <span style={{ color: '#e0e0e0', fontSize: '12px' }}>·</span>
                     <a
-                      href="https://wa.me/2347065772394"
+                      href="https://wa.me/2349167699583"
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{ fontFamily: "'Archivo', sans-serif", fontSize: '12px', color: '#000', textDecoration: 'none', letterSpacing: '0.02em', transition: 'color 0.15s' }}
