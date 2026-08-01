@@ -249,7 +249,7 @@ export default function Sidebar({
             onMouseEnter={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
             onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.25)'}
           >
-            +234 706 577 2394
+              +234 916 769 9583
           </a>
         </div>
       </div>
