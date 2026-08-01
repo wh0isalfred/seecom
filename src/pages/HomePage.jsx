@@ -441,7 +441,7 @@ export default function HomePage({ onNavigate }) {
       >
         {/* Image — reveals with scale */}
         <div
-          onClick={() => window.open('https://instagram.com', '_blank')}
+          onClick={() => window.open('https://www.instagram.com/jeh._see?igsh=MXgyZ2JlbDdycjg3dQ%3D%3D&utm_source=qr', '_blank')}
           style={{
             position: 'relative',
             backgroundColor: '#111',
