@@ -498,7 +498,7 @@ export default function HomePage({ onNavigate }) {
             </h2>
           </div>
           <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '13px', color: '#999', lineHeight: 1.7, margin: '0 0 28px', maxWidth: '340px', ...reveal(editorialInView, 0.35) }}>
-            Limited drops. No restocks. Streetwear from Abuja.
+            Limited drops. No restocks.
           </p>
           <div style={{ ...reveal(editorialInView, 0.45) }}>
             <button
