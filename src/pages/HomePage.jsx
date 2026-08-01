@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import heroVideo     from '../assets/hero_video.mp4';
-import shopAllImage  from '../assets/shopallsection.jpeg';
+import heroVideoDesktop from '../assets/hero-video-desktop.mp4';
+import heroVideoMobile  from '../assets/hero-video-mobile.mp4';
+import heroPoster       from '../assets/hero-poster.jpg';
+import shopAllImage  from '../assets/shopallchain.jpeg';
 import lookbookImage from '../assets/lookbook3.webp';
 import { fetchProducts } from '../services/products';
 import ProductCard from '../components/ProductCard';
@@ -140,11 +142,14 @@ export default function HomePage({ onNavigate }) {
           animation: heroReady ? 'heroImgIn 1.6s cubic-bezier(0.25,0.1,0.25,1) both' : 'none',
         }}>
           <video
+            key={isMobile ? 'mobile' : 'desktop'}
             autoPlay
             muted
             loop
             playsInline
             preload="auto"
+            poster={heroPoster}
+            fetchpriority="high"
             style={{
               width: '100%',
               height: '100%',
@@ -153,7 +158,7 @@ export default function HomePage({ onNavigate }) {
               backgroundColor: '#111',
             }}
           >
-            <source src={heroVideo} type="video/mp4" />
+            <source src={isMobile ? heroVideoMobile : heroVideoDesktop} type="video/mp4" />
           </video>
         </div>
 
