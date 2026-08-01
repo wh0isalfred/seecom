@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import heroVideoDesktop from '../assets/hero-video-desktop.mp4';
 import heroVideoMobile  from '../assets/hero-video-mobile.mp4';
 import heroPoster       from '../assets/hero-poster.jpg';
-import shopAllImage  from '../assets/shopallchain.jpeg';
+import shopAllImage  from '../assets/shopallsection.jpeg';
 import lookbookImage from '../assets/lookbook3.webp';
 import { fetchProducts } from '../services/products';
 import ProductCard from '../components/ProductCard';
