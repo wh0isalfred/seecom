@@ -188,7 +188,7 @@ export default function Footer() {
                 Issues & Order Inquiries:
               </div>
               <a
-                href="tel:+2347065772394"
+                href="tel:+2349167699583"
                 style={{
                   fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
                   fontSize: '11px',
@@ -200,7 +200,7 @@ export default function Footer() {
                 onMouseEnter={(e) => (e.target.style.color = '#000')}
                 onMouseLeave={(e) => (e.target.style.color = '#666')}
               >
-                +234 706 577 2394
+                +234 916 769 9583
               </a>
             </div>
 
