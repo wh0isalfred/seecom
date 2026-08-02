@@ -536,7 +536,7 @@ export default function HomePage({ onNavigate }) {
               letterSpacing: '-0.01em', color: '#000', lineHeight: 1.15, margin: 0,
               ...clipReveal(editorialInView, 0.2),
             }}>
-              Built for people<br />who refuse ordinary.
+              Noone's more tapped in<br />than you!
             </h2>
           </div>
           <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '13px', color: '#999', lineHeight: 1.7, margin: '0 0 28px', maxWidth: '340px', ...reveal(editorialInView, 0.35) }}>
