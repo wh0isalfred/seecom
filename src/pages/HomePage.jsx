@@ -527,7 +527,7 @@ export default function HomePage({ onNavigate }) {
           borderLeft: isMobile ? 'none' : '1px solid #f0f0f0',
         }}>
           <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.22em', color: '#be1826', textTransform: 'uppercase', margin: '0 0 18px', ...reveal(editorialInView, 0.1) }}>
-            The brand
+            .Com
           </p>
           <div style={{ overflow: 'hidden', marginBottom: 20 }}>
             <h2 style={{
