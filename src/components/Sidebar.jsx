@@ -60,7 +60,7 @@ export default function Sidebar({
           position: 'fixed', left: 0, top: 0,
           width: 36,
           height: stripHeight,
-          backgroundColor: '#be1826',
+          backgroundColor: '#000',
           zIndex: 9999,
           display: 'flex', flexDirection: 'column',
           alignItems: 'center',
@@ -73,14 +73,14 @@ export default function Sidebar({
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '12px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: '100%', minHeight: 44, WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
           >
             <svg width="16" height="10" viewBox="0 0 16 10" fill="none">
-              <line x1="0" y1="1" x2="16" y2="1" stroke="#000" strokeWidth="1.5" strokeLinecap="round"/>
-              <line x1="2" y1="5" x2="16" y2="5" stroke="#000" strokeWidth="1.5" strokeLinecap="round"/>
-              <line x1="0" y1="9" x2="16" y2="9" stroke="#000" strokeWidth="1.5" strokeLinecap="round"/>
+              <line x1="0" y1="1" x2="16" y2="1" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
+              <line x1="2" y1="5" x2="16" y2="5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
+              <line x1="0" y1="9" x2="16" y2="9" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
           </button>
 
           {/* Divider */}
-          <div style={{ width: 20, height: 1, backgroundColor: 'rgba(0,0,0,0.2)' }} />
+          <div style={{ width: 20, height: 1, backgroundColor: 'rgba(255,255,255,0.2)' }} />
 
           {/* Bag — below */}
           <button
@@ -88,12 +88,12 @@ export default function Sidebar({
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '12px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, width: '100%', minHeight: 44, WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
           >
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
-              <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="#000" strokeWidth="1.5" strokeLinejoin="round"/>
-              <line x1="3" y1="6" x2="21" y2="6" stroke="#000" strokeWidth="1.5"/>
-              <path d="M16 10a4 4 0 01-8 0" stroke="#000" strokeWidth="1.5" strokeLinecap="round"/>
+              <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="#fff" strokeWidth="1.5" strokeLinejoin="round"/>
+              <line x1="3" y1="6" x2="21" y2="6" stroke="#fff" strokeWidth="1.5"/>
+              <path d="M16 10a4 4 0 01-8 0" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
             {cartCount > 0 && (
-              <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 9, color: '#000', lineHeight: 1 }}>{cartCount}</span>
+              <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 9, color: '#fff', lineHeight: 1 }}>{cartCount}</span>
             )}
           </button>
         </div>

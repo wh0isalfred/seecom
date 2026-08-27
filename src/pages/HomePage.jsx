@@ -53,7 +53,7 @@ function ViewToggle({ showPrice, setShowPrice }) {
       <button onClick={() => setShowPrice(false)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '20px', border: 'none', background: showPrice ? 'transparent' : '#000', cursor: 'pointer', color: showPrice ? '#000' : '#fff', transition: 'all 0.2s' }}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3" stroke="currentColor" strokeWidth="1.5"/><path d="M5 20c0-3.314 3.582-6 7-6s7 2.686 7 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
       </button>
-      <button onClick={() => setShowPrice(true)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '20px', border: 'none', background: showPrice ? '#000' : 'transparent', cursor: 'pointer', color: showPrice ? '#fff' : '#000', transition: 'all 0.2s' }}>
+      <button onClick={() => setShowPrice(true)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '20px', border: 'none', background: showPrice ? '#bd3b28' : 'transparent', cursor: 'pointer', color: showPrice ? '#fff' : '#000', transition: 'all 0.2s' }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"/></svg>
       </button>
     </div>
@@ -626,14 +626,14 @@ export default function HomePage({ onNavigate }) {
                 }}
               />
               <button type="submit" disabled={subStatus === 'loading'} style={{
-                padding: '13px 18px', background: '#000', color: '#fff', border: 'none',
+                padding: '13px 18px', background: '#bd3b28', color: '#fff', border: 'none',
                 fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700,
                 fontSize: '10px', letterSpacing: '0.16em',
                 cursor: subStatus === 'loading' ? 'default' : 'pointer', whiteSpace: 'nowrap', transition: 'background 0.2s',
                 opacity: subStatus === 'loading' ? 0.6 : 1,
               }}
-                onMouseEnter={e => e.currentTarget.style.background = '#be1826'}
-                onMouseLeave={e => e.currentTarget.style.background = '#000'}
+                onMouseEnter={e => e.currentTarget.style.background = '#000'}
+                onMouseLeave={e => e.currentTarget.style.background = '#bd3b28'}
               >
                 {subStatus === 'loading' ? '...' : 'Join'}
               </button>
