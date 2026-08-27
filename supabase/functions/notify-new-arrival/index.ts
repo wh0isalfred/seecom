@@ -94,11 +94,20 @@ function buildEmailHtml(product, unsubscribeUrl) {
 
               <!-- Footer -->
               <tr>
-                <td style="border-top:1px solid #f0f0f0;padding:20px 24px;text-align:center;">
-                  <div style="font-size:10px;color:#999999;letter-spacing:0.5px;">
-                    Limited drops. No restocks.<br/>
-                    SEE.COM · Abuja, Nigeria<br/><br/>
-                    <a href="${unsubscribeUrl}" style="color:#999999;text-decoration:underline;">Unsubscribe</a>
+                <td style="border-top:1px solid #f0f0f0;padding:24px 24px;text-align:center;">
+                  <div style="margin-bottom:14px;">
+                    <a href="https://www.instagram.com/jeh._see/" style="color:#666666;text-decoration:none;font-size:11px;letter-spacing:1px;text-transform:uppercase;margin:0 8px;">Instagram</a>
+                    <span style="color:#cccccc;">·</span>
+                    <a href="https://www.tiktok.com/@jehsee.com" style="color:#666666;text-decoration:none;font-size:11px;letter-spacing:1px;text-transform:uppercase;margin:0 8px;">TikTok</a>
+                  </div>
+                  <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:#000000;text-transform:uppercase;margin-bottom:14px;">
+                    SEE.COM · Abuja, Nigeria
+                  </div>
+                  <div style="font-size:10px;color:#999999;letter-spacing:0.3px;margin-bottom:10px;">
+                    No longer want to receive these emails? <a href="${unsubscribeUrl}" style="color:#666666;text-decoration:underline;">Unsubscribe</a>
+                  </div>
+                  <div style="font-size:10px;color:#bbbbbb;letter-spacing:0.3px;">
+                    © 2026 SEE.COM
                   </div>
                 </td>
               </tr>

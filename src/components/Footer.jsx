@@ -1,244 +1,96 @@
-import { useEffect, useState } from 'react';
+import { FaInstagram, FaTiktok } from 'react-icons/fa';
+
+const iconBtn = {
+  width: 40, height: 40,
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  borderRadius: '50%', border: '1px solid #000',
+  color: '#000', transition: 'background 0.2s, color 0.2s',
+};
+
+const legalLink = {
+  fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
+  fontSize: '11px',
+  letterSpacing: '0.04em',
+  color: '#666',
+  textDecoration: 'underline',
+  textUnderlineOffset: '2px',
+  cursor: 'pointer',
+  transition: 'color 0.2s',
+};
 
 export default function Footer({ onNavigate }) {
-  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
-
-  useEffect(() => {
-    const handleResize = () => setIsDesktop(window.innerWidth >= 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
   return (
     <footer
       style={{
         backgroundColor: '#fff',
         borderTop: '3px solid #000',
-        marginTop: 0,
         width: '100%',
         boxSizing: 'border-box',
+        padding: '48px 24px 36px',
+        textAlign: 'center',
       }}
     >
-      {/* Content Area */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: isDesktop ? 'repeat(3, 1fr)' : '1fr',
-          gap: isDesktop ? '48px' : '40px',
-          padding: isDesktop ? '56px 40px' : '48px 24px',
-          maxWidth: '100%',
-          textAlign: isDesktop ? 'left' : 'center',
-          boxSizing: 'border-box',
-        }}
-      >
-        {/* Logo & Socials */}
-        <div>
-          <div
-            style={{
-              fontFamily: "'Clash Display', sans-serif",
-              fontWeight: 600,
-              fontSize: '18px',
-              letterSpacing: '0.22em',
-              color: '#000',
-              marginBottom: '24px',
-            }}
-          >
-            see.Com
-          </div>
-
-          {/* Social Links */}
-          <div style={{ display: 'flex', gap: '24px', justifyContent: isDesktop ? 'flex-start' : 'center' }}>
-            <a
-              href="https://www.instagram.com/jeh._see/"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
-                fontSize: '11px',
-                letterSpacing: '0.08em',
-                color: '#666',
-                textDecoration: 'none',
-                textTransform: 'uppercase',
-                transition: 'color 0.2s',
-              }}
-              onMouseEnter={(e) => (e.target.style.color = '#000')}
-              onMouseLeave={(e) => (e.target.style.color = '#666')}
-            >
-              Instagram
-            </a>
-            <a
-              href="https://www.tiktok.com/@jehsee.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
-                fontSize: '11px',
-                letterSpacing: '0.08em',
-                color: '#666',
-                textDecoration: 'none',
-                textTransform: 'uppercase',
-                transition: 'color 0.2s',
-              }}
-              onMouseEnter={(e) => (e.target.style.color = '#000')}
-              onMouseLeave={(e) => (e.target.style.color = '#666')}
-            >
-              TikTok
-            </a>
-          </div>
-        </div>
-
-        {/* Information Section */}
-        <div>
-          <h3
-            style={{
-              fontFamily: "'Space Grotesk', sans-serif",
-              fontWeight: 700,
-              fontSize: '11px',
-              letterSpacing: '0.12em',
-              color: '#000',
-              marginBottom: '20px',
-              margin: 0,
-              textTransform: 'uppercase',
-            }}
-          >
-            Information
-          </h3>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <a
-              onClick={() => onNavigate?.('terms')}
-              style={{
-                fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
-                fontSize: '11px',
-                letterSpacing: '0.05em',
-                color: '#666',
-                textDecoration: 'none',
-                textTransform: 'uppercase',
-                transition: 'color 0.2s',
-                cursor: 'pointer',
-              }}
-              onMouseEnter={(e) => (e.target.style.color = '#000')}
-              onMouseLeave={(e) => (e.target.style.color = '#666')}
-            >
-              Terms & Conditions
-            </a>
-            <a
-              onClick={() => onNavigate?.('privacy')}
-              style={{
-                fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
-                fontSize: '11px',
-                letterSpacing: '0.05em',
-                color: '#666',
-                textDecoration: 'none',
-                textTransform: 'uppercase',
-                transition: 'color 0.2s',
-                cursor: 'pointer',
-              }}
-              onMouseEnter={(e) => (e.target.style.color = '#000')}
-              onMouseLeave={(e) => (e.target.style.color = '#666')}
-            >
-              Privacy Policy
-            </a>
-            <a
-              onClick={() => onNavigate?.('no-return')}
-              style={{
-                fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
-                fontSize: '11px',
-                letterSpacing: '0.05em',
-                color: '#666',
-                textDecoration: 'none',
-                textTransform: 'uppercase',
-                transition: 'color 0.2s',
-                cursor: 'pointer',
-              }}
-              onMouseEnter={(e) => (e.target.style.color = '#000')}
-              onMouseLeave={(e) => (e.target.style.color = '#666')}
-            >
-              No-Return Policy
-            </a>
-          </div>
-        </div>
-
-        {/* Contact Us Section */}
-        <div>
-          <h3
-            style={{
-              fontFamily: "'Space Grotesk', sans-serif",
-              fontWeight: 700,
-              fontSize: '11px',
-              letterSpacing: '0.12em',
-              color: '#000',
-              marginBottom: '20px',
-              margin: 0,
-              textTransform: 'uppercase',
-            }}
-          >
-            Contact Us
-          </h3>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div>
-              <div
-                style={{
-                  fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
-                  fontSize: '10px',
-                  letterSpacing: '0.05em',
-                  color: '#999',
-                  textTransform: 'uppercase',
-                  marginBottom: '6px',
-                }}
-              >
-                Issues & Order Inquiries:
-              </div>
-              <a
-                href="tel:+2349167699583"
-                style={{
-                  fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
-                  fontSize: '11px',
-                  letterSpacing: '0.05em',
-                  color: '#666',
-                  textDecoration: 'none',
-                  transition: 'color 0.2s',
-                }}
-                onMouseEnter={(e) => (e.target.style.color = '#000')}
-                onMouseLeave={(e) => (e.target.style.color = '#666')}
-              >
-                +234 916 769 9583
-              </a>
-            </div>
-
-            <div>
-              <div
-                style={{
-                  fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
-                  fontSize: '10px',
-                  letterSpacing: '0.05em',
-                  color: '#999',
-                  textTransform: 'uppercase',
-                  marginBottom: '6px',
-                }}
-              >
-                All Other Inquiries:
-              </div>
-              <a
-                href="tel:+2347065772394"
-                style={{
-                  fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
-                  fontSize: '11px',
-                  letterSpacing: '0.05em',
-                  color: '#666',
-                  textDecoration: 'none',
-                  transition: 'color 0.2s',
-                }}
-                onMouseEnter={(e) => (e.target.style.color = '#000')}
-                onMouseLeave={(e) => (e.target.style.color = '#666')}
-              >
-                +234 706 577 2394
-              </a>
-            </div>
-          </div>
-        </div>
+      {/* Social icons */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '20px' }}>
+        <a
+          href="https://www.instagram.com/jeh._see/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Instagram"
+          style={iconBtn}
+          onMouseEnter={(e) => { e.currentTarget.style.background = '#000'; e.currentTarget.style.color = '#fff'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#000'; }}
+        >
+          <FaInstagram size={17} />
+        </a>
+        <a
+          href="https://www.tiktok.com/@jehsee.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="TikTok"
+          style={iconBtn}
+          onMouseEnter={(e) => { e.currentTarget.style.background = '#000'; e.currentTarget.style.color = '#fff'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#000'; }}
+        >
+          <FaTiktok size={16} />
+        </a>
       </div>
+
+      {/* Brand · location */}
+      <p style={{
+        fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700,
+        fontSize: '12px', letterSpacing: '0.1em', color: '#000',
+        textTransform: 'uppercase', margin: '0 0 20px',
+      }}>
+        see.Com · Abuja, Nigeria
+      </p>
+
+      {/* Legal links */}
+      <p style={{ margin: '0 0 16px', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '6px 10px' }}>
+        <a onClick={() => onNavigate?.('terms')} style={legalLink} onMouseEnter={e => e.currentTarget.style.color = '#000'} onMouseLeave={e => e.currentTarget.style.color = '#666'}>Terms & Conditions</a>
+        <span style={{ color: '#ccc' }}>·</span>
+        <a onClick={() => onNavigate?.('privacy')} style={legalLink} onMouseEnter={e => e.currentTarget.style.color = '#000'} onMouseLeave={e => e.currentTarget.style.color = '#666'}>Privacy Policy</a>
+        <span style={{ color: '#ccc' }}>·</span>
+        <a onClick={() => onNavigate?.('no-return')} style={legalLink} onMouseEnter={e => e.currentTarget.style.color = '#000'} onMouseLeave={e => e.currentTarget.style.color = '#666'}>No-Return Policy</a>
+      </p>
+
+      {/* Contact */}
+      <p style={{
+        fontFamily: "'Archivo', Helvetica, Arial, sans-serif", fontSize: '11px',
+        letterSpacing: '0.02em', color: '#999', margin: '0 0 20px', lineHeight: 1.8,
+      }}>
+        Order issues: <a href="tel:+2349167699583" style={{ color: '#666' }}>+234 916 769 9583</a>
+        <br />
+        Other inquiries: <a href="tel:+2347065772394" style={{ color: '#666' }}>+234 706 577 2394</a>
+      </p>
+
+      {/* Copyright */}
+      <p style={{
+        fontFamily: "'Archivo', Helvetica, Arial, sans-serif", fontSize: '10px',
+        letterSpacing: '0.04em', color: '#bbb', margin: 0,
+      }}>
+        © 2026 SEE.COM
+      </p>
     </footer>
   );
 }
