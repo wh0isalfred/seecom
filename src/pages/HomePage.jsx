@@ -53,7 +53,7 @@ function ViewToggle({ showPrice, setShowPrice }) {
       <button onClick={() => setShowPrice(false)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '20px', border: 'none', background: showPrice ? 'transparent' : '#000', cursor: 'pointer', color: showPrice ? '#000' : '#fff', transition: 'all 0.2s' }}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3" stroke="currentColor" strokeWidth="1.5"/><path d="M5 20c0-3.314 3.582-6 7-6s7 2.686 7 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
       </button>
-      <button onClick={() => setShowPrice(true)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '20px', border: 'none', background: showPrice ? '#bd3b28' : 'transparent', cursor: 'pointer', color: showPrice ? '#fff' : '#000', transition: 'all 0.2s' }}>
+      <button onClick={() => setShowPrice(true)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '20px', border: 'none', background: showPrice ? '#000' : 'transparent', cursor: 'pointer', color: showPrice ? '#fff' : '#000', transition: 'all 0.2s' }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"/></svg>
       </button>
     </div>
@@ -233,14 +233,14 @@ export default function HomePage({ onNavigate }) {
           </p>
         </div>
 
-        {/* Black strip — enter the store */}
+        {/* Red strip — slides in from left */}
         <div
           onClick={() => onNavigate?.('landing')}
           style={{
             position: 'absolute', bottom: 0, right: 0,
             width: isMobile ? '56%' : '45%', height: '36px',
-            backgroundColor: '#000',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+            backgroundColor: '#be1826',
+            display: 'flex', alignItems: 'center', paddingLeft: '24px',
             zIndex: 2, cursor: 'pointer', overflow: 'hidden',
             animation: heroReady ? 'fadeIn 0.6s 1.2s both' : 'none',
           }}
@@ -248,7 +248,7 @@ export default function HomePage({ onNavigate }) {
           <span style={{
             fontFamily: "'Clash Display', sans-serif",
             fontWeight: 600,
-            fontSize: isMobile ? '13px' : '15px',
+            fontSize: isMobile ? '15px' : '18px',
             color: '#fff', letterSpacing: '0.22em',
             pointerEvents: 'none',
             display: 'inline-block',
@@ -256,9 +256,6 @@ export default function HomePage({ onNavigate }) {
           }}>
             see.Com
           </span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ pointerEvents: 'none' }}>
-            <path d="M5 12h14M13 6l6 6-6 6" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
         </div>
 
         {/* Scroll indicator — last to appear */}
@@ -309,7 +306,7 @@ export default function HomePage({ onNavigate }) {
               </h2>
             </div>
             {/* Animated underline */}
-            <div style={{ height: 1, backgroundColor: '#bd3b28', marginTop: 10, animation: arrivalsInView ? 'lineGrow 0.8s 0.4s cubic-bezier(0.16,1,0.3,1) both' : 'none', transformOrigin: 'left', transform: arrivalsInView ? 'scaleX(1)' : 'scaleX(0)' }} />
+            <div style={{ height: 1, backgroundColor: '#be1826', marginTop: 10, animation: arrivalsInView ? 'lineGrow 0.8s 0.4s cubic-bezier(0.16,1,0.3,1) both' : 'none', transformOrigin: 'left', transform: arrivalsInView ? 'scaleX(1)' : 'scaleX(0)' }} />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, ...reveal(arrivalsInView, 0.2) }}>
             <ViewToggle showPrice={showPrice} setShowPrice={setShowPrice} />
@@ -407,7 +404,7 @@ export default function HomePage({ onNavigate }) {
           gap: 16,
         }}>
           {/* Left: heading */}
-          <div style={{ overflow: 'hidden', borderLeft: '3px solid #bd3b28', paddingLeft: 16 }}>
+          <div style={{ overflow: 'hidden', borderLeft: '3px solid #be1826', paddingLeft: 16 }}>
             <h2 style={{
               fontFamily: "'Clash Display', sans-serif",
               fontWeight: 700,
@@ -442,8 +439,8 @@ export default function HomePage({ onNavigate }) {
                 whiteSpace: 'nowrap',
               }}
               onMouseEnter={e => {
-                e.currentTarget.style.background = '#bd3b28';
-                e.currentTarget.style.borderColor = '#bd3b28';
+                e.currentTarget.style.background = '#be1826';
+                e.currentTarget.style.borderColor = '#be1826';
               }}
               onMouseLeave={e => {
                 e.currentTarget.style.background = 'transparent';
@@ -472,7 +469,7 @@ export default function HomePage({ onNavigate }) {
                   SHOP ALL
                 </h2>
               </div>
-              <div style={{ height: 1, backgroundColor: '#bd3b28', marginTop: 10, animation: shopGridInView ? 'lineGrow 0.8s 0.4s cubic-bezier(0.16,1,0.3,1) both' : 'none', transformOrigin: 'left', transform: shopGridInView ? 'scaleX(1)' : 'scaleX(0)' }} />
+              <div style={{ height: 1, backgroundColor: '#be1826', marginTop: 10, animation: shopGridInView ? 'lineGrow 0.8s 0.4s cubic-bezier(0.16,1,0.3,1) both' : 'none', transformOrigin: 'left', transform: shopGridInView ? 'scaleX(1)' : 'scaleX(0)' }} />
             </div>
             <div style={{ ...reveal(shopGridInView, 0.15) }}>
               <ViewToggle showPrice={showPrice} setShowPrice={setShowPrice} />
@@ -550,7 +547,7 @@ export default function HomePage({ onNavigate }) {
           padding: isMobile ? '52px 24px' : '64px 52px',
           borderLeft: isMobile ? 'none' : '1px solid #f0f0f0',
         }}>
-          <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.22em', color: '#bd3b28', textTransform: 'uppercase', margin: '0 0 18px', ...reveal(editorialInView, 0.1) }}>
+          <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.22em', color: '#be1826', textTransform: 'uppercase', margin: '0 0 18px', ...reveal(editorialInView, 0.1) }}>
             .Com
           </p>
           <div style={{ overflow: 'hidden', marginBottom: 20 }}>
@@ -570,13 +567,13 @@ export default function HomePage({ onNavigate }) {
             <button
               onClick={() => onNavigate?.('shop')}
               style={{
-                padding: '11px 24px', background: '#bd3b28', color: '#fff', border: 'none',
+                padding: '11px 24px', background: '#000', color: '#fff', border: 'none',
                 fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700,
                 fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase',
                 cursor: 'pointer', transition: 'background 0.2s',
               }}
-              onMouseEnter={e => e.currentTarget.style.background = '#000'}
-              onMouseLeave={e => e.currentTarget.style.background = '#bd3b28'}
+              onMouseEnter={e => e.currentTarget.style.background = '#be1826'}
+              onMouseLeave={e => e.currentTarget.style.background = '#000'}
             >
               Shop Now
             </button>
@@ -629,21 +626,21 @@ export default function HomePage({ onNavigate }) {
                 }}
               />
               <button type="submit" disabled={subStatus === 'loading'} style={{
-                padding: '13px 18px', background: '#bd3b28', color: '#fff', border: 'none',
+                padding: '13px 18px', background: '#000', color: '#fff', border: 'none',
                 fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700,
                 fontSize: '10px', letterSpacing: '0.16em',
                 cursor: subStatus === 'loading' ? 'default' : 'pointer', whiteSpace: 'nowrap', transition: 'background 0.2s',
                 opacity: subStatus === 'loading' ? 0.6 : 1,
               }}
-                onMouseEnter={e => e.currentTarget.style.background = '#000'}
-                onMouseLeave={e => e.currentTarget.style.background = '#bd3b28'}
+                onMouseEnter={e => e.currentTarget.style.background = '#be1826'}
+                onMouseLeave={e => e.currentTarget.style.background = '#000'}
               >
                 {subStatus === 'loading' ? '...' : 'Join'}
               </button>
             </form>
             <p style={{
               fontFamily: "'Archivo', sans-serif", fontSize: '10px', letterSpacing: '0.06em', margin: '10px 0 0',
-              color: subStatus === 'error' ? '#bd3b28' : '#bbb',
+              color: subStatus === 'error' ? '#be1826' : '#bbb',
             }}>
               {subStatus === 'success'   && "You're on the list. First to know."}
               {subStatus === 'duplicate' && "You're already on the list."}

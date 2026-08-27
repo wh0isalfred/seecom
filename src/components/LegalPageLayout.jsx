@@ -12,7 +12,7 @@ function PageHeader({ onNavigate, isMobile }) {
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       position: 'relative',
     }}>
-      <button onClick={() => onNavigate?.('home')} style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: isMobile ? '16px' : '20px', letterSpacing: '0.22em', color: '#bd3b28', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+      <button onClick={() => onNavigate?.('home')} style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: isMobile ? '16px' : '20px', letterSpacing: '0.22em', color: '#000', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
         see.Com
       </button>
       <img src={logoBadge} alt="SEE.COM" onClick={() => onNavigate?.('landing')} style={{ position: 'absolute', right: isMobile ? '20px' : '40px', top: '50%', transform: 'translateY(-50%)', width: isMobile ? '36px' : '44px', height: isMobile ? '36px' : '44px', objectFit: 'cover', cursor: 'pointer' }} />

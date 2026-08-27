@@ -246,7 +246,7 @@ export default function Landing({ onNavigate }) {
               setVolume(v);
               if (v > 0 && !isPlaying) setIsPlaying(true);
             }}
-            style={{ width: isMobile ? 64 : 80, accentColor: '#bd3b28', cursor: 'pointer', verticalAlign: 'middle' }}
+            style={{ width: isMobile ? 64 : 80, accentColor: '#be1826', cursor: 'pointer', verticalAlign: 'middle' }}
           />
         )}
         <button
@@ -265,7 +265,7 @@ export default function Landing({ onNavigate }) {
             border: '1px solid rgba(255,255,255,0.15)',
             background: 'rgba(255,255,255,0.06)',
             backdropFilter: 'blur(6px)',
-            color: isPlaying && volume > 0 ? '#bd3b28' : 'rgba(255,255,255,0.4)',
+            color: isPlaying && volume > 0 ? '#be1826' : 'rgba(255,255,255,0.4)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer', transition: 'color 0.2s',
             WebkitTapHighlightColor: 'transparent',
@@ -303,7 +303,7 @@ export default function Landing({ onNavigate }) {
         style={{
           position: 'absolute', bottom: 0, left: 0, right: 0,
           height: isMobile ? 52 : 58,
-          backgroundColor: '#bd3b28',
+          backgroundColor: '#be1826',
           zIndex: 10, cursor: 'pointer',
           display: 'flex', alignItems: 'center',
           justifyContent: 'center', gap: 12,

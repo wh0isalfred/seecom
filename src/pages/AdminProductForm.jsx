@@ -302,7 +302,7 @@ export default function AdminProductForm({ onProductCreated }) {
         {/* Colors */}
         <div>
           <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-            COLORS <span style={{ color: '#bd3b28' }}>*</span>
+            COLORS <span style={{ color: '#be1826' }}>*</span>
           </label>
           <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
             {['Black', 'White', 'Red', 'Navy', 'Green', 'Gold', 'Silver', 'Grey'].map(color => (
@@ -342,7 +342,7 @@ export default function AdminProductForm({ onProductCreated }) {
         {/* Inventory */}
         <div>
           <label style={{ display: 'block', marginBottom: '12px', fontWeight: '600' }}>
-            INVENTORY <span style={{ color: '#bd3b28' }}>*</span>
+            INVENTORY <span style={{ color: '#be1826' }}>*</span>
           </label>
           <button
             type="button"
@@ -411,7 +411,7 @@ export default function AdminProductForm({ onProductCreated }) {
           disabled={loading}
           style={{
             padding: '14px 24px',
-            background: loading ? '#ccc' : '#bd3b28',
+            background: loading ? '#ccc' : '#be1826',
             color: '#fff',
             border: 'none',
             borderRadius: '4px',

@@ -39,7 +39,8 @@ export default function Footer({ onNavigate }) {
               fontWeight: 600,
               fontSize: '18px',
               letterSpacing: '0.22em',
-              color: '#bd3b28',
+              color: '#000',
+              marginBottom: '24px',
             }}
           >
             see.Com

@@ -159,7 +159,7 @@ export default function ProductDetailPage({ productId, setCart, onNavigate }) {
           {/* Name + price */}
           <div style={{ padding: isDesktop ? '28px 32px 20px' : '24px 20px 16px', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
             <div>
-              <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.22em', color: '#bd3b28', textTransform: 'uppercase', margin: '0 0 8px' }}>
+              <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.22em', color: '#be1826', textTransform: 'uppercase', margin: '0 0 8px' }}>
                 {product.category}
               </p>
               <div style={{ overflow: 'hidden' }}>
@@ -179,11 +179,11 @@ export default function ProductDetailPage({ productId, setCart, onNavigate }) {
               )}
             </div>
             <div style={{ textAlign: 'right' }}>
-              <span style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: '18px', letterSpacing: '0.02em', color: discounted ? '#bd3b28' : '#000', whiteSpace: 'nowrap' }}>
+              <span style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: '18px', letterSpacing: '0.02em', color: discounted ? '#be1826' : '#000', whiteSpace: 'nowrap' }}>
                 ₦{effectivePrice?.toLocaleString()}
               </span>
               {discounted && discountLabel && (
-                <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '9px', letterSpacing: '0.1em', color: '#bd3b28', margin: '2px 0 0' }}>{discountLabel} OFF</p>
+                <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '9px', letterSpacing: '0.1em', color: '#be1826', margin: '2px 0 0' }}>{discountLabel} OFF</p>
               )}
             </div>
           </div>
@@ -307,7 +307,7 @@ export default function ProductDetailPage({ productId, setCart, onNavigate }) {
                     <a
                       href="tel:+234 916 769 9583"
                       style={{ fontFamily: "'Archivo', sans-serif", fontSize: '12px', color: '#000', textDecoration: 'none', letterSpacing: '0.02em', transition: 'color 0.15s' }}
-                      onMouseEnter={e => e.currentTarget.style.color = '#bd3b28'}
+                      onMouseEnter={e => e.currentTarget.style.color = '#be1826'}
                       onMouseLeave={e => e.currentTarget.style.color = '#000'}
                     >
                       Call us
@@ -358,7 +358,7 @@ export default function ProductDetailPage({ productId, setCart, onNavigate }) {
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid #f0f0f0' }}>
               <div>
-                <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.22em', color: '#bd3b28', textTransform: 'uppercase', margin: '0 0 4px' }}>
+                <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.22em', color: '#be1826', textTransform: 'uppercase', margin: '0 0 4px' }}>
                   Reference
                 </p>
                 <h2 style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: '18px', letterSpacing: '0.04em', color: '#000', margin: 0 }}>
@@ -408,7 +408,7 @@ export default function ProductDetailPage({ productId, setCart, onNavigate }) {
             {/* Chains note */}
             {product.category === 'chains' && (
               <div style={{ padding: '24px' }}>
-                <div style={{ padding: '16px', backgroundColor: '#f9f9f9', borderLeft: '2px solid #bd3b28' }}>
+                <div style={{ padding: '16px', backgroundColor: '#f9f9f9', borderLeft: '2px solid #be1826' }}>
                   <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '13px', color: '#555', lineHeight: 1.7, margin: 0 }}>
                     All SEE.COM chains are <strong style={{ color: '#000' }}>one size fits all</strong>. Standard length: <strong style={{ color: '#000' }}>50cm</strong> with an adjustable clasp. Contact us if you need a custom length.
                   </p>
@@ -542,7 +542,7 @@ function SizeBtn({ label, selected, oos, onClick }) {
       onMouseLeave={e => { if (!oos && !selected) e.currentTarget.style.borderColor = '#e0e0e0'; }}
     >
       {label}
-      {oos && <span style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom right, transparent calc(50% - 0.8px), #bd3b28 calc(50% - 0.8px), #bd3b28 calc(50% + 0.8px), transparent calc(50% + 0.8px))', pointerEvents: 'none' }} />}
+      {oos && <span style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom right, transparent calc(50% - 0.8px), #be1826 calc(50% - 0.8px), #be1826 calc(50% + 0.8px), transparent calc(50% + 0.8px))', pointerEvents: 'none' }} />}
     </button>
   );
 }
@@ -554,14 +554,14 @@ function ColorBtn({ label, selected, oos, onClick }) {
       onMouseLeave={e => { if (!oos && !selected) e.currentTarget.style.borderColor = '#e0e0e0'; }}
     >
       {label}
-      {oos && <span style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom right, transparent calc(50% - 0.8px), #bd3b28 calc(50% - 0.8px), #bd3b28 calc(50% + 0.8px), transparent calc(50% + 0.8px))', pointerEvents: 'none' }} />}
+      {oos && <span style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom right, transparent calc(50% - 0.8px), #be1826 calc(50% - 0.8px), #be1826 calc(50% + 0.8px), transparent calc(50% + 0.8px))', pointerEvents: 'none' }} />}
     </button>
   );
 }
 
 function AddToBag({ state, isSoldOut, onClick }) {
   const soldOut = isSoldOut || state === 'soldout';
-  const bg = soldOut ? '#7c4a2d' : state === 'added' ? '#bd3b28' : '#000';
+  const bg = soldOut ? '#7c4a2d' : state === 'added' ? '#1a6b3c' : '#000';
   const label = soldOut ? 'SOLD OUT' : state === 'added' ? 'ADDED ✓' : 'ADD TO BAG';
   return (
     <button onClick={onClick} style={{ width: '100%', padding: '16px', background: bg, color: '#fff', border: 'none', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '11px', letterSpacing: '0.2em', cursor: soldOut ? 'not-allowed' : 'pointer', transition: 'background 0.3s ease', minHeight: 52, WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}>
@@ -595,7 +595,7 @@ function NotFoundState({ onNavigate }) {
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20 }}>
       <p style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: '16px', letterSpacing: '0.04em', color: '#ccc' }}>Product not found</p>
-      <button onClick={() => onNavigate?.('shop')} style={{ padding: '11px 24px', background: '#bd3b28', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase' }}>Back to Shop</button>
+      <button onClick={() => onNavigate?.('shop')} style={{ padding: '11px 24px', background: '#000', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase' }}>Back to Shop</button>
     </div>
   );
 }
@@ -606,8 +606,8 @@ function ErrorState({ onRetry, onNavigate }) {
       <p style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: '16px', letterSpacing: '0.04em', color: '#ccc' }}>Couldn't load this product</p>
       <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '12px', color: '#bbb', maxWidth: 280, margin: 0 }}>Check your connection and try again.</p>
       <div style={{ display: 'flex', gap: 12 }}>
-        <button onClick={onRetry} style={{ padding: '11px 24px', background: '#bd3b28', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase' }}>Try Again</button>
-        <button onClick={() => onNavigate?.('shop')} style={{ padding: '11px 24px', background: 'none', color: '#bd3b28', border: '1px solid #bd3b28', cursor: 'pointer', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase' }}>Back to Shop</button>
+        <button onClick={onRetry} style={{ padding: '11px 24px', background: '#000', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase' }}>Try Again</button>
+        <button onClick={() => onNavigate?.('shop')} style={{ padding: '11px 24px', background: 'none', color: '#000', border: '1px solid #000', cursor: 'pointer', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase' }}>Back to Shop</button>
       </div>
     </div>
   );

@@ -60,7 +60,7 @@ export default function Sidebar({
           position: 'fixed', left: 0, top: 0,
           width: 36,
           height: stripHeight,
-          backgroundColor: '#000',
+          backgroundColor: '#be1826',
           zIndex: 9999,
           display: 'flex', flexDirection: 'column',
           alignItems: 'center',
@@ -73,14 +73,14 @@ export default function Sidebar({
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '12px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: '100%', minHeight: 44, WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
           >
             <svg width="16" height="10" viewBox="0 0 16 10" fill="none">
-              <line x1="0" y1="1" x2="16" y2="1" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
-              <line x1="2" y1="5" x2="16" y2="5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
-              <line x1="0" y1="9" x2="16" y2="9" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
+              <line x1="0" y1="1" x2="16" y2="1" stroke="#000" strokeWidth="1.5" strokeLinecap="round"/>
+              <line x1="2" y1="5" x2="16" y2="5" stroke="#000" strokeWidth="1.5" strokeLinecap="round"/>
+              <line x1="0" y1="9" x2="16" y2="9" stroke="#000" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
           </button>
 
           {/* Divider */}
-          <div style={{ width: 20, height: 1, backgroundColor: 'rgba(255,255,255,0.2)' }} />
+          <div style={{ width: 20, height: 1, backgroundColor: 'rgba(0,0,0,0.2)' }} />
 
           {/* Bag — below */}
           <button
@@ -88,12 +88,12 @@ export default function Sidebar({
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '12px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, width: '100%', minHeight: 44, WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
           >
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
-              <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="#fff" strokeWidth="1.5" strokeLinejoin="round"/>
-              <line x1="3" y1="6" x2="21" y2="6" stroke="#fff" strokeWidth="1.5"/>
-              <path d="M16 10a4 4 0 01-8 0" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
+              <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="#000" strokeWidth="1.5" strokeLinejoin="round"/>
+              <line x1="3" y1="6" x2="21" y2="6" stroke="#000" strokeWidth="1.5"/>
+              <path d="M16 10a4 4 0 01-8 0" stroke="#000" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
             {cartCount > 0 && (
-              <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 9, color: '#fff', lineHeight: 1 }}>{cartCount}</span>
+              <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 9, color: '#000', lineHeight: 1 }}>{cartCount}</span>
             )}
           </button>
         </div>
@@ -163,7 +163,7 @@ export default function Sidebar({
                 <div style={{ position: 'absolute', top: 'calc(100% + 12px)', right: 0, minWidth: 200, backgroundColor: '#1a1a1a', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)', zIndex: 100001, padding: '8px 0', animation: 'stripItemIn 0.2s ease both' }}>
                   <div style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                     <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: 11, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.04em', margin: 0 }}>{user.email}</p>
-                    {isAdmin && <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 9, letterSpacing: '0.12em', color: '#bd3b28', margin: '4px 0 0', textTransform: 'uppercase' }}>Admin</p>}
+                    {isAdmin && <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 9, letterSpacing: '0.12em', color: '#be1826', margin: '4px 0 0', textTransform: 'uppercase' }}>Admin</p>}
                   </div>
                   <button
                     onClick={() => { setShowAccountMenu(false); onSignOut?.(); onClose?.(false); }}
@@ -185,7 +185,7 @@ export default function Sidebar({
                 <path d="M16 10a4 4 0 01-8 0" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeLinecap="round"/>
               </svg>
               {cartCount > 0 && (
-                <span style={{ position: 'absolute', top: -6, right: -6, width: 16, height: 16, borderRadius: '50%', backgroundColor: '#bd3b28', color: '#fff', fontSize: 9, fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{cartCount}</span>
+                <span style={{ position: 'absolute', top: -6, right: -6, width: 16, height: 16, borderRadius: '50%', backgroundColor: '#be1826', color: '#fff', fontSize: 9, fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{cartCount}</span>
               )}
             </button>
 
@@ -200,7 +200,7 @@ export default function Sidebar({
         </div>
 
         {/* Red accent line */}
-        <div style={{ height: 1, backgroundColor: '#bd3b28', margin: '0 32px', transform: isOpen ? 'scaleX(1)' : 'scaleX(0)', transformOrigin: 'left', transition: 'transform 0.6s 0.2s cubic-bezier(0.16,1,0.3,1)' }} />
+        <div style={{ height: 1, backgroundColor: '#be1826', margin: '0 32px', transform: isOpen ? 'scaleX(1)' : 'scaleX(0)', transformOrigin: 'left', transition: 'transform 0.6s 0.2s cubic-bezier(0.16,1,0.3,1)' }} />
 
         {/* Nav */}
         <nav style={{ padding: '40px 32px 0', flex: 1 }}>
@@ -225,7 +225,7 @@ export default function Sidebar({
                   e.currentTarget.querySelector('.nav-label').style.color = 'rgba(255,255,255,0.55)';
                 }}
               >
-                <div className="nav-dot" style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#bd3b28', flexShrink: 0, opacity: 0, transform: 'scale(0)', transition: 'opacity 0.2s, transform 0.2s' }} />
+                <div className="nav-dot" style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#be1826', flexShrink: 0, opacity: 0, transform: 'scale(0)', transition: 'opacity 0.2s, transform 0.2s' }} />
                 <span className="nav-label" style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: 'clamp(26px, 5vw, 36px)', letterSpacing: '-0.01em', color: 'rgba(255,255,255,0.55)', transition: 'color 0.2s', lineHeight: 1 }}>
                   {item.label}
                 </span>
