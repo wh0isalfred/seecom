@@ -255,12 +255,11 @@ function OrdersTab({ isMobile = false }) {
   };
 
   const daysSince = d => d ? Math.floor((Date.now() - new Date(d).getTime()) / 86400000) : null;
-  const isAbuja   = o => (o.shipping_state || '').toLowerCase().match(/abuja|fct/);
+  const SLA_MAX_DAYS = 14; // flat delivery window — no per-state differentiation
   const getRisk   = o => {
     if (!['shipped','out_for_delivery'].includes(o.order_status)) return null;
     const d = daysSince(o.shipped_at); if (d === null) return null;
-    const max = isAbuja(o) ? 2 : 5;
-    return d > max + 2 ? 'high' : d > max ? 'medium' : null;
+    return d > SLA_MAX_DAYS + 2 ? 'high' : d > SLA_MAX_DAYS ? 'medium' : null;
   };
 
   const filterKeys = ['all','pending','confirmed','processing','shipped','out_for_delivery','delivered','investigating'];
@@ -383,7 +382,7 @@ function OrdersTab({ isMobile = false }) {
                           {risk === 'high' ? '⚠ Overdue' : '⚡ Running late'}
                         </p>
                         <p style={{ fontSize: 11, color: '#666', margin: 0, lineHeight: 1.5 }}>
-                          Shipped {daysShipped} day{daysShipped !== 1 ? 's' : ''} ago · {isAbuja(order) ? 'Abuja (max 2 days)' : 'Outside Abuja (max 5 days)'}
+                          Shipped {daysShipped} day{daysShipped !== 1 ? 's' : ''} ago · Max {SLA_MAX_DAYS} days
                         </p>
                       </div>
                     )}

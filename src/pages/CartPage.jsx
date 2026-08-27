@@ -7,19 +7,13 @@ const SHIPPING_THRESHOLD = 100000;
 const FLAT_SHIPPING      = 3500;
 const fmt = n => `₦${n.toLocaleString()}`;
 
-// Grace window in days before auto-close
-const GRACE_DAYS = { abuja: 5, other: 8 };
+// Grace window in days before auto-close — flat across all states
+const GRACE_DAYS = 14;
 
-const isAbuja = state => {
-  const s = (state || '').toLowerCase();
-  return s.includes('abuja') || s.includes('fct');
-};
-
-const getAutoCloseDate = (shippedAt, state) => {
+const getAutoCloseDate = (shippedAt) => {
   if (!shippedAt) return null;
-  const days = isAbuja(state) ? GRACE_DAYS.abuja : GRACE_DAYS.other;
   const d = new Date(shippedAt);
-  d.setDate(d.getDate() + days);
+  d.setDate(d.getDate() + GRACE_DAYS);
   return d;
 };
 
@@ -108,7 +102,7 @@ export default function CartPage({ cart = [], setCart, onNavigate }) {
         const active = stored.map(o => {
           const live = data.find(d => d.id === o.id);
           if (!live) return o;
-          const autoClose = getAutoCloseDate(live.shipped_at, live.shipping_state);
+          const autoClose = getAutoCloseDate(live.shipped_at);
           if (autoClose && now > autoClose.getTime()) {
             supabase.from('orders').update({ order_status: 'delivered', updated_at: new Date().toISOString() }).eq('id', o.id);
             return null;
@@ -263,12 +257,12 @@ export default function CartPage({ cart = [], setCart, onNavigate }) {
           <div style={{ marginTop: 20, borderTop: '1px solid #f5f5f5', paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', gap: 8 }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, marginTop: 2, color: '#bbb' }}><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/><circle cx="5.5" cy="18.5" r="1.5" stroke="currentColor" strokeWidth="1.4"/><circle cx="18.5" cy="18.5" r="1.5" stroke="currentColor" strokeWidth="1.4"/></svg>
-              <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>Abuja: up to 2 days · Other states: up to 5 days</p>
+              <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>7-14 business days</p>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, marginTop: 2, color: '#bbb' }}><path d="M3 10h10a5 5 0 010 10H7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M6 7l-3 3 3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
               <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>
-                1-day returns · Tags on · <a href="tel:+2347065772394" style={{ color: '#aaa', textDecoration: 'underline', textUnderlineOffset: '2px' }}>Call</a> or <a href="https://wa.me/2347065772394" target="_blank" rel="noopener noreferrer" style={{ color: '#aaa', textDecoration: 'underline', textUnderlineOffset: '2px' }}>WhatsApp</a>
+                No available return policy
               </p>
             </div>
           </div>

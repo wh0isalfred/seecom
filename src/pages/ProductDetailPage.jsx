@@ -249,7 +249,7 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
                   </svg>
                 }
                 label="Delivery"
-                value="Abuja: up to 2 days · Other states: up to 5 days"
+                value="7-14 business days"
               />
 
               {/* Returns */}
@@ -261,7 +261,7 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
                   </svg>
                 }
                 label="Returns"
-                value="1-day return window · Tags must be on · Call to initiate"
+                value="No available return policy"
               />
 
               {/* Free shipping */}
