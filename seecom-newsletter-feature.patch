@@ -1,0 +1,431 @@
+diff --git a/src/pages/AdminProductForm.jsx b/src/pages/AdminProductForm.jsx
+index cd9076f..9215210 100644
+--- a/src/pages/AdminProductForm.jsx
++++ b/src/pages/AdminProductForm.jsx
+@@ -1,5 +1,5 @@
+ import { useState, useEffect } from 'react';
+-import { uploadProductImage, createProduct } from '../services/productAdmin';
++import { uploadProductImage, createProduct, notifyIfNewArrival } from '../services/productAdmin';
+ 
+ export default function AdminProductForm({ onProductCreated }) {
+   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+@@ -132,7 +132,8 @@ export default function AdminProductForm({ onProductCreated }) {
+       };
+ 
+       const product = await createProduct(productData, inventory);
+-      
++      notifyIfNewArrival(product);
++
+       setSuccess(true);
+       setFormData({
+         name: '',
+diff --git a/src/pages/HomePage.jsx b/src/pages/HomePage.jsx
+index 02704c6..2be1f9d 100644
+--- a/src/pages/HomePage.jsx
++++ b/src/pages/HomePage.jsx
+@@ -5,6 +5,7 @@ import heroPoster       from '../assets/hero-poster.jpg';
+ import shopAllImage  from '../assets/shopallsection.jpeg';
+ import lookbookImage from '../assets/lookbook3.webp';
+ import { fetchProducts } from '../services/products';
++import { subscribeEmail } from '../services/subscribersService';
+ import ProductCard from '../components/ProductCard';
+ import { useResponsiveGrid } from '../utils/responsiveGrid';
+ import Footer from '../components/Footer';
+@@ -74,6 +75,26 @@ export default function HomePage({ onNavigate }) {
+   const [editorialRef, editorialInView] = useInView();
+   const [communityRef, communityInView] = useInView();
+ 
++  // Newsletter signup ("First to know")
++  const [subEmail, setSubEmail]   = useState('');
++  const [subStatus, setSubStatus] = useState('idle'); // idle | loading | success | duplicate | error
++  const [subError, setSubError]   = useState('');
++
++  const handleSubscribe = async (e) => {
++    e.preventDefault();
++    if (subStatus === 'loading') return;
++    setSubStatus('loading');
++    setSubError('');
++    try {
++      const { alreadySubscribed } = await subscribeEmail(subEmail);
++      setSubStatus(alreadySubscribed ? 'duplicate' : 'success');
++      setSubEmail('');
++    } catch (err) {
++      setSubStatus('error');
++      setSubError(err.code === 'INVALID_EMAIL' ? err.message : 'Something went wrong. Try again.');
++    }
++  };
++
+   useEffect(() => {
+     const h = () => setIsMobile(window.innerWidth < 768);
+     window.addEventListener('resize', h);
+@@ -589,32 +610,42 @@ export default function HomePage({ onNavigate }) {
+           </div>
+ 
+           <div style={{ ...reveal(communityInView, 0.15), width: isMobile ? '100%' : '360px' }}>
+-            <form onSubmit={e => e.preventDefault()} style={{ display: 'flex', width: '100%', border: '1px solid #e0e0e0', transition: 'border-color 0.2s' }}
++            <form onSubmit={handleSubscribe} style={{ display: 'flex', width: '100%', border: '1px solid #e0e0e0', transition: 'border-color 0.2s' }}
+               onFocusCapture={e => e.currentTarget.style.borderColor = '#000'}
+               onBlurCapture={e => e.currentTarget.style.borderColor = '#e0e0e0'}
+             >
+               <input
+                 type="email" placeholder="Email address" required
++                value={subEmail}
++                onChange={e => setSubEmail(e.target.value)}
++                disabled={subStatus === 'loading'}
+                 style={{
+                   flex: 1, padding: '13px 16px', border: 'none', outline: 'none',
+                   fontFamily: "'Archivo', sans-serif", fontSize: '13px',
+                   backgroundColor: '#fff', color: '#000',
+                 }}
+               />
+-              <button type="submit" style={{
++              <button type="submit" disabled={subStatus === 'loading'} style={{
+                 padding: '13px 18px', background: '#000', color: '#fff', border: 'none',
+                 fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700,
+                 fontSize: '10px', letterSpacing: '0.16em',
+-                cursor: 'pointer', whiteSpace: 'nowrap', transition: 'background 0.2s',
++                cursor: subStatus === 'loading' ? 'default' : 'pointer', whiteSpace: 'nowrap', transition: 'background 0.2s',
++                opacity: subStatus === 'loading' ? 0.6 : 1,
+               }}
+                 onMouseEnter={e => e.currentTarget.style.background = '#be1826'}
+                 onMouseLeave={e => e.currentTarget.style.background = '#000'}
+               >
+-                Join
++                {subStatus === 'loading' ? '...' : 'Join'}
+               </button>
+             </form>
+-            <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', color: '#bbb', letterSpacing: '0.06em', margin: '10px 0 0' }}>
+-              No spam. Unsubscribe anytime.
++            <p style={{
++              fontFamily: "'Archivo', sans-serif", fontSize: '10px', letterSpacing: '0.06em', margin: '10px 0 0',
++              color: subStatus === 'error' ? '#be1826' : '#bbb',
++            }}>
++              {subStatus === 'success'   && "You're on the list. First to know."}
++              {subStatus === 'duplicate' && "You're already on the list."}
++              {subStatus === 'error'     && subError}
++              {(subStatus === 'idle' || subStatus === 'loading') && 'No spam. Unsubscribe anytime.'}
+             </p>
+           </div>
+         </div>
+diff --git a/src/services/adminService.js b/src/services/adminService.js
+index 0a45a5b..f8b0ff7 100644
+--- a/src/services/adminService.js
++++ b/src/services/adminService.js
+@@ -79,6 +79,25 @@ export const toggleNewArrival = async (productId, value) => {
+   const { error } = await supabase
+     .from('products').update({ is_new_arrival: value }).eq('id', productId);
+   if (error) throw error;
++
++  // Fire the "new drop" email to subscribers — only when turning ON, never on turn-off.
++  // Fire-and-forget: a failed email send should never block the admin toggle.
++  if (value) notifyNewArrival(productId);
++};
++
++/**
++ * Invoke the notify-new-arrival Supabase Edge Function, which emails everyone
++ * on the subscribers list about this product. See supabase/functions/notify-new-arrival/.
++ */
++export const notifyNewArrival = async (productId) => {
++  try {
++    const { error } = await supabase.functions.invoke('notify-new-arrival', {
++      body: { productId },
++    });
++    if (error) console.error('notifyNewArrival:', error);
++  } catch (err) {
++    console.error('notifyNewArrival:', err);
++  }
+ };
+ 
+ export const deleteProductById = async (productId) => {
+diff --git a/src/services/productAdmin.js b/src/services/productAdmin.js
+index 20d2129..b47257d 100644
+--- a/src/services/productAdmin.js
++++ b/src/services/productAdmin.js
+@@ -1,4 +1,5 @@
+ import { supabase } from './supabase';
++import { notifyNewArrival } from './adminService';
+ 
+ /**
+  * Upload a product image to Supabase Storage
+@@ -72,6 +73,15 @@ export const createProduct = async (productData, inventoryData = []) => {
+   }
+ };
+ 
++/**
++ * Send the "new drop" email to subscribers for a just-created product.
++ * Called separately (not from createProduct directly) so the calling page can
++ * decide when to fire it — e.g. only after images/inventory are fully saved.
++ */
++export const notifyIfNewArrival = (product) => {
++  if (product?.is_new_arrival) notifyNewArrival(product.id);
++};
++
+ /**
+  * Update existing product
+  */
+diff --git a/src/services/subscribersService.js b/src/services/subscribersService.js
+new file mode 100644
+index 0000000..8d5375f
+--- /dev/null
++++ b/src/services/subscribersService.js
+@@ -0,0 +1,42 @@
++import { supabase } from './supabase';
++
++/**
++ * RUN THIS SQL FIRST (see supabase/migrations/006_create_subscribers_table.sql):
++ *
++ * CREATE TABLE IF NOT EXISTS subscribers (
++ *   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
++ *   email VARCHAR NOT NULL UNIQUE,
++ *   is_active BOOLEAN DEFAULT true,
++ *   created_at TIMESTAMPTZ DEFAULT NOW()
++ * );
++ * ALTER TABLE subscribers ENABLE ROW LEVEL SECURITY;
++ * CREATE POLICY "Public can subscribe" ON subscribers FOR INSERT WITH CHECK (true);
++ * CREATE POLICY "Admin read subscribers" ON subscribers FOR SELECT
++ *   USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin'));
++ */
++
++const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
++
++/**
++ * Subscribe an email to new-drop notifications.
++ * Returns { ok: true, alreadySubscribed: boolean } or throws on unexpected errors.
++ */
++export const subscribeEmail = async (rawEmail) => {
++  const email = (rawEmail || '').trim().toLowerCase();
++
++  if (!EMAIL_RE.test(email)) {
++    const err = new Error('Please enter a valid email address.');
++    err.code = 'INVALID_EMAIL';
++    throw err;
++  }
++
++  const { error } = await supabase.from('subscribers').insert([{ email }]);
++
++  if (error) {
++    // Postgres unique_violation — they're already on the list
++    if (error.code === '23505') return { ok: true, alreadySubscribed: true };
++    throw error;
++  }
++
++  return { ok: true, alreadySubscribed: false };
++};
+diff --git a/supabase/functions/notify-new-arrival/index.ts b/supabase/functions/notify-new-arrival/index.ts
+new file mode 100644
+index 0000000..0320eda
+--- /dev/null
++++ b/supabase/functions/notify-new-arrival/index.ts
+@@ -0,0 +1,184 @@
++// supabase/functions/notify-new-arrival/index.ts
++//
++// Triggered from the client (see src/services/adminService.js -> notifyNewArrival)
++// whenever a product is flagged as a new arrival — either via the "New Arrival"
++// toggle in the admin panel, or on initial product creation.
++//
++// Fetches the product + the active subscriber list, then sends a branded
++// "new drop" email to every subscriber via Resend.
++//
++// ── Required secrets (set with `supabase secrets set KEY=value`) ───────────
++//   RESEND_API_KEY   — API key from https://resend.com
++//   RESEND_FROM       — verified sender, e.g. "SEE.COM <drops@yourdomain.com>"
++//   SITE_URL          — e.g. https://seecom.vercel.app (defaults to that if unset)
++//
++// SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are auto-injected by Supabase —
++// no need to set those yourself. The service role key is required here
++// specifically so this function can read the subscribers table, which is
++// locked down from the client (INSERT-only) by RLS.
++
++import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
++
++const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
++const RESEND_FROM    = Deno.env.get('RESEND_FROM') || 'SEE.COM <drops@see.com>';
++const SITE_URL       = Deno.env.get('SITE_URL') || 'https://seecom.vercel.app';
++
++const supabaseAdmin = createClient(
++  Deno.env.get('SUPABASE_URL'),
++  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
++);
++
++const corsHeaders = {
++  'Access-Control-Allow-Origin': '*',
++  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
++};
++
++const fmtNaira = (n) => `₦${Number(n).toLocaleString('en-NG')}`;
++
++function buildEmailHtml(product) {
++  const price = product.discount_price
++    ? `<span style="text-decoration:line-through;color:#999;margin-right:8px;">${fmtNaira(product.price)}</span><span style="color:#be1826;font-weight:700;">${fmtNaira(product.discount_price)}</span>`
++    : `<span style="font-weight:700;">${fmtNaira(product.price)}</span>`;
++
++  return `
++  <html>
++    <body style="margin:0;padding:0;background-color:#f5f5f5;font-family:Helvetica,Arial,sans-serif;">
++      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f5f5;padding:32px 0;">
++        <tr>
++          <td align="center">
++            <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background-color:#ffffff;max-width:480px;width:100%;">
++
++              <!-- Header -->
++              <tr>
++                <td style="background-color:#000000;padding:20px 0;text-align:center;">
++                  <span style="color:#ffffff;font-size:16px;font-weight:700;letter-spacing:4px;">SEE.COM</span>
++                </td>
++              </tr>
++
++              <!-- Badge -->
++              <tr>
++                <td style="padding:24px 24px 0;text-align:center;">
++                  <span style="background-color:#be1826;color:#ffffff;font-size:10px;font-weight:700;letter-spacing:2px;padding:6px 12px;display:inline-block;">NEW DROP</span>
++                </td>
++              </tr>
++
++              <!-- Product image -->
++              ${product.image_1 ? `
++              <tr>
++                <td style="padding:20px 24px 0;">
++                  <img src="${product.image_1}" alt="${product.name}" width="432" style="width:100%;height:auto;display:block;border:1px solid #f0f0f0;" />
++                </td>
++              </tr>` : ''}
++
++              <!-- Product info -->
++              <tr>
++                <td style="padding:20px 24px 8px;text-align:center;">
++                  <div style="font-size:20px;font-weight:600;color:#000000;letter-spacing:0.5px;margin-bottom:8px;">
++                    ${product.name}
++                  </div>
++                  <div style="font-size:14px;">${price}</div>
++                </td>
++              </tr>
++
++              <!-- CTA -->
++              <tr>
++                <td style="padding:16px 24px 32px;text-align:center;">
++                  <a href="${SITE_URL}" style="display:inline-block;background-color:#000000;color:#ffffff;text-decoration:none;font-size:11px;font-weight:700;letter-spacing:2px;padding:14px 32px;">
++                    SHOP NOW
++                  </a>
++                </td>
++              </tr>
++
++              <!-- Footer -->
++              <tr>
++                <td style="border-top:1px solid #f0f0f0;padding:20px 24px;text-align:center;">
++                  <div style="font-size:10px;color:#999999;letter-spacing:0.5px;">
++                    Limited drops. No restocks.<br/>
++                    SEE.COM · Abuja, Nigeria
++                  </div>
++                </td>
++              </tr>
++
++            </table>
++          </td>
++        </tr>
++      </table>
++    </body>
++  </html>`;
++}
++
++async function sendEmail(to, html, subject) {
++  const res = await fetch('https://api.resend.com/emails', {
++    method: 'POST',
++    headers: {
++      Authorization: `Bearer ${RESEND_API_KEY}`,
++      'Content-Type': 'application/json',
++    },
++    body: JSON.stringify({ from: RESEND_FROM, to, subject, html }),
++  });
++  if (!res.ok) {
++    const body = await res.text();
++    throw new Error(`Resend error (${res.status}): ${body}`);
++  }
++}
++
++Deno.serve(async (req) => {
++  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
++
++  if (!RESEND_API_KEY) {
++    return new Response(JSON.stringify({ error: 'RESEND_API_KEY is not configured' }), {
++      status: 500,
++      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
++    });
++  }
++
++  try {
++    const { productId } = await req.json();
++    if (!productId) throw new Error('productId is required');
++
++    const { data: product, error: productErr } = await supabaseAdmin
++      .from('products')
++      .select('id, name, price, discount_price, image_1')
++      .eq('id', productId)
++      .single();
++    if (productErr) throw productErr;
++
++    const { data: subscribers, error: subErr } = await supabaseAdmin
++      .from('subscribers')
++      .select('email')
++      .eq('is_active', true);
++    if (subErr) throw subErr;
++
++    if (!subscribers?.length) {
++      return new Response(JSON.stringify({ sent: 0, message: 'No active subscribers' }), {
++        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
++      });
++    }
++
++    const html    = buildEmailHtml(product);
++    const subject = `New drop: ${product.name}`;
++
++    // Send in small batches so one bad address doesn't block the rest
++    const BATCH_SIZE = 40;
++    let sent = 0;
++    let failed = 0;
++
++    for (let i = 0; i < subscribers.length; i += BATCH_SIZE) {
++      const batch = subscribers.slice(i, i + BATCH_SIZE);
++      const results = await Promise.allSettled(
++        batch.map((s) => sendEmail(s.email, html, subject))
++      );
++      results.forEach((r) => (r.status === 'fulfilled' ? sent++ : failed++));
++    }
++
++    return new Response(JSON.stringify({ sent, failed, total: subscribers.length }), {
++      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
++    });
++  } catch (err) {
++    console.error('notify-new-arrival error:', err);
++    return new Response(JSON.stringify({ error: err.message }), {
++      status: 500,
++      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
++    });
++  }
++});
+diff --git a/supabase/migrations/006_create_subscribers_table.sql b/supabase/migrations/006_create_subscribers_table.sql
+new file mode 100644
+index 0000000..d0657d1
+--- /dev/null
++++ b/supabase/migrations/006_create_subscribers_table.sql
+@@ -0,0 +1,22 @@
++-- Create subscribers table (email capture for "First to know" / new drop alerts)
++CREATE TABLE IF NOT EXISTS subscribers (
++  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
++  email VARCHAR NOT NULL UNIQUE,
++  is_active BOOLEAN DEFAULT true,
++  created_at TIMESTAMPTZ DEFAULT NOW()
++);
++
++CREATE INDEX IF NOT EXISTS idx_subscribers_active ON subscribers(is_active);
++
++-- Enable RLS
++ALTER TABLE subscribers ENABLE ROW LEVEL SECURITY;
++
++-- Anyone can subscribe (public insert) — no read/update/delete from the client.
++-- The notify-new-arrival edge function reads this table using the service role key,
++-- which bypasses RLS entirely, so no SELECT policy is needed for it to work.
++CREATE POLICY "Public can subscribe" ON subscribers FOR INSERT
++  WITH CHECK (true);
++
++-- Admin can view the subscriber list (e.g. for a future "subscribers" admin tab)
++CREATE POLICY "Admin read subscribers" ON subscribers FOR SELECT
++  USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin'));

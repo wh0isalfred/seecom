@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { uploadProductImage, createProduct } from '../services/productAdmin';
+import { uploadProductImage, createProduct, notifyIfNewArrival } from '../services/productAdmin';
 
 export default function AdminProductForm({ onProductCreated }) {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -132,7 +132,8 @@ export default function AdminProductForm({ onProductCreated }) {
       };
 
       const product = await createProduct(productData, inventory);
-      
+      notifyIfNewArrival(product);
+
       setSuccess(true);
       setFormData({
         name: '',

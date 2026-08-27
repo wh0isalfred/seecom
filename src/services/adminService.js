@@ -79,6 +79,25 @@ export const toggleNewArrival = async (productId, value) => {
   const { error } = await supabase
     .from('products').update({ is_new_arrival: value }).eq('id', productId);
   if (error) throw error;
+
+  // Fire the "new drop" email to subscribers — only when turning ON, never on turn-off.
+  // Fire-and-forget: a failed email send should never block the admin toggle.
+  if (value) notifyNewArrival(productId);
+};
+
+/**
+ * Invoke the notify-new-arrival Supabase Edge Function, which emails everyone
+ * on the subscribers list about this product. See supabase/functions/notify-new-arrival/.
+ */
+export const notifyNewArrival = async (productId) => {
+  try {
+    const { error } = await supabase.functions.invoke('notify-new-arrival', {
+      body: { productId },
+    });
+    if (error) console.error('notifyNewArrival:', error);
+  } catch (err) {
+    console.error('notifyNewArrival:', err);
+  }
 };
 
 export const deleteProductById = async (productId) => {

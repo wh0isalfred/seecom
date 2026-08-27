@@ -5,6 +5,7 @@ import heroPoster       from '../assets/hero-poster.jpg';
 import shopAllImage  from '../assets/shopallsection.jpeg';
 import lookbookImage from '../assets/lookbook3.webp';
 import { fetchProducts } from '../services/products';
+import { subscribeEmail } from '../services/subscribersService';
 import ProductCard from '../components/ProductCard';
 import { useResponsiveGrid } from '../utils/responsiveGrid';
 import Footer from '../components/Footer';
@@ -73,6 +74,26 @@ export default function HomePage({ onNavigate }) {
   const [shopGridRef, shopGridInView]   = useInView();
   const [editorialRef, editorialInView] = useInView();
   const [communityRef, communityInView] = useInView();
+
+  // Newsletter signup ("First to know")
+  const [subEmail, setSubEmail]   = useState('');
+  const [subStatus, setSubStatus] = useState('idle'); // idle | loading | success | duplicate | error
+  const [subError, setSubError]   = useState('');
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    if (subStatus === 'loading') return;
+    setSubStatus('loading');
+    setSubError('');
+    try {
+      const { alreadySubscribed } = await subscribeEmail(subEmail);
+      setSubStatus(alreadySubscribed ? 'duplicate' : 'success');
+      setSubEmail('');
+    } catch (err) {
+      setSubStatus('error');
+      setSubError(err.code === 'INVALID_EMAIL' ? err.message : 'Something went wrong. Try again.');
+    }
+  };
 
   useEffect(() => {
     const h = () => setIsMobile(window.innerWidth < 768);
@@ -589,32 +610,42 @@ export default function HomePage({ onNavigate }) {
           </div>
 
           <div style={{ ...reveal(communityInView, 0.15), width: isMobile ? '100%' : '360px' }}>
-            <form onSubmit={e => e.preventDefault()} style={{ display: 'flex', width: '100%', border: '1px solid #e0e0e0', transition: 'border-color 0.2s' }}
+            <form onSubmit={handleSubscribe} style={{ display: 'flex', width: '100%', border: '1px solid #e0e0e0', transition: 'border-color 0.2s' }}
               onFocusCapture={e => e.currentTarget.style.borderColor = '#000'}
               onBlurCapture={e => e.currentTarget.style.borderColor = '#e0e0e0'}
             >
               <input
                 type="email" placeholder="Email address" required
+                value={subEmail}
+                onChange={e => setSubEmail(e.target.value)}
+                disabled={subStatus === 'loading'}
                 style={{
                   flex: 1, padding: '13px 16px', border: 'none', outline: 'none',
                   fontFamily: "'Archivo', sans-serif", fontSize: '13px',
                   backgroundColor: '#fff', color: '#000',
                 }}
               />
-              <button type="submit" style={{
+              <button type="submit" disabled={subStatus === 'loading'} style={{
                 padding: '13px 18px', background: '#000', color: '#fff', border: 'none',
                 fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700,
                 fontSize: '10px', letterSpacing: '0.16em',
-                cursor: 'pointer', whiteSpace: 'nowrap', transition: 'background 0.2s',
+                cursor: subStatus === 'loading' ? 'default' : 'pointer', whiteSpace: 'nowrap', transition: 'background 0.2s',
+                opacity: subStatus === 'loading' ? 0.6 : 1,
               }}
                 onMouseEnter={e => e.currentTarget.style.background = '#be1826'}
                 onMouseLeave={e => e.currentTarget.style.background = '#000'}
               >
-                Join
+                {subStatus === 'loading' ? '...' : 'Join'}
               </button>
             </form>
-            <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', color: '#bbb', letterSpacing: '0.06em', margin: '10px 0 0' }}>
-              No spam. Unsubscribe anytime.
+            <p style={{
+              fontFamily: "'Archivo', sans-serif", fontSize: '10px', letterSpacing: '0.06em', margin: '10px 0 0',
+              color: subStatus === 'error' ? '#be1826' : '#bbb',
+            }}>
+              {subStatus === 'success'   && "You're on the list. First to know."}
+              {subStatus === 'duplicate' && "You're already on the list."}
+              {subStatus === 'error'     && subError}
+              {(subStatus === 'idle' || subStatus === 'loading') && 'No spam. Unsubscribe anytime.'}
             </p>
           </div>
         </div>

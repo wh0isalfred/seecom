@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { notifyNewArrival } from './adminService';
 
 /**
  * Upload a product image to Supabase Storage
@@ -70,6 +71,15 @@ export const createProduct = async (productData, inventoryData = []) => {
     console.error('Product creation error:', error);
     throw error;
   }
+};
+
+/**
+ * Send the "new drop" email to subscribers for a just-created product.
+ * Called separately (not from createProduct directly) so the calling page can
+ * decide when to fire it — e.g. only after images/inventory are fully saved.
+ */
+export const notifyIfNewArrival = (product) => {
+  if (product?.is_new_arrival) notifyNewArrival(product.id);
 };
 
 /**
