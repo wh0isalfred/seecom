@@ -233,14 +233,14 @@ export default function HomePage({ onNavigate }) {
           </p>
         </div>
 
-        {/* Red strip — slides in from left */}
+        {/* Black strip — enter the store */}
         <div
           onClick={() => onNavigate?.('landing')}
           style={{
             position: 'absolute', bottom: 0, right: 0,
             width: isMobile ? '56%' : '45%', height: '36px',
-            backgroundColor: '#be1826',
-            display: 'flex', alignItems: 'center', paddingLeft: '24px',
+            backgroundColor: '#000',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
             zIndex: 2, cursor: 'pointer', overflow: 'hidden',
             animation: heroReady ? 'fadeIn 0.6s 1.2s both' : 'none',
           }}
@@ -248,14 +248,17 @@ export default function HomePage({ onNavigate }) {
           <span style={{
             fontFamily: "'Clash Display', sans-serif",
             fontWeight: 600,
-            fontSize: isMobile ? '15px' : '18px',
+            fontSize: isMobile ? '13px' : '15px',
             color: '#fff', letterSpacing: '0.22em',
             pointerEvents: 'none',
             display: 'inline-block',
             animation: heroReady ? 'clipUp 0.8s 1.3s cubic-bezier(0.16,1,0.3,1) both' : 'none',
           }}>
-            see.Com
+            ENTER STORE
           </span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ pointerEvents: 'none' }}>
+            <path d="M5 12h14M13 6l6 6-6 6" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
         </div>
 
         {/* Scroll indicator — last to appear */}

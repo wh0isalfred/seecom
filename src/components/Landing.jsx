@@ -297,13 +297,13 @@ export default function Landing({ onNavigate }) {
         </p>
       )}
 
-      {/* Black strip — enter the store */}
+      {/* Red strip — enter the store */}
       <div
         onClick={() => onNavigate('home')}
         style={{
           position: 'absolute', bottom: 0, left: 0, right: 0,
           height: isMobile ? 52 : 58,
-          backgroundColor: '#000',
+          backgroundColor: '#be1826',
           zIndex: 10, cursor: 'pointer',
           display: 'flex', alignItems: 'center',
           justifyContent: 'center', gap: 12,
@@ -312,7 +312,7 @@ export default function Landing({ onNavigate }) {
           transition: 'filter 0.2s',
           WebkitTapHighlightColor: 'transparent',
         }}
-        onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.3)'}
+        onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.08)'}
         onMouseLeave={e => e.currentTarget.style.filter = 'none'}
       >
         <span style={{
@@ -322,7 +322,7 @@ export default function Landing({ onNavigate }) {
           letterSpacing: '0.3em',
           color: '#fff',
         }}>
-          ENTER STORE
+          see.SHOP
         </span>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
           <path d="M5 12h14M13 6l6 6-6 6" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
