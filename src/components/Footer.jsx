@@ -62,7 +62,7 @@ export default function Footer({ onNavigate }) {
         fontSize: '12px', letterSpacing: '0.1em', color: '#000',
         textTransform: 'uppercase', margin: '0 0 20px',
       }}>
-        see.Com · Abuja, Nigeria
+        see.Com ·  Global
       </p>
 
       {/* Legal links */}
