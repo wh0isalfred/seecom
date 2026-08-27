@@ -9,6 +9,7 @@ export default function ProductDetailPage({ productId, setCart, onNavigate }) {
   const [product, setProduct]           = useState(null);
   const [inventory, setInventory]       = useState([]);
   const [loading, setLoading]           = useState(true);
+  const [loadError, setLoadError]       = useState(false);
   const [activeImage, setActiveImage]   = useState(0);
   const [selectedSize, setSelectedSize] = useState(null);
   const [selectedColor, setSelectedColor] = useState(null);
@@ -18,6 +19,8 @@ export default function ProductDetailPage({ productId, setCart, onNavigate }) {
   const [ready, setReady]               = useState(false);
   const [showSizeGuide, setShowSizeGuide] = useState(false);
   const { discount }                    = useDiscount();
+  const [retryNonce, setRetryNonce]     = useState(0);
+  const retry = () => setRetryNonce(n => n + 1);
 
   useEffect(() => {
     const h = () => setIsDesktop(window.innerWidth >= 820);
@@ -27,20 +30,31 @@ export default function ProductDetailPage({ productId, setCart, onNavigate }) {
 
   useEffect(() => {
     if (!productId) return;
-    setLoading(true); setSelectedSize(null); setSelectedColor(null); setExpanded(null); setActiveImage(0); setReady(false);
+    let cancelled = false;
+    setLoading(true); setLoadError(false); setSelectedSize(null); setSelectedColor(null); setExpanded(null); setActiveImage(0); setReady(false);
     Promise.all([fetchProductById(productId), fetchProductInventory(productId)])
       .then(([p, inv]) => {
+        if (cancelled) return;
         setProduct(p);
         setInventory(inv);
         const sz = Array.isArray(p?.sizes) ? p.sizes : [];
         if (sz.length === 1) setSelectedSize(sz[0]);
         setTimeout(() => setReady(true), 60);
       })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [productId]);
+      .catch(() => { if (!cancelled) setLoadError(true); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [productId, retryNonce]);
+
+  // Auto-retry once connectivity returns, if the load failed
+  useEffect(() => {
+    if (!loadError) return;
+    window.addEventListener('online', retry);
+    return () => window.removeEventListener('online', retry);
+  }, [loadError]);
 
   if (loading) return <LoadingState />;
+  if (loadError) return <ErrorState onRetry={retry} onNavigate={onNavigate} />;
   if (!product)  return <NotFoundState onNavigate={onNavigate} />;
 
   const images = [product.image_1, product.image_2, product.image_male, product.image_female].filter(Boolean);
@@ -582,6 +596,19 @@ function NotFoundState({ onNavigate }) {
     <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20 }}>
       <p style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: '16px', letterSpacing: '0.04em', color: '#ccc' }}>Product not found</p>
       <button onClick={() => onNavigate?.('shop')} style={{ padding: '11px 24px', background: '#000', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase' }}>Back to Shop</button>
+    </div>
+  );
+}
+
+function ErrorState({ onRetry, onNavigate }) {
+  return (
+    <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, padding: '0 24px', textAlign: 'center' }}>
+      <p style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: '16px', letterSpacing: '0.04em', color: '#ccc' }}>Couldn't load this product</p>
+      <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '12px', color: '#bbb', maxWidth: 280, margin: 0 }}>Check your connection and try again.</p>
+      <div style={{ display: 'flex', gap: 12 }}>
+        <button onClick={onRetry} style={{ padding: '11px 24px', background: '#000', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase' }}>Try Again</button>
+        <button onClick={() => onNavigate?.('shop')} style={{ padding: '11px 24px', background: 'none', color: '#000', border: '1px solid #000', cursor: 'pointer', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase' }}>Back to Shop</button>
+      </div>
     </div>
   );
 }

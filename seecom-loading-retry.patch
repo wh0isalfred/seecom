@@ -1,0 +1,637 @@
+diff --git a/src/components/FetchErrorState.jsx b/src/components/FetchErrorState.jsx
+new file mode 100644
+index 0000000..26850ea
+--- /dev/null
++++ b/src/components/FetchErrorState.jsx
+@@ -0,0 +1,26 @@
++export default function FetchErrorState({ message = "Couldn't load products.", onRetry, height = 320 }) {
++  return (
++    <div style={{
++      height, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14,
++    }}>
++      <p style={{
++        fontFamily: "'Archivo', sans-serif", fontSize: 12, color: '#999', letterSpacing: '0.04em',
++        textAlign: 'center', margin: 0, maxWidth: 260,
++      }}>
++        {message}
++      </p>
++      <button
++        onClick={onRetry}
++        style={{
++          padding: '10px 24px', background: '#000', color: '#fff', border: 'none',
++          fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 10,
++          letterSpacing: '0.16em', cursor: 'pointer', transition: 'background 0.2s', textTransform: 'uppercase',
++        }}
++        onMouseEnter={e => e.currentTarget.style.background = '#be1826'}
++        onMouseLeave={e => e.currentTarget.style.background = '#000'}
++      >
++        Try Again
++      </button>
++    </div>
++  );
++}
+diff --git a/src/pages/ChainsPage.jsx b/src/pages/ChainsPage.jsx
+index a2d1792..cc9a268 100644
+--- a/src/pages/ChainsPage.jsx
++++ b/src/pages/ChainsPage.jsx
+@@ -1,7 +1,9 @@
+ import { useState, useEffect, useRef, useCallback } from 'react';
+ import ProductCard from '../components/ProductCard';
+ import Footer from '../components/Footer';
++import FetchErrorState from '../components/FetchErrorState';
+ import { fetchProducts } from '../services/products';
++import { useAsyncFetch } from '../utils/useAsyncFetch';
+ import { useResponsiveGrid } from '../utils/responsiveGrid';
+ 
+ function ViewToggle({ showPrice, setShowPrice }) {
+@@ -19,9 +21,7 @@ function ViewToggle({ showPrice, setShowPrice }) {
+ 
+ export default function ChainsPage({ onNavigate }) {
+   const [showPrice, setShowPrice]           = useState(false);
+-  const [products, setProducts]             = useState([]);
+   const [displayedProducts, setDisplayedProducts] = useState([]);
+-  const [loading, setLoading]               = useState(true);
+   const [hasMore, setHasMore]               = useState(true);
+   const [currentIndex, setCurrentIndex]     = useState(0);
+   const [ready, setReady]                   = useState(false);
+@@ -30,6 +30,9 @@ export default function ChainsPage({ onNavigate }) {
+   const gridColumns = useResponsiveGrid();
+   const PRODUCTS_PER_PAGE = 25;
+ 
++  const fetcher = useCallback(() => fetchProducts('chains', null, 1000), []);
++  const { data: products, loading, error, retry } = useAsyncFetch(fetcher);
++
+   useEffect(() => {
+     const h = () => setIsMobile(window.innerWidth < 768);
+     window.addEventListener('resize', h);
+@@ -38,19 +41,14 @@ export default function ChainsPage({ onNavigate }) {
+   }, []);
+ 
+   useEffect(() => {
+-    fetchProducts('chains', null, 1000)
+-      .then(data => {
+-        setProducts(data);
+-        setDisplayedProducts(data.slice(0, PRODUCTS_PER_PAGE));
+-        setCurrentIndex(PRODUCTS_PER_PAGE);
+-        setHasMore(data.length > PRODUCTS_PER_PAGE);
+-      })
+-      .catch(console.error)
+-      .finally(() => setLoading(false));
+-  }, []);
++    if (!products) return;
++    setDisplayedProducts(products.slice(0, PRODUCTS_PER_PAGE));
++    setCurrentIndex(PRODUCTS_PER_PAGE);
++    setHasMore(products.length > PRODUCTS_PER_PAGE);
++  }, [products]);
+ 
+   const loadMore = useCallback(() => {
+-    if (!hasMore || currentIndex >= products.length) return;
++    if (!products || !hasMore || currentIndex >= products.length) return;
+     const next = currentIndex + PRODUCTS_PER_PAGE;
+     setDisplayedProducts(products.slice(0, next));
+     setCurrentIndex(next);
+@@ -159,10 +157,12 @@ export default function ChainsPage({ onNavigate }) {
+ 
+       {/* ── GRID ── */}
+       <main style={{ flex: 1, padding: isMobile ? '24px 12px' : '64px 40px' }}>
+-        {loading && displayedProducts.length === 0 ? (
++        {loading ? (
+           <div style={{ height: 320, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+-            <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.22em', color: '#ddd', textTransform: 'uppercase' }}>—</span>
++            <div style={{ width: 24, height: 24, border: '1.5px solid #e0e0e0', borderTopColor: '#000', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+           </div>
++        ) : error ? (
++          <FetchErrorState onRetry={retry} />
+         ) : displayedProducts.length > 0 ? (
+           <>
+             <div style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: isMobile ? '10px' : '24px' }}>
+diff --git a/src/pages/HomePage.jsx b/src/pages/HomePage.jsx
+index c47ce02..fdacd50 100644
+--- a/src/pages/HomePage.jsx
++++ b/src/pages/HomePage.jsx
+@@ -1,4 +1,4 @@
+-import { useState, useEffect, useRef } from 'react';
++import { useState, useEffect, useRef, useCallback } from 'react';
+ import heroVideoDesktop from '../assets/hero-video-desktop.mp4';
+ import heroVideoMobile  from '../assets/hero-video-mobile.mp4';
+ import heroPoster       from '../assets/hero-poster.jpg';
+@@ -6,6 +6,8 @@ import shopAllImage  from '../assets/shopallsection.jpeg';
+ import lookbookImage from '../assets/lookbook3.webp';
+ import { fetchProducts } from '../services/products';
+ import { subscribeEmail } from '../services/subscribersService';
++import { useAsyncFetch } from '../utils/useAsyncFetch';
++import FetchErrorState from '../components/FetchErrorState';
+ import ProductCard from '../components/ProductCard';
+ import { useResponsiveGrid } from '../utils/responsiveGrid';
+ import Footer from '../components/Footer';
+@@ -60,15 +62,17 @@ function ViewToggle({ showPrice, setShowPrice }) {
+ 
+ export default function HomePage({ onNavigate }) {
+   const [showPrice, setShowPrice]             = useState(false);
+-  const [products, setProducts]               = useState([]);
+-  const [loading, setLoading]                 = useState(true);
+-  const [shopAllProducts, setShopAllProducts] = useState([]);
+-  const [shopAllLoading, setShopAllLoading]   = useState(true);
+   const [heroReady, setHeroReady]             = useState(false);
+   const [isMobile, setIsMobile]               = useState(window.innerWidth < 768);
+   const heroRef = useRef(null);
+   const gridColumns = useResponsiveGrid();
+ 
++  const newArrivalsFetcher = useCallback(() => fetchProducts(null, null, 5, true), []);
++  const { data: products, loading, error, retry } = useAsyncFetch(newArrivalsFetcher);
++
++  const shopAllFetcher = useCallback(() => fetchProducts(null, null, 10, false), []);
++  const { data: shopAllProducts, loading: shopAllLoading, error: shopAllError, retry: retryShopAll } = useAsyncFetch(shopAllFetcher);
++
+   const [arrivalsRef, arrivalsInView]   = useInView();
+   const [bannerRef, bannerParallaxY]    = useParallax(0.12);
+   const [shopGridRef, shopGridInView]   = useInView();
+@@ -108,14 +112,6 @@ export default function HomePage({ onNavigate }) {
+     return () => { clearTimeout(t); };
+   }, []);
+ 
+-  useEffect(() => {
+-    fetchProducts(null, null, 5, true).then(setProducts).catch(console.error).finally(() => setLoading(false));
+-  }, []);
+-
+-  useEffect(() => {
+-    fetchProducts(null, null, 10, false).then(setShopAllProducts).catch(console.error).finally(() => setShopAllLoading(false));
+-  }, []);
+-
+   // Standard reveal
+   const reveal = (inView, delay = 0) => ({
+     opacity: inView ? 1 : 0,
+@@ -322,11 +318,13 @@ export default function HomePage({ onNavigate }) {
+ 
+         {loading ? (
+           <div style={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+-            <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.22em', color: '#ddd', textTransform: 'uppercase' }}>—</span>
++            <div style={{ width: 22, height: 22, border: '1.5px solid #e0e0e0', borderTopColor: '#000', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+           </div>
++        ) : error ? (
++          <FetchErrorState onRetry={retry} height={220} message="Couldn't load new arrivals." />
+         ) : (
+           <div style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: isMobile ? '10px' : '24px' }}>
+-            {products.map((p, i) => (
++            {(products || []).map((p, i) => (
+               <div key={p.id} style={{
+                 opacity: arrivalsInView ? 1 : 0,
+                 transform: arrivalsInView ? 'translateY(0)' : 'translateY(20px)',
+@@ -378,7 +376,7 @@ export default function HomePage({ onNavigate }) {
+         </div>
+ 
+         {/* Top-right: product count */}
+-        {shopAllProducts.length > 0 && (
++        {shopAllProducts?.length > 0 && (
+           <div style={{
+             position: 'absolute', top: isMobile ? 24 : 36, right: isMobile ? 20 : 44,
+             zIndex: 2,
+@@ -481,11 +479,13 @@ export default function HomePage({ onNavigate }) {
+ 
+         {shopAllLoading ? (
+           <div style={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+-            <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.22em', color: '#ddd', textTransform: 'uppercase' }}>—</span>
++            <div style={{ width: 22, height: 22, border: '1.5px solid #e0e0e0', borderTopColor: '#000', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+           </div>
++        ) : shopAllError ? (
++          <FetchErrorState onRetry={retryShopAll} height={220} message="Couldn't load products." />
+         ) : (
+           <div style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: isMobile ? '10px' : '24px' }}>
+-            {shopAllProducts.map(p => (
++            {(shopAllProducts || []).map(p => (
+               <ProductCard key={p.id} product={p} showPrice={showPrice} onProductClick={id => onNavigate?.('product', { productId: id })} />
+             ))}
+           </div>
+diff --git a/src/pages/ProductDetailPage.jsx b/src/pages/ProductDetailPage.jsx
+index 89a5fff..db62ec4 100644
+--- a/src/pages/ProductDetailPage.jsx
++++ b/src/pages/ProductDetailPage.jsx
+@@ -9,6 +9,7 @@ export default function ProductDetailPage({ productId, setCart, onNavigate }) {
+   const [product, setProduct]           = useState(null);
+   const [inventory, setInventory]       = useState([]);
+   const [loading, setLoading]           = useState(true);
++  const [loadError, setLoadError]       = useState(false);
+   const [activeImage, setActiveImage]   = useState(0);
+   const [selectedSize, setSelectedSize] = useState(null);
+   const [selectedColor, setSelectedColor] = useState(null);
+@@ -18,6 +19,8 @@ export default function ProductDetailPage({ productId, setCart, onNavigate }) {
+   const [ready, setReady]               = useState(false);
+   const [showSizeGuide, setShowSizeGuide] = useState(false);
+   const { discount }                    = useDiscount();
++  const [retryNonce, setRetryNonce]     = useState(0);
++  const retry = () => setRetryNonce(n => n + 1);
+ 
+   useEffect(() => {
+     const h = () => setIsDesktop(window.innerWidth >= 820);
+@@ -27,20 +30,31 @@ export default function ProductDetailPage({ productId, setCart, onNavigate }) {
+ 
+   useEffect(() => {
+     if (!productId) return;
+-    setLoading(true); setSelectedSize(null); setSelectedColor(null); setExpanded(null); setActiveImage(0); setReady(false);
++    let cancelled = false;
++    setLoading(true); setLoadError(false); setSelectedSize(null); setSelectedColor(null); setExpanded(null); setActiveImage(0); setReady(false);
+     Promise.all([fetchProductById(productId), fetchProductInventory(productId)])
+       .then(([p, inv]) => {
++        if (cancelled) return;
+         setProduct(p);
+         setInventory(inv);
+         const sz = Array.isArray(p?.sizes) ? p.sizes : [];
+         if (sz.length === 1) setSelectedSize(sz[0]);
+         setTimeout(() => setReady(true), 60);
+       })
+-      .catch(console.error)
+-      .finally(() => setLoading(false));
+-  }, [productId]);
++      .catch(() => { if (!cancelled) setLoadError(true); })
++      .finally(() => { if (!cancelled) setLoading(false); });
++    return () => { cancelled = true; };
++  }, [productId, retryNonce]);
++
++  // Auto-retry once connectivity returns, if the load failed
++  useEffect(() => {
++    if (!loadError) return;
++    window.addEventListener('online', retry);
++    return () => window.removeEventListener('online', retry);
++  }, [loadError]);
+ 
+   if (loading) return <LoadingState />;
++  if (loadError) return <ErrorState onRetry={retry} onNavigate={onNavigate} />;
+   if (!product)  return <NotFoundState onNavigate={onNavigate} />;
+ 
+   const images = [product.image_1, product.image_2, product.image_male, product.image_female].filter(Boolean);
+@@ -586,6 +600,19 @@ function NotFoundState({ onNavigate }) {
+   );
+ }
+ 
++function ErrorState({ onRetry, onNavigate }) {
++  return (
++    <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, padding: '0 24px', textAlign: 'center' }}>
++      <p style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: '16px', letterSpacing: '0.04em', color: '#ccc' }}>Couldn't load this product</p>
++      <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '12px', color: '#bbb', maxWidth: 280, margin: 0 }}>Check your connection and try again.</p>
++      <div style={{ display: 'flex', gap: 12 }}>
++        <button onClick={onRetry} style={{ padding: '11px 24px', background: '#000', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase' }}>Try Again</button>
++        <button onClick={() => onNavigate?.('shop')} style={{ padding: '11px 24px', background: 'none', color: '#000', border: '1px solid #000', cursor: 'pointer', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase' }}>Back to Shop</button>
++      </div>
++    </div>
++  );
++}
++
+ const crumbBtn = { background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: "'Archivo', sans-serif", fontSize: '10px', letterSpacing: '0.1em', color: '#bbb', textTransform: 'uppercase', transition: 'color 0.15s' };
+ 
+ const arrowStyle = side => ({
+diff --git a/src/pages/ShopPage.jsx b/src/pages/ShopPage.jsx
+index 1a29860..bedf610 100644
+--- a/src/pages/ShopPage.jsx
++++ b/src/pages/ShopPage.jsx
+@@ -1,7 +1,9 @@
+ import { useState, useEffect, useRef, useCallback } from 'react';
+ import ProductCard from '../components/ProductCard';
+ import Footer from '../components/Footer';
++import FetchErrorState from '../components/FetchErrorState';
+ import { fetchProducts } from '../services/products';
++import { useAsyncFetch } from '../utils/useAsyncFetch';
+ import { useResponsiveGrid } from '../utils/responsiveGrid';
+ import logoBadge from '../assets/badge.webp';
+ 
+@@ -20,9 +22,7 @@ function ViewToggle({ showPrice, setShowPrice }) {
+ 
+ export default function ShopPage({ onNavigate }) {
+   const [showPrice, setShowPrice]           = useState(false);
+-  const [products, setProducts]             = useState([]);
+   const [displayedProducts, setDisplayedProducts] = useState([]);
+-  const [loading, setLoading]               = useState(true);
+   const [hasMore, setHasMore]               = useState(true);
+   const [currentIndex, setCurrentIndex]     = useState(0);
+   const [ready, setReady]                   = useState(false);
+@@ -31,6 +31,9 @@ export default function ShopPage({ onNavigate }) {
+   const gridColumns = useResponsiveGrid();
+   const PRODUCTS_PER_PAGE = 25;
+ 
++  const fetcher = useCallback(() => fetchProducts(null, null, 1000), []);
++  const { data: products, loading, error, retry } = useAsyncFetch(fetcher);
++
+   useEffect(() => {
+     const h = () => setIsMobile(window.innerWidth < 768);
+     window.addEventListener('resize', h);
+@@ -39,19 +42,14 @@ export default function ShopPage({ onNavigate }) {
+   }, []);
+ 
+   useEffect(() => {
+-    fetchProducts(null, null, 1000)
+-      .then(all => {
+-        setProducts(all);
+-        setDisplayedProducts(all.slice(0, PRODUCTS_PER_PAGE));
+-        setCurrentIndex(PRODUCTS_PER_PAGE);
+-        setHasMore(all.length > PRODUCTS_PER_PAGE);
+-      })
+-      .catch(console.error)
+-      .finally(() => setLoading(false));
+-  }, []);
++    if (!products) return;
++    setDisplayedProducts(products.slice(0, PRODUCTS_PER_PAGE));
++    setCurrentIndex(PRODUCTS_PER_PAGE);
++    setHasMore(products.length > PRODUCTS_PER_PAGE);
++  }, [products]);
+ 
+   const loadMore = useCallback(() => {
+-    if (!hasMore || currentIndex >= products.length) return;
++    if (!products || !hasMore || currentIndex >= products.length) return;
+     const next = currentIndex + PRODUCTS_PER_PAGE;
+     setDisplayedProducts(products.slice(0, next));
+     setCurrentIndex(next);
+@@ -132,7 +130,7 @@ export default function ShopPage({ onNavigate }) {
+           </div>
+           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+             <ViewToggle showPrice={showPrice} setShowPrice={setShowPrice} />
+-            {!loading && products.length > 0 && (
++            {!loading && !error && products?.length > 0 && (
+               <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', letterSpacing: '0.1em', color: '#ccc', textTransform: 'uppercase' }}>
+                 {products.length}
+               </span>
+@@ -141,10 +139,12 @@ export default function ShopPage({ onNavigate }) {
+         </div>
+ 
+         {/* Grid */}
+-        {loading && displayedProducts.length === 0 ? (
++        {loading ? (
+           <div style={{ height: 320, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+-            <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.22em', color: '#ddd', textTransform: 'uppercase' }}>—</span>
++            <div style={{ width: 24, height: 24, border: '1.5px solid #e0e0e0', borderTopColor: '#000', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+           </div>
++        ) : error ? (
++          <FetchErrorState onRetry={retry} />
+         ) : displayedProducts.length > 0 ? (
+           <>
+             <div style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: isMobile ? '10px' : '24px' }}>
+diff --git a/src/pages/TshirtsPage.jsx b/src/pages/TshirtsPage.jsx
+index 205085b..ef6d450 100644
+--- a/src/pages/TshirtsPage.jsx
++++ b/src/pages/TshirtsPage.jsx
+@@ -1,7 +1,9 @@
+ import { useState, useEffect, useRef, useCallback } from 'react';
+ import ProductCard from '../components/ProductCard';
+ import Footer from '../components/Footer';
++import FetchErrorState from '../components/FetchErrorState';
+ import { fetchProducts } from '../services/products';
++import { useAsyncFetch } from '../utils/useAsyncFetch';
+ import { useResponsiveGrid } from '../utils/responsiveGrid';
+ 
+ function ViewToggle({ showPrice, setShowPrice }) {
+@@ -19,9 +21,7 @@ function ViewToggle({ showPrice, setShowPrice }) {
+ 
+ export default function TshirtsPage({ onNavigate }) {
+   const [showPrice, setShowPrice]           = useState(false);
+-  const [products, setProducts]             = useState([]);
+   const [displayedProducts, setDisplayedProducts] = useState([]);
+-  const [loading, setLoading]               = useState(true);
+   const [hasMore, setHasMore]               = useState(true);
+   const [currentIndex, setCurrentIndex]     = useState(0);
+   const [activeGender, setActiveGender]     = useState('all');
+@@ -31,7 +31,10 @@ export default function TshirtsPage({ onNavigate }) {
+   const gridColumns = useResponsiveGrid();
+   const PRODUCTS_PER_PAGE = 25;
+ 
+-  const filteredProducts = activeGender === 'all'
++  const fetcher = useCallback(() => fetchProducts('tshirts', null, 1000), []);
++  const { data: products, loading, error, retry } = useAsyncFetch(fetcher);
++
++  const filteredProducts = !products ? [] : activeGender === 'all'
+     ? products
+     : products.filter(p => p.gender === activeGender || p.gender === 'unisex');
+ 
+@@ -42,18 +45,6 @@ export default function TshirtsPage({ onNavigate }) {
+     return () => window.removeEventListener('resize', h);
+   }, []);
+ 
+-  useEffect(() => {
+-    fetchProducts('tshirts', null, 1000)
+-      .then(data => {
+-        setProducts(data);
+-        setDisplayedProducts(data.slice(0, PRODUCTS_PER_PAGE));
+-        setCurrentIndex(PRODUCTS_PER_PAGE);
+-        setHasMore(data.length > PRODUCTS_PER_PAGE);
+-      })
+-      .catch(console.error)
+-      .finally(() => setLoading(false));
+-  }, []);
+-
+   useEffect(() => {
+     setDisplayedProducts(filteredProducts.slice(0, PRODUCTS_PER_PAGE));
+     setCurrentIndex(PRODUCTS_PER_PAGE);
+@@ -172,10 +163,12 @@ export default function TshirtsPage({ onNavigate }) {
+ 
+       {/* ── GRID ── */}
+       <main style={{ flex: 1, padding: isMobile ? '24px 12px' : '64px 40px' }}>
+-        {loading && displayedProducts.length === 0 ? (
++        {loading ? (
+           <div style={{ height: 320, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+-            <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.22em', color: '#ddd', textTransform: 'uppercase' }}>—</span>
++            <div style={{ width: 24, height: 24, border: '1.5px solid #e0e0e0', borderTopColor: '#000', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+           </div>
++        ) : error ? (
++          <FetchErrorState onRetry={retry} />
+         ) : displayedProducts.length > 0 ? (
+           <>
+             <div style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: isMobile ? '10px' : '24px' }}>
+diff --git a/src/services/products.js b/src/services/products.js
+index cb57108..4a5f947 100644
+--- a/src/services/products.js
++++ b/src/services/products.js
+@@ -1,66 +1,68 @@
+ import { supabase } from './supabase';
++import { withRetry } from '../utils/fetchWithRetry';
+ 
+ /**
+- * Fetch all products or filter by category/gender/is_new_arrival
++ * Fetch all products or filter by category/gender/is_new_arrival.
++ * Retries automatically on failure (flaky connection, cold Supabase
++ * connection, etc.) before giving up — see withRetry. Throws if every
++ * attempt fails, so the caller can show a real error/retry state instead
++ * of silently rendering "no products."
+  */
+ export const fetchProducts = async (category = null, gender = null, limit = null, isNewArrival = null) => {
+-  let query = supabase.from('products').select('*');
++  return withRetry(async () => {
++    let query = supabase.from('products').select('*');
+ 
+-  if (category) {
+-    query = query.eq('category', category);
+-  }
++    if (category) {
++      query = query.eq('category', category);
++    }
+ 
+-  if (gender) {
+-    query = query.eq('gender', gender);
+-  }
++    if (gender) {
++      query = query.eq('gender', gender);
++    }
+ 
+-  if (isNewArrival !== null) {
+-    query = query.eq('is_new_arrival', isNewArrival);
+-  }
++    if (isNewArrival !== null) {
++      query = query.eq('is_new_arrival', isNewArrival);
++    }
+ 
+-  if (limit) {
+-    query = query.limit(limit);
+-  }
++    if (limit) {
++      query = query.limit(limit);
++    }
+ 
+-  const { data, error } = await query;
+-  if (error) {
+-    console.error('Error fetching products:', error);
+-    return [];
+-  }
+-  return data || [];
++    const { data, error } = await query;
++    if (error) throw error;
++    return data || [];
++  });
+ };
+ 
+ /**
+- * Fetch single product by ID
++ * Fetch single product by ID. Retries on failure; throws if all attempts fail.
+  */
+ export const fetchProductById = async (productId) => {
+-  const { data, error } = await supabase
+-    .from('products')
+-    .select('*')
+-    .eq('id', productId)
+-    .single();
+-
+-  if (error) {
+-    console.error('Error fetching product:', error);
+-    return null;
+-  }
+-  return data;
++  return withRetry(async () => {
++    const { data, error } = await supabase
++      .from('products')
++      .select('*')
++      .eq('id', productId)
++      .single();
++
++    if (error) throw error;
++    return data;
++  });
+ };
+ 
+ /**
+- * Fetch inventory for a specific product
++ * Fetch inventory for a specific product. Retries on failure; throws if all attempts fail.
+  */
+ export const fetchProductInventory = async (productId) => {
+-  const { data, error } = await supabase
+-    .from('product_inventory')
+-    .select('*')
+-    .eq('product_id', productId);
+-
+-  if (error) {
+-    console.error('Error fetching inventory:', error);
+-    return [];
+-  }
+-  return data || [];
++  return withRetry(async () => {
++    const { data, error } = await supabase
++      .from('product_inventory')
++      .select('*')
++      .eq('product_id', productId);
++
++    if (error) throw error;
++    return data || [];
++  });
+ };
+ 
+ /**
+diff --git a/src/utils/fetchWithRetry.js b/src/utils/fetchWithRetry.js
+new file mode 100644
+index 0000000..70efabb
+--- /dev/null
++++ b/src/utils/fetchWithRetry.js
+@@ -0,0 +1,26 @@
++/**
++ * Retry an async function with exponential backoff.
++ *
++ * Built for Supabase reads that gate what a customer can see (products,
++ * product detail, inventory) — on shaky mobile connections a single failed
++ * request shouldn't be the difference between "showing the shop" and
++ * "showing nothing." This keeps trying quietly before giving up.
++ *
++ * @param {() => Promise<T>} fn      - the thing to retry; should throw on failure
++ * @param {number} retries           - additional attempts after the first (default 3 → 4 total tries)
++ * @param {number} baseDelayMs       - delay before the 2nd attempt; doubles each retry
++ */
++export async function withRetry(fn, { retries = 3, baseDelayMs = 600 } = {}) {
++  let lastErr;
++  for (let attempt = 0; attempt <= retries; attempt++) {
++    try {
++      return await fn();
++    } catch (err) {
++      lastErr = err;
++      if (attempt < retries) {
++        await new Promise(resolve => setTimeout(resolve, baseDelayMs * 2 ** attempt));
++      }
++    }
++  }
++  throw lastErr;
++}
+diff --git a/src/utils/useAsyncFetch.js b/src/utils/useAsyncFetch.js
+new file mode 100644
+index 0000000..c6aded1
+--- /dev/null
++++ b/src/utils/useAsyncFetch.js
+@@ -0,0 +1,48 @@
++import { useState, useEffect, useCallback, useRef } from 'react';
++
++/**
++ * Runs an async fetcher and tracks loading/error/data state.
++ *
++ * - fetcher should throw on failure (the retry-wrapped product-service
++ *   functions already do — see services/products.js + utils/fetchWithRetry.js).
++ * - retry() re-runs the fetch — wire it to a "Try Again" button.
++ * - Also retries automatically the moment the browser regains connectivity
++ *   while in an error state, so a customer who lost signal mid-load doesn't
++ *   have to do anything once it's back — the page keeps trying quietly.
++ *
++ * deps re-triggers the fetch when they change (e.g. a category param).
++ */
++export function useAsyncFetch(fetcher, deps = []) {
++  const [data, setData]       = useState(null);
++  const [loading, setLoading] = useState(true);
++  const [error, setError]     = useState(false);
++  const [nonce, setNonce]     = useState(0);
++  const fetcherRef = useRef(fetcher);
++  useEffect(() => { fetcherRef.current = fetcher; });
++
++  const retry = useCallback(() => setNonce(n => n + 1), []);
++
++  useEffect(() => {
++    let cancelled = false;
++    // Canonical data-fetching effect (fetch + cancellation flag, per React docs'
++    // "Fetching data" example) — the set-state-in-effect rule flags this
++    // pattern broadly, but this is the sanctioned shape for it.
++    // eslint-disable-next-line react-hooks/set-state-in-effect
++    setLoading(true);
++    setError(false);
++    fetcherRef.current()
++      .then(result => { if (!cancelled) setData(result); })
++      .catch(() => { if (!cancelled) setError(true); })
++      .finally(() => { if (!cancelled) setLoading(false); });
++    return () => { cancelled = true; };
++    // eslint-disable-next-line react-hooks/exhaustive-deps
++  }, [...deps, nonce]);
++
++  useEffect(() => {
++    if (!error) return;
++    window.addEventListener('online', retry);
++    return () => window.removeEventListener('online', retry);
++  }, [error, retry]);
++
++  return { data, loading, error, retry };
++}

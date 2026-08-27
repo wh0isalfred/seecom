@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import heroVideoDesktop from '../assets/hero-video-desktop.mp4';
 import heroVideoMobile  from '../assets/hero-video-mobile.mp4';
 import heroPoster       from '../assets/hero-poster.jpg';
@@ -6,6 +6,8 @@ import shopAllImage  from '../assets/shopallsection.jpeg';
 import lookbookImage from '../assets/lookbook3.webp';
 import { fetchProducts } from '../services/products';
 import { subscribeEmail } from '../services/subscribersService';
+import { useAsyncFetch } from '../utils/useAsyncFetch';
+import FetchErrorState from '../components/FetchErrorState';
 import ProductCard from '../components/ProductCard';
 import { useResponsiveGrid } from '../utils/responsiveGrid';
 import Footer from '../components/Footer';
@@ -60,14 +62,16 @@ function ViewToggle({ showPrice, setShowPrice }) {
 
 export default function HomePage({ onNavigate }) {
   const [showPrice, setShowPrice]             = useState(false);
-  const [products, setProducts]               = useState([]);
-  const [loading, setLoading]                 = useState(true);
-  const [shopAllProducts, setShopAllProducts] = useState([]);
-  const [shopAllLoading, setShopAllLoading]   = useState(true);
   const [heroReady, setHeroReady]             = useState(false);
   const [isMobile, setIsMobile]               = useState(window.innerWidth < 768);
   const heroRef = useRef(null);
   const gridColumns = useResponsiveGrid();
+
+  const newArrivalsFetcher = useCallback(() => fetchProducts(null, null, 5, true), []);
+  const { data: products, loading, error, retry } = useAsyncFetch(newArrivalsFetcher);
+
+  const shopAllFetcher = useCallback(() => fetchProducts(null, null, 10, false), []);
+  const { data: shopAllProducts, loading: shopAllLoading, error: shopAllError, retry: retryShopAll } = useAsyncFetch(shopAllFetcher);
 
   const [arrivalsRef, arrivalsInView]   = useInView();
   const [bannerRef, bannerParallaxY]    = useParallax(0.12);
@@ -106,14 +110,6 @@ export default function HomePage({ onNavigate }) {
     document.body.style.cssText = 'margin:0;padding:0;overflow-x:hidden;';
     const t = setTimeout(() => setHeroReady(true), 80);
     return () => { clearTimeout(t); };
-  }, []);
-
-  useEffect(() => {
-    fetchProducts(null, null, 5, true).then(setProducts).catch(console.error).finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
-    fetchProducts(null, null, 10, false).then(setShopAllProducts).catch(console.error).finally(() => setShopAllLoading(false));
   }, []);
 
   // Standard reveal
@@ -322,11 +318,13 @@ export default function HomePage({ onNavigate }) {
 
         {loading ? (
           <div style={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.22em', color: '#ddd', textTransform: 'uppercase' }}>—</span>
+            <div style={{ width: 22, height: 22, border: '1.5px solid #e0e0e0', borderTopColor: '#000', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
           </div>
+        ) : error ? (
+          <FetchErrorState onRetry={retry} height={220} message="Couldn't load new arrivals." />
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: isMobile ? '10px' : '24px' }}>
-            {products.map((p, i) => (
+            {(products || []).map((p, i) => (
               <div key={p.id} style={{
                 opacity: arrivalsInView ? 1 : 0,
                 transform: arrivalsInView ? 'translateY(0)' : 'translateY(20px)',
@@ -378,7 +376,7 @@ export default function HomePage({ onNavigate }) {
         </div>
 
         {/* Top-right: product count */}
-        {shopAllProducts.length > 0 && (
+        {shopAllProducts?.length > 0 && (
           <div style={{
             position: 'absolute', top: isMobile ? 24 : 36, right: isMobile ? 20 : 44,
             zIndex: 2,
@@ -481,11 +479,13 @@ export default function HomePage({ onNavigate }) {
 
         {shopAllLoading ? (
           <div style={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.22em', color: '#ddd', textTransform: 'uppercase' }}>—</span>
+            <div style={{ width: 22, height: 22, border: '1.5px solid #e0e0e0', borderTopColor: '#000', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
           </div>
+        ) : shopAllError ? (
+          <FetchErrorState onRetry={retryShopAll} height={220} message="Couldn't load products." />
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: isMobile ? '10px' : '24px' }}>
-            {shopAllProducts.map(p => (
+            {(shopAllProducts || []).map(p => (
               <ProductCard key={p.id} product={p} showPrice={showPrice} onProductClick={id => onNavigate?.('product', { productId: id })} />
             ))}
           </div>

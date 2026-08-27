@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import ProductCard from '../components/ProductCard';
 import Footer from '../components/Footer';
+import FetchErrorState from '../components/FetchErrorState';
 import { fetchProducts } from '../services/products';
+import { useAsyncFetch } from '../utils/useAsyncFetch';
 import { useResponsiveGrid } from '../utils/responsiveGrid';
 
 function ViewToggle({ showPrice, setShowPrice }) {
@@ -19,9 +21,7 @@ function ViewToggle({ showPrice, setShowPrice }) {
 
 export default function ChainsPage({ onNavigate }) {
   const [showPrice, setShowPrice]           = useState(false);
-  const [products, setProducts]             = useState([]);
   const [displayedProducts, setDisplayedProducts] = useState([]);
-  const [loading, setLoading]               = useState(true);
   const [hasMore, setHasMore]               = useState(true);
   const [currentIndex, setCurrentIndex]     = useState(0);
   const [ready, setReady]                   = useState(false);
@@ -29,6 +29,9 @@ export default function ChainsPage({ onNavigate }) {
   const observerTarget = useRef(null);
   const gridColumns = useResponsiveGrid();
   const PRODUCTS_PER_PAGE = 25;
+
+  const fetcher = useCallback(() => fetchProducts('chains', null, 1000), []);
+  const { data: products, loading, error, retry } = useAsyncFetch(fetcher);
 
   useEffect(() => {
     const h = () => setIsMobile(window.innerWidth < 768);
@@ -38,19 +41,14 @@ export default function ChainsPage({ onNavigate }) {
   }, []);
 
   useEffect(() => {
-    fetchProducts('chains', null, 1000)
-      .then(data => {
-        setProducts(data);
-        setDisplayedProducts(data.slice(0, PRODUCTS_PER_PAGE));
-        setCurrentIndex(PRODUCTS_PER_PAGE);
-        setHasMore(data.length > PRODUCTS_PER_PAGE);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
+    if (!products) return;
+    setDisplayedProducts(products.slice(0, PRODUCTS_PER_PAGE));
+    setCurrentIndex(PRODUCTS_PER_PAGE);
+    setHasMore(products.length > PRODUCTS_PER_PAGE);
+  }, [products]);
 
   const loadMore = useCallback(() => {
-    if (!hasMore || currentIndex >= products.length) return;
+    if (!products || !hasMore || currentIndex >= products.length) return;
     const next = currentIndex + PRODUCTS_PER_PAGE;
     setDisplayedProducts(products.slice(0, next));
     setCurrentIndex(next);
@@ -159,10 +157,12 @@ export default function ChainsPage({ onNavigate }) {
 
       {/* ── GRID ── */}
       <main style={{ flex: 1, padding: isMobile ? '24px 12px' : '64px 40px' }}>
-        {loading && displayedProducts.length === 0 ? (
+        {loading ? (
           <div style={{ height: 320, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.22em', color: '#ddd', textTransform: 'uppercase' }}>—</span>
+            <div style={{ width: 24, height: 24, border: '1.5px solid #e0e0e0', borderTopColor: '#000', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
           </div>
+        ) : error ? (
+          <FetchErrorState onRetry={retry} />
         ) : displayedProducts.length > 0 ? (
           <>
             <div style={{ display: 'grid', gridTemplateColumns: gridColumns, gap: isMobile ? '10px' : '24px' }}>

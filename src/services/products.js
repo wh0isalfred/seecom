@@ -1,66 +1,68 @@
 import { supabase } from './supabase';
+import { withRetry } from '../utils/fetchWithRetry';
 
 /**
- * Fetch all products or filter by category/gender/is_new_arrival
+ * Fetch all products or filter by category/gender/is_new_arrival.
+ * Retries automatically on failure (flaky connection, cold Supabase
+ * connection, etc.) before giving up — see withRetry. Throws if every
+ * attempt fails, so the caller can show a real error/retry state instead
+ * of silently rendering "no products."
  */
 export const fetchProducts = async (category = null, gender = null, limit = null, isNewArrival = null) => {
-  let query = supabase.from('products').select('*');
+  return withRetry(async () => {
+    let query = supabase.from('products').select('*');
 
-  if (category) {
-    query = query.eq('category', category);
-  }
+    if (category) {
+      query = query.eq('category', category);
+    }
 
-  if (gender) {
-    query = query.eq('gender', gender);
-  }
+    if (gender) {
+      query = query.eq('gender', gender);
+    }
 
-  if (isNewArrival !== null) {
-    query = query.eq('is_new_arrival', isNewArrival);
-  }
+    if (isNewArrival !== null) {
+      query = query.eq('is_new_arrival', isNewArrival);
+    }
 
-  if (limit) {
-    query = query.limit(limit);
-  }
+    if (limit) {
+      query = query.limit(limit);
+    }
 
-  const { data, error } = await query;
-  if (error) {
-    console.error('Error fetching products:', error);
-    return [];
-  }
-  return data || [];
+    const { data, error } = await query;
+    if (error) throw error;
+    return data || [];
+  });
 };
 
 /**
- * Fetch single product by ID
+ * Fetch single product by ID. Retries on failure; throws if all attempts fail.
  */
 export const fetchProductById = async (productId) => {
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .eq('id', productId)
-    .single();
+  return withRetry(async () => {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', productId)
+      .single();
 
-  if (error) {
-    console.error('Error fetching product:', error);
-    return null;
-  }
-  return data;
+    if (error) throw error;
+    return data;
+  });
 };
 
 /**
- * Fetch inventory for a specific product
+ * Fetch inventory for a specific product. Retries on failure; throws if all attempts fail.
  */
 export const fetchProductInventory = async (productId) => {
-  const { data, error } = await supabase
-    .from('product_inventory')
-    .select('*')
-    .eq('product_id', productId);
+  return withRetry(async () => {
+    const { data, error } = await supabase
+      .from('product_inventory')
+      .select('*')
+      .eq('product_id', productId);
 
-  if (error) {
-    console.error('Error fetching inventory:', error);
-    return [];
-  }
-  return data || [];
+    if (error) throw error;
+    return data || [];
+  });
 };
 
 /**
