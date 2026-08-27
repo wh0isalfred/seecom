@@ -144,7 +144,7 @@ export default function CartPage({ cart = [], setCart, onNavigate }) {
             onMouseLeave={e => e.currentTarget.style.background = '#000'}
           >Shop All</button>
         </div>
-        <Footer />
+        <Footer onNavigate={onNavigate} />
         <style>{`@keyframes fadeUp { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }`}</style>
       </div>
     );
@@ -262,7 +262,7 @@ export default function CartPage({ cart = [], setCart, onNavigate }) {
             <div style={{ display: 'flex', gap: 8 }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, marginTop: 2, color: '#bbb' }}><path d="M3 10h10a5 5 0 010 10H7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M6 7l-3 3 3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
               <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>
-                No available return policy
+                No change-of-mind returns · <a onClick={() => onNavigate?.('no-return')} style={{ color: '#aaa', textDecoration: 'underline', textUnderlineOffset: '2px', cursor: 'pointer' }}>Read policy</a>
               </p>
             </div>
           </div>
@@ -361,7 +361,7 @@ export default function CartPage({ cart = [], setCart, onNavigate }) {
         </div>
       )}
 
-      <Footer />
+      <Footer onNavigate={onNavigate} />
     </div>
   );
 }

@@ -651,7 +651,7 @@ export default function HomePage({ onNavigate }) {
         </div>
       </section>
 
-      <Footer />
+      <Footer onNavigate={onNavigate} />
     </div>
   );
 }

@@ -203,7 +203,7 @@ export default function TshirtsPage({ onNavigate }) {
         )}
       </main>
 
-      <Footer />
+      <Footer onNavigate={onNavigate} />
     </div>
   );
 }

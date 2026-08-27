@@ -190,7 +190,7 @@ export default function ChainsPage({ onNavigate }) {
         )}
       </main>
 
-      <Footer />
+      <Footer onNavigate={onNavigate} />
     </div>
   );
 }

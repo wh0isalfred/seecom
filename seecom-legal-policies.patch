@@ -1,0 +1,1173 @@
+diff --git a/src/App.jsx b/src/App.jsx
+index add0698..23b1266 100644
+--- a/src/App.jsx
++++ b/src/App.jsx
+@@ -18,6 +18,9 @@ const CartPage          = lazy(() => import('./pages/CartPage'))
+ const CheckoutPage      = lazy(() => import('./pages/CheckoutPage'))
+ const ProductDetailPage = lazy(() => import('./pages/ProductDetailPage'))
+ const AdminPage         = lazy(() => import('./pages/AdminPage'))
++const TermsPage         = lazy(() => import('./pages/TermsPage'))
++const PrivacyPage       = lazy(() => import('./pages/PrivacyPage'))
++const NoReturnPage      = lazy(() => import('./pages/NoReturnPage'))
+ 
+ // Minimal fallback — invisible, no layout shift
+ const PageFallback = () => (
+@@ -42,13 +45,6 @@ function AppInner() {
+   const [sessionId, setSessionId]         = useState(null)
+   const [sidebarOpen, setSidebarOpen]     = useState(false)
+   const [authModalOpen, setAuthModalOpen] = useState(false)
+-  const [isMobile, setIsMobile]           = useState(window.innerWidth < 768)
+-
+-  useEffect(() => {
+-    const h = () => setIsMobile(window.innerWidth < 768)
+-    window.addEventListener('resize', h)
+-    return () => window.removeEventListener('resize', h)
+-  }, [])
+ 
+   // Persist guest cart to localStorage
+   useEffect(() => {
+@@ -136,7 +132,7 @@ function AppInner() {
+   }
+ 
+   const handleSidebarNavigate = (category) => {
+-    let page   = 'home'
++    let page
+     let params = {}
+ 
+     if (category === 'home')         { page = 'home' }
+@@ -249,7 +245,6 @@ function AppInner() {
+             {currentPage === 'product' && sessionId && (
+               <ProductDetailPage
+                 productId={pageParams.productId}
+-                cart={cart}
+                 setCart={setCart}
+                 onNavigate={goToPage}
+               />
+@@ -261,6 +256,18 @@ function AppInner() {
+                 : (() => { setAuthModalOpen(true); goToPage('home'); return null; })()
+             )}
+ 
++            {currentPage === 'terms' && (
++              <TermsPage onNavigate={goToPage} />
++            )}
++
++            {currentPage === 'privacy' && (
++              <PrivacyPage onNavigate={goToPage} />
++            )}
++
++            {currentPage === 'no-return' && (
++              <NoReturnPage onNavigate={goToPage} />
++            )}
++
+           </div>
+ 
+           {/* Auth modal — rendered above everything, any page */}
+diff --git a/src/components/Footer.jsx b/src/components/Footer.jsx
+index 08aeb96..6cf0eb5 100644
+--- a/src/components/Footer.jsx
++++ b/src/components/Footer.jsx
+@@ -1,6 +1,6 @@
+ import { useEffect, useState } from 'react';
+ 
+-export default function Footer() {
++export default function Footer({ onNavigate }) {
+   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
+ 
+   useEffect(() => {
+@@ -106,7 +106,7 @@ export default function Footer() {
+ 
+           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+             <a
+-              href="#"
++              onClick={() => onNavigate?.('terms')}
+               style={{
+                 fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
+                 fontSize: '11px',
+@@ -115,6 +115,7 @@ export default function Footer() {
+                 textDecoration: 'none',
+                 textTransform: 'uppercase',
+                 transition: 'color 0.2s',
++                cursor: 'pointer',
+               }}
+               onMouseEnter={(e) => (e.target.style.color = '#000')}
+               onMouseLeave={(e) => (e.target.style.color = '#666')}
+@@ -122,7 +123,7 @@ export default function Footer() {
+               Terms & Conditions
+             </a>
+             <a
+-              href="#"
++              onClick={() => onNavigate?.('privacy')}
+               style={{
+                 fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
+                 fontSize: '11px',
+@@ -131,6 +132,7 @@ export default function Footer() {
+                 textDecoration: 'none',
+                 textTransform: 'uppercase',
+                 transition: 'color 0.2s',
++                cursor: 'pointer',
+               }}
+               onMouseEnter={(e) => (e.target.style.color = '#000')}
+               onMouseLeave={(e) => (e.target.style.color = '#666')}
+@@ -138,7 +140,7 @@ export default function Footer() {
+               Privacy Policy
+             </a>
+             <a
+-              href="#"
++              onClick={() => onNavigate?.('no-return')}
+               style={{
+                 fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
+                 fontSize: '11px',
+@@ -147,11 +149,12 @@ export default function Footer() {
+                 textDecoration: 'none',
+                 textTransform: 'uppercase',
+                 transition: 'color 0.2s',
++                cursor: 'pointer',
+               }}
+               onMouseEnter={(e) => (e.target.style.color = '#000')}
+               onMouseLeave={(e) => (e.target.style.color = '#666')}
+             >
+-              Returns Policy
++              No-Return Policy
+             </a>
+           </div>
+         </div>
+diff --git a/src/components/LegalMarkdown.jsx b/src/components/LegalMarkdown.jsx
+new file mode 100644
+index 0000000..be3a0be
+--- /dev/null
++++ b/src/components/LegalMarkdown.jsx
+@@ -0,0 +1,108 @@
++/**
++ * Minimal markdown-to-JSX renderer, scoped to exactly what the SEE.COM legal
++ * policy content uses: #/##/### headings, "- " bullet lists, **bold** inline,
++ * "---" horizontal rules, and plain paragraphs (with hard line breaks where
++ * the source has them on separate lines within one block).
++ *
++ * Not a general-purpose markdown parser — kept intentionally small so the
++ * legal pages render exactly what's in src/content/legalPolicies.js with no
++ * surprises.
++ */
++
++function renderInline(line, key) {
++  const parts = line.split(/(\*\*[^*]+\*\*)/g).filter(Boolean);
++  return (
++    <span key={key}>
++      {parts.map((part, i) =>
++        part.startsWith('**') && part.endsWith('**')
++          ? <strong key={i} style={{ fontWeight: 700, color: '#000' }}>{part.slice(2, -2)}</strong>
++          : <span key={i}>{part}</span>
++      )}
++    </span>
++  );
++}
++
++export default function LegalMarkdown({ content }) {
++  const blocks = content.trim().split(/\n\s*\n/);
++
++  return (
++    <>
++      {blocks.map((block, i) => {
++        const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
++        if (lines.length === 0) return null;
++
++        // Heading levels
++        if (lines[0].startsWith('### ')) {
++          return (
++            <h3 key={i} style={{
++              fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700,
++              fontSize: 13, letterSpacing: '0.04em', color: '#000',
++              margin: '28px 0 8px', textTransform: 'uppercase',
++            }}>
++              {lines[0].slice(4)}
++            </h3>
++          );
++        }
++        if (lines[0].startsWith('## ')) {
++          return (
++            <h2 key={i} style={{
++              fontFamily: "'Clash Display', sans-serif", fontWeight: 600,
++              fontSize: 17, letterSpacing: '0.01em', color: '#000',
++              margin: '32px 0 10px',
++            }}>
++              {lines[0].slice(3)}
++            </h2>
++          );
++        }
++        if (lines[0].startsWith('# ')) {
++          return (
++            <h1 key={i} style={{
++              fontFamily: "'Clash Display', sans-serif", fontWeight: 600,
++              fontSize: 24, letterSpacing: '0.01em', color: '#000',
++              margin: '40px 0 14px', paddingTop: i === 0 ? 0 : 20,
++              borderTop: i === 0 ? 'none' : '3px solid #000',
++            }}>
++              {lines[0].slice(2)}
++            </h1>
++          );
++        }
++
++        // Horizontal rule
++        if (lines.length === 1 && lines[0] === '---') {
++          return <hr key={i} style={{ border: 'none', borderTop: '1px solid #f0f0f0', margin: '32px 0' }} />;
++        }
++
++        // Bullet list
++        if (lines.every(l => l.startsWith('- '))) {
++          return (
++            <ul key={i} style={{ margin: '0 0 16px', paddingLeft: 20 }}>
++              {lines.map((l, j) => (
++                <li key={j} style={{
++                  fontFamily: "'Archivo', sans-serif", fontSize: 13, lineHeight: 1.8,
++                  color: '#444', marginBottom: 4,
++                }}>
++                  {renderInline(l.slice(2), j)}
++                </li>
++              ))}
++            </ul>
++          );
++        }
++
++        // Paragraph — preserve intentional line breaks within the block
++        return (
++          <p key={i} style={{
++            fontFamily: "'Archivo', sans-serif", fontSize: 13, lineHeight: 1.8,
++            color: '#444', margin: '0 0 16px',
++          }}>
++            {lines.map((l, j) => (
++              <span key={j}>
++                {renderInline(l, j)}
++                {j < lines.length - 1 && <br />}
++              </span>
++            ))}
++          </p>
++        );
++      })}
++    </>
++  );
++}
+diff --git a/src/components/LegalPageLayout.jsx b/src/components/LegalPageLayout.jsx
+new file mode 100644
+index 0000000..278d678
+--- /dev/null
++++ b/src/components/LegalPageLayout.jsx
+@@ -0,0 +1,65 @@
++import { useState, useEffect } from 'react';
++import logoBadge from '../assets/badge.webp';
++import Footer from '../components/Footer';
++import LegalMarkdown from '../components/LegalMarkdown';
++import { POLICY_EFFECTIVE_DATE, POLICY_LAST_UPDATED } from '../content/legalPolicies';
++
++function PageHeader({ onNavigate, isMobile }) {
++  return (
++    <header style={{
++      padding: isMobile ? '16px 20px' : '18px 40px',
++      borderBottom: '1px solid #f0f0f0',
++      display: 'flex', alignItems: 'center', justifyContent: 'center',
++      position: 'relative',
++    }}>
++      <button onClick={() => onNavigate?.('home')} style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: isMobile ? '16px' : '20px', letterSpacing: '0.22em', color: '#000', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
++        see.Com
++      </button>
++      <img src={logoBadge} alt="SEE.COM" onClick={() => onNavigate?.('landing')} style={{ position: 'absolute', right: isMobile ? '20px' : '40px', top: '50%', transform: 'translateY(-50%)', width: isMobile ? '36px' : '44px', height: isMobile ? '36px' : '44px', objectFit: 'cover', cursor: 'pointer' }} />
++    </header>
++  );
++}
++
++export default function LegalPageLayout({ title, content, onNavigate }) {
++  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
++
++  useEffect(() => {
++    const h = () => setIsMobile(window.innerWidth < 768);
++    window.addEventListener('resize', h);
++    return () => window.removeEventListener('resize', h);
++  }, []);
++
++  return (
++    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh', backgroundColor: '#fff' }}>
++      <PageHeader onNavigate={onNavigate} isMobile={isMobile} />
++
++      <div style={{ padding: isMobile ? '32px 20px 8px' : '48px 40px 8px', maxWidth: 720 }}>
++        <button
++          onClick={() => onNavigate?.('home')}
++          style={{
++            display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none',
++            cursor: 'pointer', padding: 0, marginBottom: 20,
++            fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 10,
++            letterSpacing: '0.1em', color: '#999', textTransform: 'uppercase',
++          }}
++        >
++          <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
++          Back
++        </button>
++
++        <h1 style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: isMobile ? '24px' : '32px', letterSpacing: '0.02em', color: '#000', margin: '0 0 8px' }}>
++          {title}
++        </h1>
++        <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: 11, letterSpacing: '0.05em', color: '#bbb', margin: '0 0 32px', textTransform: 'uppercase' }}>
++          Effective {POLICY_EFFECTIVE_DATE} · Last updated {POLICY_LAST_UPDATED}
++        </p>
++      </div>
++
++      <div style={{ padding: isMobile ? '0 20px 60px' : '0 40px 80px', maxWidth: 720, flex: 1 }}>
++        <LegalMarkdown content={content} />
++      </div>
++
++      <Footer onNavigate={onNavigate} />
++    </div>
++  );
++}
+diff --git a/src/content/legalPolicies.js b/src/content/legalPolicies.js
+new file mode 100644
+index 0000000..1377de3
+--- /dev/null
++++ b/src/content/legalPolicies.js
+@@ -0,0 +1,483 @@
++// Auto-extracted from SEE-COM-Legal-Policies.md (effective 27 August 2026).
++// Update this file (and only this file) when the underlying policy pack changes.
++
++export const POLICY_EFFECTIVE_DATE = '27 August 2026';
++export const POLICY_LAST_UPDATED   = '27 August 2026';
++
++export const TERMS_MD = `# 1. Terms and Conditions
++
++## 1.1 About these Terms
++
++These Terms and Conditions govern your access to and use of the SEE.COM website, your SEE.COM account, and any order you place through the website.
++
++In these Terms, “SEE.COM,” “we,” “us,” and “our” refer to the SEE.COM streetwear brand and online store. “You” and “your” refer to any visitor, customer, or account holder using the website.
++
++By using the website, creating an account, adding an item to your bag, or placing an order, you agree to these Terms. If you do not agree, do not use the website or place an order.
++
++## 1.2 Our Store
++
++SEE.COM sells streetwear, clothing, chains, accessories, and related products. Our collections may be released as limited drops. Quantities may be limited and products may not be restocked after they sell out.
++
++The availability of a product on the website does not guarantee that it will remain available. Adding an item to your bag does not reserve it.
++
++## 1.3 Product Information
++
++We aim to display product names, descriptions, prices, sizes, colours, images, materials, stock information, and other details accurately. However:
++
++- colours may appear differently depending on your device, screen, lighting, or display settings;
++- product images are illustrative and minor variations may occur;
++- measurements and size-guide information are approximate; and
++- obvious typographical, pricing, stock, or technical errors may occasionally occur.
++
++You are responsible for reviewing the product description, selected size, selected colour, quantity, price, and delivery information before payment.
++
++Where a product has a size guide, you should review it before ordering. SEE.COM chains are described on the website as one size fits all, with a standard length of approximately 50 cm and an adjustable clasp, unless the relevant product page states otherwise.
++
++## 1.4 Prices and Promotions
++
++All prices displayed on the website are in Nigerian naira (NGN) unless stated otherwise.
++
++Discounts, promotional prices, free-delivery offers, and limited-drop offers may be changed, suspended, or withdrawn at any time before an order is placed. A promotion cannot be applied retrospectively to an order that has already been completed unless we expressly agree otherwise.
++
++If a product is listed at an obviously incorrect price due to a technical or administrative error, we may contact you before fulfilment. If the correct price is higher and you do not wish to proceed, we will cancel the affected order and refund the amount paid for that item.
++
++## 1.5 Accounts and Guest Checkout
++
++You may be able to shop as a guest or create an account using an email address and password.
++
++You are responsible for:
++
++- providing accurate information;
++- keeping your password confidential;
++- preventing unauthorised access to your account or device; and
++- notifying us promptly if you suspect unauthorised account activity.
++
++We may suspend access where we reasonably believe an account is being used fraudulently, unlawfully, or in a way that could harm SEE.COM, our customers, or the website.
++
++Guest order information may be stored on the browser and device used to place the order. Clearing browser storage, changing devices, or using private-browsing mode may affect your ability to view a guest order through the website. You may still contact us using your order number and payment reference.
++
++## 1.6 Placing an Order
++
++When you submit an order, you are offering to purchase the selected products using the information supplied at checkout. An order is not finally accepted merely because an item was added to your bag or a payment window was opened.
++
++Your order is accepted when payment has been successfully verified and SEE.COM records or confirms the order. You should retain your order number and payment reference.
++
++After a successful order, the website may display an order number and allow you to follow the order through statuses such as:
++
++**Order Placed → Confirmed → Being Prepared → Shipped → Out for Delivery → Delivered**
++
++If there is a problem with an order after payment, contact us with the order number and Paystack payment reference.
++
++## 1.7 Payment
++
++Online payments are processed through Paystack. Available payment methods are those offered in the Paystack checkout interface at the time of payment.
++
++By paying through Paystack, you may also be subject to Paystack’s applicable terms and privacy practices. SEE.COM does not receive or store your complete card number, card PIN, or banking credentials through the website.
++
++You must not use a payment method without the account holder’s authorisation. We may delay or cancel an order where payment cannot be verified or where we reasonably suspect fraud, abuse, an incorrect amount, or an unauthorised transaction.
++
++If Paystack shows a successful payment but the website does not confirm the order, do not make a duplicate payment immediately. Contact SEE.COM with the payment reference so the transaction can be investigated.
++
++## 1.8 Stock and Order Cancellation
++
++Because SEE.COM releases limited pieces, an item may become unavailable before the order is fulfilled, including where two customers attempt to purchase the final unit at nearly the same time.
++
++We may cancel all or part of an order where:
++
++- payment is unsuccessful, incomplete, reversed, or cannot be verified;
++- the item is unavailable;
++- the price or product information contained an obvious error;
++- the delivery information is materially incomplete or invalid;
++- we reasonably suspect fraud, resale abuse, or unlawful activity; or
++- fulfilment is prevented by circumstances outside our reasonable control.
++
++If SEE.COM cancels a successfully paid order because the item is unavailable or because of an error attributable to us, the amount paid for the cancelled item and any applicable delivery charge will be refunded through an appropriate payment channel.
++
++## 1.9 Delivery
++
++SEE.COM currently estimates delivery within **7–14 business days**. Delivery fees and other delivery terms are set out in the Shipping and Delivery Policy below, which forms part of these Terms.
++
++Delivery estimates are not guaranteed dates. Sundays, public holidays, courier disruptions, adverse weather, security incidents, road restrictions, incorrect delivery information, and other circumstances may affect delivery time.
++
++## 1.10 No Change-of-Mind Returns or Exchanges
++
++SEE.COM does not operate a general return or exchange programme. Except where required by applicable law or where Section 1.11 applies, all completed sales are final.
++
++In particular, SEE.COM does not accept a return, exchange, or refund because:
++
++- you changed your mind;
++- you selected the wrong size, colour, style, or quantity;
++- an item does not fit as you expected after you selected the size;
++- you no longer want or need the item;
++- you found the item or a similar item at another price;
++- the product has been worn, used, washed, altered, damaged after delivery, or removed from its original condition; or
++- delivery occurred within the stated 7–14-business-day estimate but later than you personally expected.
++
++Please inspect all selections carefully before paying.
++
++## 1.11 Wrong, Damaged, Defective, or Materially Misdescribed Items
++
++The absence of a general return policy does not remove any remedy that cannot lawfully be excluded under applicable Nigerian consumer-protection law.
++
++If the item delivered is materially different from what you ordered, is damaged when delivered, has a material manufacturing defect, or is materially inconsistent with its description, contact SEE.COM as soon as reasonably possible through the order-issue channel below.
++
++You may be asked to provide:
++
++- your order number;
++- the phone number or email used for the order;
++- clear photographs or video showing the item, packaging, and issue; and
++- any other reasonable information needed to investigate the complaint.
++
++Do not wear, wash, alter, repair, or dispose of an affected item while the issue is being investigated. Where the complaint is verified, SEE.COM will provide an appropriate remedy required by applicable law, which may include correction, replacement, or refund depending on the circumstances and available stock.
++
++This section is an order-issue remedy and does not create a general change-of-mind return or size-exchange programme.
++
++## 1.12 Delivery Confirmation and Issue Reporting
++
++When an order is marked Shipped or Out for Delivery, the website may allow you to select “Confirm Received” or “Report Issue.” Only confirm receipt after you have actually received the order.
++
++If you have not received an order, use “Report Issue” or contact us promptly. The website may mark an unreported order as delivered 14 days after its recorded shipment date. This administrative status does not prevent you from presenting credible evidence that an order was not delivered, but delays in reporting may make an investigation more difficult.
++
++## 1.13 Acceptable Use
++
++You must not:
++
++- use the website for fraud, unlawful activity, or unauthorised payments;
++- interfere with the website, payment process, database, inventory, accounts, or security controls;
++- attempt to access another customer’s order, account, or personal information;
++- introduce malware or harmful code;
++- scrape, reproduce, resell, or commercially exploit website content without permission;
++- impersonate another person or provide deliberately false information; or
++- use automated methods to unfairly purchase limited-stock products.
++
++## 1.14 Intellectual Property
++
++The SEE.COM name, branding, product photography, product designs, artwork, graphics, website design, copy, audio, video, 3D assets, and other original materials are owned by or licensed to SEE.COM. They may not be copied, modified, distributed, republished, or used commercially without prior written permission, except as permitted by law.
++
++## 1.15 Website Availability
++
++We may modify, suspend, or discontinue any part of the website. We do not guarantee that the website, account system, order tracker, or payment interface will always be uninterrupted or error-free.
++
++Nothing in these Terms excludes liability that cannot lawfully be excluded. Subject to that limitation, SEE.COM is not responsible for indirect or consequential loss arising solely from temporary website unavailability, device incompatibility, or circumstances outside our reasonable control.
++
++## 1.16 Privacy
++
++Our collection and use of personal information are governed by the Privacy Policy below.
++
++## 1.17 Changes to these Terms
++
++We may update these Terms where our store, technology, payment methods, delivery arrangements, or legal obligations change. The effective date at the top identifies the current version. Changes apply prospectively and do not remove rights attached to an order already placed.
++
++## 1.18 Governing Law and Complaints
++
++These Terms are governed by the laws of the Federal Republic of Nigeria. The parties should first attempt to resolve any complaint directly and in good faith.
++
++Nothing in these Terms prevents a consumer from contacting the Federal Competition and Consumer Protection Commission or exercising any other right or remedy available under Nigerian law.
++
++## 1.19 Contact
++
++**Orders, delivery issues, and product complaints**  
++Phone/WhatsApp: **+234 916 769 9583**
++
++**Other enquiries**  
++Phone: **+234 706 577 2394**`;
++
++export const SHIPPING_MD = `# 2. Shipping and Delivery Policy
++
++## 2.1 Delivery Area
++
++SEE.COM accepts delivery information for Nigerian states and the Federal Capital Territory through its checkout. Delivery availability remains subject to courier coverage, accessibility, and any restrictions affecting the destination.
++
++If we cannot reasonably deliver to the address provided, we will contact you using the phone number or email supplied with the order.
++
++## 2.2 Delivery Fee
++
++The current standard delivery charge is:
++
++- **₦3,500** for orders below ₦100,000; and
++- **free delivery** for orders with a merchandise subtotal of ₦100,000 or more.
++
++The applicable delivery charge is displayed in your order summary before payment. Discounts that reduce the merchandise subtotal below ₦100,000 may affect eligibility for free delivery.
++
++## 2.3 Delivery Estimate
++
++Estimated delivery time is **7–14 business days**.
++
++Business days exclude Sundays and public holidays. The estimate begins after successful payment verification and order confirmation, not when an item is first added to the bag or when an unsuccessful payment is attempted.
++
++The 7–14-business-day period is an estimate rather than an appointment or guaranteed delivery date. Delivery may be delayed by:
++
++- public holidays or unusually high order volumes;
++- limited-drop demand;
++- courier or logistics disruptions;
++- weather, road, security, or access conditions;
++- events outside SEE.COM’s reasonable control;
++- an incorrect, incomplete, or inaccessible address; or
++- inability to reach the recipient.
++
++Where we become aware of a material delay, we will make reasonable efforts to provide an update using the contact information supplied with the order.
++
++## 2.4 Delivery Information
++
++At checkout, you must provide accurate information, including your name, email address, phone number, street address, city, state, and any useful landmark.
++
++SEE.COM is not responsible for avoidable delay caused by incorrect or incomplete information supplied by the customer. Contact us immediately if you notice an address or phone-number error. We cannot guarantee that details can be changed after processing or shipment has begun.
++
++## 2.5 Tracking and Order Status
++
++Where tracking details are available, the website may display the courier and tracking number. Order statuses may include Order Placed, Confirmed, Being Prepared, Shipped, Out for Delivery, Delivered, Issue Reported, or Cancelled.
++
++Tracking events and courier scans may not update instantly. A delay in an online status update does not necessarily mean the parcel has stopped moving.
++
++## 2.6 Receiving an Order
++
++Ensure that you or an authorised person is available to receive the parcel at the delivery address. Inspect the external packaging and item promptly after receipt.
++
++Do not select “Confirm Received” until the parcel has actually been received. If the website displays “Report Issue” and you have not received the order, use it promptly or contact SEE.COM through WhatsApp.
++
++## 2.7 Failed Delivery
++
++If a delivery fails because the recipient is unavailable, cannot be reached, refuses the parcel without a legally valid reason, or supplied an inaccurate or inaccessible address, additional courier charges may be required before another delivery attempt. Any such charge will be communicated before redelivery.
++
++## 2.8 Missing or Incorrect Delivery
++
++If an order is shown as delivered but has not been received, or if the parcel contains the wrong item, contact SEE.COM promptly with your order number and available evidence.
++
++We may review delivery scans, tracking information, courier records, communications, photographs, and other relevant evidence before deciding the appropriate resolution.
++
++## 2.9 Contact for Delivery Issues
++
++Phone/WhatsApp: **+234 916 769 9583**
++
++When contacting us, provide your order number and a clear description of the issue. Do not post payment references, addresses, or other personal order information publicly on social media.`;
++
++export const NO_RETURN_MD = `# 3. No-Return and Order-Issue Policy
++
++## 3.1 No General Returns
++
++SEE.COM has **no general return or exchange policy**. Purchases are final except where the item supplied is wrong, damaged on delivery, materially defective, materially misdescribed, or another remedy is required by applicable law.
++
++We do not accept change-of-mind returns, discretionary refunds, or size and colour exchanges. Customers must confirm the product, size, colour, quantity, delivery information, and total price before completing payment.
++
++## 3.2 Requests We Do Not Accept
++
++Subject to rights that cannot legally be excluded, SEE.COM does not accept a return, exchange, or refund where:
++
++- the customer changed their mind;
++- the customer selected the wrong size, colour, product, or quantity;
++- the item does not fit as expected after the customer selected the size;
++- the customer no longer wants the item;
++- the item was bought as a gift and is unwanted;
++- the customer found a different or lower price elsewhere;
++- the item has been worn, washed, used, stained, altered, repaired, damaged, or handled beyond what is reasonably necessary to inspect it;
++- tags, original packaging, accessories, or supplied components have been removed or lost; or
++- the complaint concerns a minor colour or appearance difference caused by photography, lighting, or screen settings rather than a materially different product.
++
++## 3.3 Valid Order Issues
++
++Contact SEE.COM if:
++
++- you receive a different product, size, or colour from the one shown in your confirmed order;
++- the product arrives materially damaged;
++- the product has a material manufacturing defect; or
++- the product is materially inconsistent with its description.
++
++Report the issue as soon as reasonably possible after delivery. Prompt reporting helps us distinguish a delivery or manufacturing issue from damage occurring after receipt.
++
++## 3.4 Evidence and Inspection
++
++To investigate a valid order issue, we may request the order number, customer contact details, photographs or video, the original packaging, and a description of when and how the issue was discovered.
++
++The item must not be worn, washed, altered, repaired, or deliberately damaged while the complaint is under review. We may require the item to be made available for inspection or returned using instructions we provide.
++
++## 3.5 Resolution
++
++If SEE.COM verifies that the wrong item was supplied or that the item was materially damaged, defective, or misdescribed, we will provide an appropriate lawful remedy. Depending on the circumstances and stock availability, this may be a correction, replacement, or refund.
++
++Where SEE.COM asks for a verified faulty or incorrect item to be returned, SEE.COM will provide reasonable return instructions and will not treat the matter as an ordinary change-of-mind return.
++
++Refund timing may depend on Paystack, the customer’s bank, and the payment method. A refund is not the same as a chargeback. Customers should contact SEE.COM first so the order can be investigated and resolved efficiently.
++
++## 3.6 Contact
++
++Phone/WhatsApp: **+234 916 769 9583**`;
++
++export const PRIVACY_MD = `# 4. Privacy Policy
++
++## 4.1 Purpose of this Policy
++
++This Privacy Policy explains how SEE.COM collects, uses, stores, and shares personal information when you visit the website, create an account, place an order, track an order, report a delivery issue, or contact us.
++
++SEE.COM is responsible for the personal information it controls in connection with the online store. We aim to process personal information fairly, lawfully, transparently, and securely in accordance with applicable Nigerian data-protection law, including the Nigeria Data Protection Act 2023.
++
++## 4.2 Information We Collect
++
++Depending on how you use the website, we may collect:
++
++### Account information
++
++- email address;
++- encrypted authentication credentials handled through our authentication provider;
++- account identifier;
++- account role; and
++- account creation and session information.
++
++### Checkout and delivery information
++
++- first and last name;
++- email address;
++- phone number;
++- delivery address;
++- city;
++- state;
++- landmark, where supplied; and
++- any correction or delivery instruction you communicate to us.
++
++### Order information
++
++- order number;
++- products, sizes, colours, quantities, and prices;
++- subtotal, delivery charge, and total;
++- order and payment status;
++- Paystack payment reference;
++- order date and status history;
++- courier, tracking number, and shipment date;
++- delivery-confirmation information; and
++- reported delivery or product issues.
++
++### Device and browser storage
++
++The website uses browser storage to support features such as:
++
++- saving a guest bag;
++- assigning a browser session identifier;
++- remembering guest and pending order identifiers;
++- restoring guest order status; and
++- keeping an authenticated session active.
++
++Depending on your browser settings, this information may remain on your device until it expires or is cleared.
++
++### Communications
++
++If you contact us by phone, WhatsApp, or another channel, we may process your phone number, profile information made available through that channel, message content, attachments, and information needed to resolve the enquiry.
++
++### Payment information
++
++Paystack processes online payments. SEE.COM receives transaction information such as the payment reference, amount, currency, and payment status. SEE.COM does not receive or store your complete card number, PIN, or online-banking credentials through the website.
++
++## 4.3 How We Use Information
++
++We use personal information to:
++
++- create and manage customer accounts;
++- save and synchronise bags for signed-in customers;
++- process, confirm, prepare, and deliver orders;
++- verify and reconcile payments;
++- reduce stock and manage product availability;
++- provide order tracking and delivery updates;
++- allow customers to confirm receipt or report an issue;
++- communicate about an order or enquiry;
++- investigate delivery, product, payment, fraud, and security issues;
++- prevent unauthorised access and abuse;
++- keep financial, transaction, complaint, and operational records;
++- maintain and improve the reliability of the website; and
++- comply with legal and regulatory obligations.
++
++We will not treat an email typed into a newsletter-style field as consent to marketing unless the subscription feature clearly explains the intended marketing use and the customer actively submits it for that purpose.
++
++## 4.4 Lawful Bases
++
++Depending on the activity, we process personal information because:
++
++- it is necessary to take steps at your request or perform the sales contract, including payment, fulfilment, delivery, and issue resolution;
++- it is necessary to comply with legal obligations;
++- it is necessary for legitimate interests such as preventing fraud, securing the store, managing stock, resolving disputes, and improving service, where those interests do not override your rights; or
++- you have given consent for a specific optional use, where consent is the appropriate basis.
++
++## 4.5 Service Providers and Sharing
++
++We may share relevant information with service providers that help operate the store, including:
++
++- **Paystack**, for payment processing, verification, refunds, fraud prevention, and transaction disputes;
++- **Supabase**, for authentication, database, storage, and order-management infrastructure;
++- **Vercel**, for website hosting and delivery;
++- delivery companies and couriers, for shipment, tracking, and delivery;
++- communications providers, where needed to respond through phone or WhatsApp; and
++- professional advisers, regulators, courts, banks, payment networks, or law-enforcement authorities where reasonably necessary or legally required.
++
++We share only information reasonably needed for the relevant purpose. We do not sell customer personal information.
++
++## 4.6 International Processing
++
++Some technology providers may store or process information outside Nigeria. Where personal information is transferred internationally, we will take reasonable steps required by applicable law to ensure that the transfer has an appropriate legal basis and safeguards.
++
++## 4.7 Data Retention
++
++We retain personal information only for as long as reasonably necessary for the purposes described in this Policy, including fulfilment, support, fraud prevention, accounting, tax, dispute resolution, and legal compliance.
++
++Account information may be retained while the account remains active. Order, payment-reference, delivery, complaint, and transaction records may be retained for the period reasonably required by applicable financial, tax, consumer-protection, payment-dispute, and limitation rules.
++
++Information stored locally on your device remains subject to your browser controls. Clearing browser storage may remove the guest bag and local guest-order references but does not necessarily delete the corresponding order or transaction record held by SEE.COM or its providers.
++
++## 4.8 Security
++
++We use reasonable administrative and technical measures intended to protect personal information. These include managed authentication, access controls, role-based administrative access, encrypted web connections, and restricted database policies.
++
++No internet service is completely secure. You should use a strong, unique password, protect access to your device, and contact us if you suspect unauthorised account or order activity.
++
++## 4.9 Your Rights
++
++Subject to applicable law and any lawful exceptions, you may request:
++
++- confirmation of whether we process your personal information;
++- access to your personal information;
++- correction of inaccurate or incomplete information;
++- deletion of information that no longer has a lawful basis for retention;
++- restriction of certain processing;
++- objection to certain processing based on legitimate interests;
++- withdrawal of consent for processing based on consent; and
++- information about applicable data portability or complaint rights.
++
++We may need to verify your identity before acting on a request. We may retain information where required for an active order, payment dispute, fraud investigation, legal claim, accounting obligation, or other lawful purpose.
++
++You may also complain to the Nigeria Data Protection Commission if you believe your data-protection rights have been infringed.
++
++## 4.10 Children
++
++The store is not designed to knowingly collect personal information directly from children who are unable to enter a valid purchase contract or provide legally effective consent. A parent or legal guardian should place and manage an order for a child where required.
++
++## 4.11 Third-Party Services and Links
++
++The website may link to services such as Paystack, WhatsApp, Instagram, or TikTok. Those services operate under their own terms and privacy policies. SEE.COM is not responsible for how an independent third party processes information after you leave our website or interact directly with that service.
++
++## 4.12 Changes to this Policy
++
++We may update this Privacy Policy to reflect changes to the store, technology, service providers, or legal obligations. The “Last updated” date identifies the current version.
++
++## 4.13 Privacy Contact
++
++For a privacy question or request, contact SEE.COM and clearly state that your enquiry concerns privacy or personal data:
++
++Phone/WhatsApp: **+234 916 769 9583**  
++Alternative phone: **+234 706 577 2394**
++
++Do not send passwords, PINs, complete card details, or banking credentials through WhatsApp or ordinary messages.`;
++
++export const COOKIES_MD = `# 5. Browser Storage and Cookie Notice
++
++SEE.COM uses essential browser storage and authentication technologies to operate the website.
++
++These technologies support:
++
++- the guest shopping bag;
++- browser session identification;
++- guest and pending-order recovery;
++- signed-in sessions and token refresh;
++- cross-device bag synchronisation for account holders; and
++- security and reliable website operation.
++
++Some of this information is stored through local storage rather than a traditional browser cookie. Disabling or clearing it may sign you out, empty a guest bag, or remove guest-order references from that browser.
++
++Payment processing through Paystack and embedded third-party services may use their own strictly necessary security, fraud-prevention, or transaction technologies under their respective policies.
++
++SEE.COM does not currently state that it uses non-essential advertising or behavioural-analytics cookies. If such tools are introduced, this notice and the website’s consent controls should be updated before those tools are activated where consent is required.`;
+diff --git a/src/pages/CartPage.jsx b/src/pages/CartPage.jsx
+index 909c8dd..2cd604a 100644
+--- a/src/pages/CartPage.jsx
++++ b/src/pages/CartPage.jsx
+@@ -144,7 +144,7 @@ export default function CartPage({ cart = [], setCart, onNavigate }) {
+             onMouseLeave={e => e.currentTarget.style.background = '#000'}
+           >Shop All</button>
+         </div>
+-        <Footer />
++        <Footer onNavigate={onNavigate} />
+         <style>{`@keyframes fadeUp { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }`}</style>
+       </div>
+     );
+@@ -262,7 +262,7 @@ export default function CartPage({ cart = [], setCart, onNavigate }) {
+             <div style={{ display: 'flex', gap: 8 }}>
+               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, marginTop: 2, color: '#bbb' }}><path d="M3 10h10a5 5 0 010 10H7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M6 7l-3 3 3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+               <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>
+-                No available return policy
++                No change-of-mind returns · <a onClick={() => onNavigate?.('no-return')} style={{ color: '#aaa', textDecoration: 'underline', textUnderlineOffset: '2px', cursor: 'pointer' }}>Read policy</a>
+               </p>
+             </div>
+           </div>
+@@ -361,7 +361,7 @@ export default function CartPage({ cart = [], setCart, onNavigate }) {
+         </div>
+       )}
+ 
+-      <Footer />
++      <Footer onNavigate={onNavigate} />
+     </div>
+   );
+ }
+diff --git a/src/pages/ChainsPage.jsx b/src/pages/ChainsPage.jsx
+index d349321..a2d1792 100644
+--- a/src/pages/ChainsPage.jsx
++++ b/src/pages/ChainsPage.jsx
+@@ -190,7 +190,7 @@ export default function ChainsPage({ onNavigate }) {
+         )}
+       </main>
+ 
+-      <Footer />
++      <Footer onNavigate={onNavigate} />
+     </div>
+   );
+ }
+diff --git a/src/pages/CheckoutPage.jsx b/src/pages/CheckoutPage.jsx
+index e025d97..a87b002 100644
+--- a/src/pages/CheckoutPage.jsx
++++ b/src/pages/CheckoutPage.jsx
+@@ -47,7 +47,7 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
+     s.onload  = () => setReady(true);
+     s.onerror = () => setError('Could not load payment system. Check your connection.');
+     document.head.appendChild(s);
+-    return () => { try { document.head.removeChild(s); } catch {} };
++    return () => { try { document.head.removeChild(s); } catch { /* script already removed */ } };
+   }, []);
+ 
+   const set = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+@@ -315,6 +315,7 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
+           {!isMobile && (
+             <div style={{ marginTop: '32px' }}>
+               <DesktopSummary cart={cart} subtotal={subtotal} shipping={shipping} total={total} />
++              <PolicyAcceptance onNavigate={onNavigate} />
+               <PayButton onPay={handlePay} loading={loading} total={total} />
+               <PaystackBadge />
+             </div>
+@@ -372,6 +373,7 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
+               {error}
+             </div>
+           )}
++          <PolicyAcceptance onNavigate={onNavigate} />
+           <PayButton onPay={handlePay} loading={loading} total={total} />
+           <PaystackBadge />
+         </div>
+@@ -470,6 +472,19 @@ function PayButton({ onPay, loading, total }) {
+   );
+ }
+ 
++function PolicyAcceptance({ onNavigate }) {
++  const linkStyle = { color: '#666', textDecoration: 'underline', textUnderlineOffset: '2px', cursor: 'pointer' };
++  return (
++    <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', color: '#999', letterSpacing: '0.02em', lineHeight: 1.6, textAlign: 'center', margin: '0 0 10px' }}>
++      By paying, you agree to the{' '}
++      <a onClick={() => onNavigate?.('terms')} style={linkStyle}>Terms & Conditions</a>,{' '}
++      <a onClick={() => onNavigate?.('terms')} style={linkStyle}>Shipping Policy</a>,{' '}
++      <a onClick={() => onNavigate?.('no-return')} style={linkStyle}>No-Return Policy</a>, and{' '}
++      <a onClick={() => onNavigate?.('privacy')} style={linkStyle}>Privacy Policy</a>.
++    </p>
++  );
++}
++
+ function PaystackBadge() {
+   return (
+     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '10px' }}>
+diff --git a/src/pages/HomePage.jsx b/src/pages/HomePage.jsx
+index 47d093f..c47ce02 100644
+--- a/src/pages/HomePage.jsx
++++ b/src/pages/HomePage.jsx
+@@ -651,7 +651,7 @@ export default function HomePage({ onNavigate }) {
+         </div>
+       </section>
+ 
+-      <Footer />
++      <Footer onNavigate={onNavigate} />
+     </div>
+   );
+ }
+diff --git a/src/pages/NoReturnPage.jsx b/src/pages/NoReturnPage.jsx
+new file mode 100644
+index 0000000..b810102
+--- /dev/null
++++ b/src/pages/NoReturnPage.jsx
+@@ -0,0 +1,12 @@
++import LegalPageLayout from '../components/LegalPageLayout';
++import { NO_RETURN_MD } from '../content/legalPolicies';
++
++export default function NoReturnPage({ onNavigate }) {
++  return (
++    <LegalPageLayout
++      title="No-Return Policy"
++      content={NO_RETURN_MD}
++      onNavigate={onNavigate}
++    />
++  );
++}
+diff --git a/src/pages/PrivacyPage.jsx b/src/pages/PrivacyPage.jsx
+new file mode 100644
+index 0000000..ef04558
+--- /dev/null
++++ b/src/pages/PrivacyPage.jsx
+@@ -0,0 +1,12 @@
++import LegalPageLayout from '../components/LegalPageLayout';
++import { PRIVACY_MD, COOKIES_MD } from '../content/legalPolicies';
++
++export default function PrivacyPage({ onNavigate }) {
++  return (
++    <LegalPageLayout
++      title="Privacy Policy"
++      content={`${PRIVACY_MD}\n\n---\n\n${COOKIES_MD}`}
++      onNavigate={onNavigate}
++    />
++  );
++}
+diff --git a/src/pages/ProductDetailPage.jsx b/src/pages/ProductDetailPage.jsx
+index d5c16fb..89a5fff 100644
+--- a/src/pages/ProductDetailPage.jsx
++++ b/src/pages/ProductDetailPage.jsx
+@@ -5,7 +5,7 @@ import logoBadge from '../assets/badge.webp';
+ import { useDiscount } from '../contexts/DiscountContext';
+ import { getEffectivePrice, isDiscounted, getDiscountLabel } from '../utils/discountUtils';
+ 
+-export default function ProductDetailPage({ productId, cart, setCart, onNavigate }) {
++export default function ProductDetailPage({ productId, setCart, onNavigate }) {
+   const [product, setProduct]           = useState(null);
+   const [inventory, setInventory]       = useState([]);
+   const [loading, setLoading]           = useState(true);
+@@ -72,7 +72,6 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
+   })();
+ 
+   const isSoldOut  = selectedStock !== null && selectedStock === 0;
+-  const canAddToBag = selectedSize && (colors.length === 0 || selectedColor);
+ 
+   const toggle = section => setExpanded(p => p === section ? null : section);
+ 
+@@ -261,7 +260,11 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
+                   </svg>
+                 }
+                 label="Returns"
+-                value="No available return policy"
++                value={
++                  <>
++                    No change-of-mind returns · <a onClick={() => onNavigate?.('no-return')} style={{ color: '#555', textDecoration: 'underline', textUnderlineOffset: '2px', cursor: 'pointer' }}>Read policy</a>
++                  </>
++                }
+               />
+ 
+               {/* Free shipping */}
+@@ -429,7 +432,7 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
+         </div>
+       )}
+ 
+-      <Footer />
++      <Footer onNavigate={onNavigate} />
+     </div>
+   );
+ }
+diff --git a/src/pages/ShopPage.jsx b/src/pages/ShopPage.jsx
+index cf05395..1a29860 100644
+--- a/src/pages/ShopPage.jsx
++++ b/src/pages/ShopPage.jsx
+@@ -181,7 +181,7 @@ export default function ShopPage({ onNavigate }) {
+       </main>
+ 
+       <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+-      <Footer />
++      <Footer onNavigate={onNavigate} />
+     </div>
+   );
+ }
+diff --git a/src/pages/TermsPage.jsx b/src/pages/TermsPage.jsx
+new file mode 100644
+index 0000000..5102448
+--- /dev/null
++++ b/src/pages/TermsPage.jsx
+@@ -0,0 +1,12 @@
++import LegalPageLayout from '../components/LegalPageLayout';
++import { TERMS_MD, SHIPPING_MD } from '../content/legalPolicies';
++
++export default function TermsPage({ onNavigate }) {
++  return (
++    <LegalPageLayout
++      title="Terms & Conditions"
++      content={`${TERMS_MD}\n\n---\n\n${SHIPPING_MD}`}
++      onNavigate={onNavigate}
++    />
++  );
++}
+diff --git a/src/pages/TshirtsPage.jsx b/src/pages/TshirtsPage.jsx
+index 0d8ed21..205085b 100644
+--- a/src/pages/TshirtsPage.jsx
++++ b/src/pages/TshirtsPage.jsx
+@@ -203,7 +203,7 @@ export default function TshirtsPage({ onNavigate }) {
+         )}
+       </main>
+ 
+-      <Footer />
++      <Footer onNavigate={onNavigate} />
+     </div>
+   );
+ }
+diff --git a/supabase/functions/notify-new-arrival/index.ts b/supabase/functions/notify-new-arrival/index.ts
+index 0320eda..5d0cd97 100644
+--- a/supabase/functions/notify-new-arrival/index.ts
++++ b/supabase/functions/notify-new-arrival/index.ts
+@@ -28,6 +28,9 @@ const supabaseAdmin = createClient(
+   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+ );
+ 
++// Edge Functions live on the same project host, under /functions/v1/<name>
++const FUNCTIONS_BASE = `${Deno.env.get('SUPABASE_URL')}/functions/v1`;
++
+ const corsHeaders = {
+   'Access-Control-Allow-Origin': '*',
+   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+@@ -35,7 +38,7 @@ const corsHeaders = {
+ 
+ const fmtNaira = (n) => `₦${Number(n).toLocaleString('en-NG')}`;
+ 
+-function buildEmailHtml(product) {
++function buildEmailHtml(product, unsubscribeUrl) {
+   const price = product.discount_price
+     ? `<span style="text-decoration:line-through;color:#999;margin-right:8px;">${fmtNaira(product.price)}</span><span style="color:#be1826;font-weight:700;">${fmtNaira(product.discount_price)}</span>`
+     : `<span style="font-weight:700;">${fmtNaira(product.price)}</span>`;
+@@ -94,7 +97,8 @@ function buildEmailHtml(product) {
+                 <td style="border-top:1px solid #f0f0f0;padding:20px 24px;text-align:center;">
+                   <div style="font-size:10px;color:#999999;letter-spacing:0.5px;">
+                     Limited drops. No restocks.<br/>
+-                    SEE.COM · Abuja, Nigeria
++                    SEE.COM · Abuja, Nigeria<br/><br/>
++                    <a href="${unsubscribeUrl}" style="color:#999999;text-decoration:underline;">Unsubscribe</a>
+                   </div>
+                 </td>
+               </tr>
+@@ -145,7 +149,7 @@ Deno.serve(async (req) => {
+ 
+     const { data: subscribers, error: subErr } = await supabaseAdmin
+       .from('subscribers')
+-      .select('email')
++      .select('email, unsubscribe_token')
+       .eq('is_active', true);
+     if (subErr) throw subErr;
+ 
+@@ -155,7 +159,6 @@ Deno.serve(async (req) => {
+       });
+     }
+ 
+-    const html    = buildEmailHtml(product);
+     const subject = `New drop: ${product.name}`;
+ 
+     // Send in small batches so one bad address doesn't block the rest
+@@ -166,7 +169,10 @@ Deno.serve(async (req) => {
+     for (let i = 0; i < subscribers.length; i += BATCH_SIZE) {
+       const batch = subscribers.slice(i, i + BATCH_SIZE);
+       const results = await Promise.allSettled(
+-        batch.map((s) => sendEmail(s.email, html, subject))
++        batch.map((s) => {
++          const unsubscribeUrl = `${FUNCTIONS_BASE}/unsubscribe?token=${s.unsubscribe_token}`;
++          return sendEmail(s.email, buildEmailHtml(product, unsubscribeUrl), subject);
++        })
+       );
+       results.forEach((r) => (r.status === 'fulfilled' ? sent++ : failed++));
+     }
+diff --git a/supabase/functions/unsubscribe/index.ts b/supabase/functions/unsubscribe/index.ts
+new file mode 100644
+index 0000000..6dcc1cd
+--- /dev/null
++++ b/supabase/functions/unsubscribe/index.ts
+@@ -0,0 +1,58 @@
++// supabase/functions/unsubscribe/index.ts
++//
++// One-click unsubscribe target for the "Unsubscribe" link in the new-drop
++// email (see supabase/functions/notify-new-arrival/). Returns a plain HTML
++// page directly — this is a standalone link, not part of the SPA, so it
++// works even with JavaScript disabled and doesn't depend on the app's
++// client-side routing.
++//
++// Link shape: https://<project-ref>.supabase.co/functions/v1/unsubscribe?token=<uuid>
++//
++// SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY are auto-injected by Supabase.
++
++import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
++
++const supabaseAdmin = createClient(
++  Deno.env.get('SUPABASE_URL'),
++  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
++);
++
++function page(message) {
++  return `
++  <html>
++    <head><meta charset="utf-8" /><title>SEE.COM</title></head>
++    <body style="margin:0;padding:0;background-color:#f5f5f5;font-family:Helvetica,Arial,sans-serif;">
++      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:60px 20px;">
++        <tr><td align="center">
++          <table role="presentation" width="420" cellpadding="0" cellspacing="0" style="background:#fff;max-width:420px;width:100%;text-align:center;">
++            <tr><td style="background:#000;padding:18px 0;">
++              <span style="color:#fff;font-size:15px;font-weight:700;letter-spacing:4px;">SEE.COM</span>
++            </td></tr>
++            <tr><td style="padding:32px 24px;">
++              <p style="font-size:14px;color:#333;line-height:1.6;margin:0;">${message}</p>
++            </td></tr>
++          </table>
++        </td></tr>
++      </table>
++    </body>
++  </html>`;
++}
++
++const html = (body, status = 200) =>
++  new Response(page(body), { status, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
++
++Deno.serve(async (req) => {
++  const token = new URL(req.url).searchParams.get('token');
++  if (!token) return html("Missing unsubscribe link. Contact SEE.COM if you keep receiving emails you didn't ask for.", 400);
++
++  const { error } = await supabaseAdmin
++    .from('subscribers')
++    .update({ is_active: false })
++    .eq('unsubscribe_token', token);
++
++  // Deliberately return the same success message whether or not a row matched —
++  // don't reveal whether a given token/subscription exists.
++  if (error) console.error('unsubscribe error:', error);
++
++  return html("You've been unsubscribed from SEE.COM new-drop emails. You won't hear from us again unless you sign up again.");
++});
+diff --git a/supabase/migrations/007_add_subscriber_unsubscribe_token.sql b/supabase/migrations/007_add_subscriber_unsubscribe_token.sql
+new file mode 100644
+index 0000000..54cb6a8
+--- /dev/null
++++ b/supabase/migrations/007_add_subscriber_unsubscribe_token.sql
+@@ -0,0 +1,5 @@
++-- Add a per-subscriber unsubscribe token so email footer "Unsubscribe" links
++-- don't need to expose (or trust) the raw email address, and can't be used
++-- to unsubscribe someone else's address by guessing it.
++ALTER TABLE subscribers
++  ADD COLUMN IF NOT EXISTS unsubscribe_token UUID NOT NULL DEFAULT uuid_generate_v4() UNIQUE;

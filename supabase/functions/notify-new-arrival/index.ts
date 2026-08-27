@@ -28,6 +28,9 @@ const supabaseAdmin = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
 );
 
+// Edge Functions live on the same project host, under /functions/v1/<name>
+const FUNCTIONS_BASE = `${Deno.env.get('SUPABASE_URL')}/functions/v1`;
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -35,7 +38,7 @@ const corsHeaders = {
 
 const fmtNaira = (n) => `₦${Number(n).toLocaleString('en-NG')}`;
 
-function buildEmailHtml(product) {
+function buildEmailHtml(product, unsubscribeUrl) {
   const price = product.discount_price
     ? `<span style="text-decoration:line-through;color:#999;margin-right:8px;">${fmtNaira(product.price)}</span><span style="color:#be1826;font-weight:700;">${fmtNaira(product.discount_price)}</span>`
     : `<span style="font-weight:700;">${fmtNaira(product.price)}</span>`;
@@ -94,7 +97,8 @@ function buildEmailHtml(product) {
                 <td style="border-top:1px solid #f0f0f0;padding:20px 24px;text-align:center;">
                   <div style="font-size:10px;color:#999999;letter-spacing:0.5px;">
                     Limited drops. No restocks.<br/>
-                    SEE.COM · Abuja, Nigeria
+                    SEE.COM · Abuja, Nigeria<br/><br/>
+                    <a href="${unsubscribeUrl}" style="color:#999999;text-decoration:underline;">Unsubscribe</a>
                   </div>
                 </td>
               </tr>
@@ -145,7 +149,7 @@ Deno.serve(async (req) => {
 
     const { data: subscribers, error: subErr } = await supabaseAdmin
       .from('subscribers')
-      .select('email')
+      .select('email, unsubscribe_token')
       .eq('is_active', true);
     if (subErr) throw subErr;
 
@@ -155,7 +159,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    const html    = buildEmailHtml(product);
     const subject = `New drop: ${product.name}`;
 
     // Send in small batches so one bad address doesn't block the rest
@@ -166,7 +169,10 @@ Deno.serve(async (req) => {
     for (let i = 0; i < subscribers.length; i += BATCH_SIZE) {
       const batch = subscribers.slice(i, i + BATCH_SIZE);
       const results = await Promise.allSettled(
-        batch.map((s) => sendEmail(s.email, html, subject))
+        batch.map((s) => {
+          const unsubscribeUrl = `${FUNCTIONS_BASE}/unsubscribe?token=${s.unsubscribe_token}`;
+          return sendEmail(s.email, buildEmailHtml(product, unsubscribeUrl), subject);
+        })
       );
       results.forEach((r) => (r.status === 'fulfilled' ? sent++ : failed++));
     }

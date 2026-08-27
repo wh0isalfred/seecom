@@ -5,7 +5,7 @@ import logoBadge from '../assets/badge.webp';
 import { useDiscount } from '../contexts/DiscountContext';
 import { getEffectivePrice, isDiscounted, getDiscountLabel } from '../utils/discountUtils';
 
-export default function ProductDetailPage({ productId, cart, setCart, onNavigate }) {
+export default function ProductDetailPage({ productId, setCart, onNavigate }) {
   const [product, setProduct]           = useState(null);
   const [inventory, setInventory]       = useState([]);
   const [loading, setLoading]           = useState(true);
@@ -72,7 +72,6 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
   })();
 
   const isSoldOut  = selectedStock !== null && selectedStock === 0;
-  const canAddToBag = selectedSize && (colors.length === 0 || selectedColor);
 
   const toggle = section => setExpanded(p => p === section ? null : section);
 
@@ -261,7 +260,11 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
                   </svg>
                 }
                 label="Returns"
-                value="No available return policy"
+                value={
+                  <>
+                    No change-of-mind returns · <a onClick={() => onNavigate?.('no-return')} style={{ color: '#555', textDecoration: 'underline', textUnderlineOffset: '2px', cursor: 'pointer' }}>Read policy</a>
+                  </>
+                }
               />
 
               {/* Free shipping */}
@@ -429,7 +432,7 @@ export default function ProductDetailPage({ productId, cart, setCart, onNavigate
         </div>
       )}
 
-      <Footer />
+      <Footer onNavigate={onNavigate} />
     </div>
   );
 }

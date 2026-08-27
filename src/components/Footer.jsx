@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export default function Footer() {
+export default function Footer({ onNavigate }) {
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
 
   useEffect(() => {
@@ -106,7 +106,7 @@ export default function Footer() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <a
-              href="#"
+              onClick={() => onNavigate?.('terms')}
               style={{
                 fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
                 fontSize: '11px',
@@ -115,6 +115,7 @@ export default function Footer() {
                 textDecoration: 'none',
                 textTransform: 'uppercase',
                 transition: 'color 0.2s',
+                cursor: 'pointer',
               }}
               onMouseEnter={(e) => (e.target.style.color = '#000')}
               onMouseLeave={(e) => (e.target.style.color = '#666')}
@@ -122,7 +123,7 @@ export default function Footer() {
               Terms & Conditions
             </a>
             <a
-              href="#"
+              onClick={() => onNavigate?.('privacy')}
               style={{
                 fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
                 fontSize: '11px',
@@ -131,6 +132,7 @@ export default function Footer() {
                 textDecoration: 'none',
                 textTransform: 'uppercase',
                 transition: 'color 0.2s',
+                cursor: 'pointer',
               }}
               onMouseEnter={(e) => (e.target.style.color = '#000')}
               onMouseLeave={(e) => (e.target.style.color = '#666')}
@@ -138,7 +140,7 @@ export default function Footer() {
               Privacy Policy
             </a>
             <a
-              href="#"
+              onClick={() => onNavigate?.('no-return')}
               style={{
                 fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
                 fontSize: '11px',
@@ -147,11 +149,12 @@ export default function Footer() {
                 textDecoration: 'none',
                 textTransform: 'uppercase',
                 transition: 'color 0.2s',
+                cursor: 'pointer',
               }}
               onMouseEnter={(e) => (e.target.style.color = '#000')}
               onMouseLeave={(e) => (e.target.style.color = '#666')}
             >
-              Returns Policy
+              No-Return Policy
             </a>
           </div>
         </div>

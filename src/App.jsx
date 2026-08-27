@@ -18,6 +18,9 @@ const CartPage          = lazy(() => import('./pages/CartPage'))
 const CheckoutPage      = lazy(() => import('./pages/CheckoutPage'))
 const ProductDetailPage = lazy(() => import('./pages/ProductDetailPage'))
 const AdminPage         = lazy(() => import('./pages/AdminPage'))
+const TermsPage         = lazy(() => import('./pages/TermsPage'))
+const PrivacyPage       = lazy(() => import('./pages/PrivacyPage'))
+const NoReturnPage      = lazy(() => import('./pages/NoReturnPage'))
 
 // Minimal fallback — invisible, no layout shift
 const PageFallback = () => (
@@ -42,13 +45,6 @@ function AppInner() {
   const [sessionId, setSessionId]         = useState(null)
   const [sidebarOpen, setSidebarOpen]     = useState(false)
   const [authModalOpen, setAuthModalOpen] = useState(false)
-  const [isMobile, setIsMobile]           = useState(window.innerWidth < 768)
-
-  useEffect(() => {
-    const h = () => setIsMobile(window.innerWidth < 768)
-    window.addEventListener('resize', h)
-    return () => window.removeEventListener('resize', h)
-  }, [])
 
   // Persist guest cart to localStorage
   useEffect(() => {
@@ -136,7 +132,7 @@ function AppInner() {
   }
 
   const handleSidebarNavigate = (category) => {
-    let page   = 'home'
+    let page
     let params = {}
 
     if (category === 'home')         { page = 'home' }
@@ -249,7 +245,6 @@ function AppInner() {
             {currentPage === 'product' && sessionId && (
               <ProductDetailPage
                 productId={pageParams.productId}
-                cart={cart}
                 setCart={setCart}
                 onNavigate={goToPage}
               />
@@ -259,6 +254,18 @@ function AppInner() {
               isAdmin
                 ? <AdminPage onNavigate={goToPage} />
                 : (() => { setAuthModalOpen(true); goToPage('home'); return null; })()
+            )}
+
+            {currentPage === 'terms' && (
+              <TermsPage onNavigate={goToPage} />
+            )}
+
+            {currentPage === 'privacy' && (
+              <PrivacyPage onNavigate={goToPage} />
+            )}
+
+            {currentPage === 'no-return' && (
+              <NoReturnPage onNavigate={goToPage} />
             )}
 
           </div>

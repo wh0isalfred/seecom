@@ -181,7 +181,7 @@ export default function ShopPage({ onNavigate }) {
       </main>
 
       <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-      <Footer />
+      <Footer onNavigate={onNavigate} />
     </div>
   );
 }

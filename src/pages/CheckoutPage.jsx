@@ -47,7 +47,7 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
     s.onload  = () => setReady(true);
     s.onerror = () => setError('Could not load payment system. Check your connection.');
     document.head.appendChild(s);
-    return () => { try { document.head.removeChild(s); } catch {} };
+    return () => { try { document.head.removeChild(s); } catch { /* script already removed */ } };
   }, []);
 
   const set = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
@@ -315,6 +315,7 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
           {!isMobile && (
             <div style={{ marginTop: '32px' }}>
               <DesktopSummary cart={cart} subtotal={subtotal} shipping={shipping} total={total} />
+              <PolicyAcceptance onNavigate={onNavigate} />
               <PayButton onPay={handlePay} loading={loading} total={total} />
               <PaystackBadge />
             </div>
@@ -372,6 +373,7 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
               {error}
             </div>
           )}
+          <PolicyAcceptance onNavigate={onNavigate} />
           <PayButton onPay={handlePay} loading={loading} total={total} />
           <PaystackBadge />
         </div>
@@ -467,6 +469,19 @@ function PayButton({ onPay, loading, total }) {
     >
       {loading ? 'PROCESSING...' : `PAY ₦${total.toLocaleString()}`}
     </button>
+  );
+}
+
+function PolicyAcceptance({ onNavigate }) {
+  const linkStyle = { color: '#666', textDecoration: 'underline', textUnderlineOffset: '2px', cursor: 'pointer' };
+  return (
+    <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', color: '#999', letterSpacing: '0.02em', lineHeight: 1.6, textAlign: 'center', margin: '0 0 10px' }}>
+      By paying, you agree to the{' '}
+      <a onClick={() => onNavigate?.('terms')} style={linkStyle}>Terms & Conditions</a>,{' '}
+      <a onClick={() => onNavigate?.('terms')} style={linkStyle}>Shipping Policy</a>,{' '}
+      <a onClick={() => onNavigate?.('no-return')} style={linkStyle}>No-Return Policy</a>, and{' '}
+      <a onClick={() => onNavigate?.('privacy')} style={linkStyle}>Privacy Policy</a>.
+    </p>
   );
 }
 
