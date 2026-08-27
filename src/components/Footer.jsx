@@ -39,8 +39,7 @@ export default function Footer({ onNavigate }) {
               fontWeight: 600,
               fontSize: '18px',
               letterSpacing: '0.22em',
-              color: '#000',
-              marginBottom: '24px',
+              color: '#bd3b28',
             }}
           >
             see.Com
@@ -49,7 +48,7 @@ export default function Footer({ onNavigate }) {
           {/* Social Links */}
           <div style={{ display: 'flex', gap: '24px', justifyContent: isDesktop ? 'flex-start' : 'center' }}>
             <a
-              href="https://instagram.com"
+              href="https://www.instagram.com/jeh._see/"
               target="_blank"
               rel="noopener noreferrer"
               style={{
@@ -67,7 +66,7 @@ export default function Footer({ onNavigate }) {
               Instagram
             </a>
             <a
-              href="https://tiktok.com"
+              href="https://www.tiktok.com/@jehsee.com"
               target="_blank"
               rel="noopener noreferrer"
               style={{

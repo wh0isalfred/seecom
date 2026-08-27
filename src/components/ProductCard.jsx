@@ -86,7 +86,7 @@ export default function ProductCard({ product, showPrice, onProductClick }) {
         {discounted && discountLabel && (
           <div style={{
             position: 'absolute', top: 8, left: 8, zIndex: 4,
-            backgroundColor: '#be1826', color: '#fff',
+            backgroundColor: '#bd3b28', color: '#fff',
             fontFamily: "'Space Grotesk', sans-serif",
             fontWeight: 700, fontSize: 9, letterSpacing: '0.1em',
             padding: '3px 7px', pointerEvents: 'none',
@@ -140,7 +140,7 @@ export default function ProductCard({ product, showPrice, onProductClick }) {
         }}>
           {discounted ? (
             <>
-              <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 12, color: '#be1826' }}>
+              <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 12, color: '#bd3b28' }}>
                 ₦{effectivePrice.toLocaleString()}
               </span>
               <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: 11, color: '#bbb', textDecoration: 'line-through' }}>

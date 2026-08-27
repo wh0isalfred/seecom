@@ -86,7 +86,7 @@ export default function ShopPage({ onNavigate }) {
           style={{
             fontFamily: "'Clash Display', sans-serif",
             fontWeight: 600, fontSize: isMobile ? '18px' : '22px',
-            letterSpacing: '0.22em', color: '#000',
+            letterSpacing: '0.22em', color: '#bd3b28',
             background: 'none', border: 'none', cursor: 'pointer', padding: 0,
           }}
         >

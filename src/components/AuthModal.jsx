@@ -185,10 +185,10 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
                 padding: '10px 14px',
                 backgroundColor: '#fff5f5',
                 border: '1px solid #fecaca',
-                borderLeft: '3px solid #be1826',
+                borderLeft: '3px solid #bd3b28',
                 fontFamily: "'Archivo', Helvetica, Arial, sans-serif",
                 fontSize: '12px',
-                color: '#be1826',
+                color: '#bd3b28',
                 marginBottom: '16px',
                 letterSpacing: '0.02em',
               }}>
@@ -252,7 +252,7 @@ function Logo() {
 }
 
 function Divider() {
-  return <div style={{ width: 36, height: 3, background: '#be1826', margin: '0 auto 24px' }} />;
+  return <div style={{ width: 36, height: 3, background: '#bd3b28', margin: '0 auto 24px' }} />;
 }
 
 function Field({ type, placeholder, value, onChange, onEnter }) {
@@ -303,7 +303,7 @@ const sub = {
 const primaryBtn = (loading) => ({
   width: '100%',
   padding: '13px',
-  background: '#000',
+  background: '#bd3b28',
   color: '#fff',
   border: 'none',
   borderRadius: '2px',

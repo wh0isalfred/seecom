@@ -12,12 +12,12 @@ export default function FetchErrorState({ message = "Couldn't load products.", o
       <button
         onClick={onRetry}
         style={{
-          padding: '10px 24px', background: '#000', color: '#fff', border: 'none',
+          padding: '10px 24px', background: '#bd3b28', color: '#fff', border: 'none',
           fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 10,
           letterSpacing: '0.16em', cursor: 'pointer', transition: 'background 0.2s', textTransform: 'uppercase',
         }}
-        onMouseEnter={e => e.currentTarget.style.background = '#be1826'}
-        onMouseLeave={e => e.currentTarget.style.background = '#000'}
+        onMouseEnter={e => e.currentTarget.style.background = '#000'}
+        onMouseLeave={e => e.currentTarget.style.background = '#bd3b28'}
       >
         Try Again
       </button>

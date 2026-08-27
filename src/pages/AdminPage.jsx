@@ -64,7 +64,7 @@ export default function AdminPage({ onNavigate }) {
       {/* ── Header ── */}
       <div style={{ backgroundColor: '#fff', borderBottom: '1px solid #f0f0f0', position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', height: 52 }}>
-          <button onClick={() => onNavigate?.('home')} style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: 16, letterSpacing: '0.22em', background: 'none', border: 'none', cursor: 'pointer', color: '#000', padding: 0 }}>
+          <button onClick={() => onNavigate?.('home')} style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: 16, letterSpacing: '0.22em', background: 'none', border: 'none', cursor: 'pointer', color: '#bd3b28', padding: 0 }}>
             see.Com
           </button>
           <span style={{ fontSize: 10, letterSpacing: '0.18em', color: '#ccc', textTransform: 'uppercase' }}>Admin</span>
@@ -74,10 +74,10 @@ export default function AdminPage({ onNavigate }) {
           {TABS.map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
               flexShrink: 0, padding: '12px 20px',
-              background: 'none', border: 'none', borderBottom: `2px solid ${tab === t ? '#be1826' : 'transparent'}`,
+              background: 'none', border: 'none', borderBottom: `2px solid ${tab === t ? '#bd3b28' : 'transparent'}`,
               fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700,
               fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase',
-              color: tab === t ? '#be1826' : '#bbb', cursor: 'pointer', transition: 'color 0.15s',
+              color: tab === t ? '#bd3b28' : '#bbb', cursor: 'pointer', transition: 'color 0.15s',
               WebkitTapHighlightColor: 'transparent',
             }}>{t}</button>
           ))}
@@ -125,7 +125,7 @@ function DashboardTab({ setTab, isMobile }) {
           { label: 'Revenue',      value: fmt(revenue),                   sub: 'paid orders',    accent: '#16a34a' },
           { label: 'Today',        value: todayCount,                     sub: 'new orders',     accent: '#3b82f6' },
           { label: 'Pending',      value: pending,                        sub: 'need action',    accent: '#f59e0b', action: () => setTab('orders') },
-          { label: 'Stock alerts', value: lowStock.length + outOfStock.length, sub: `${outOfStock.length} out of stock`, accent: '#be1826', action: () => setTab('inventory') },
+          { label: 'Stock alerts', value: lowStock.length + outOfStock.length, sub: `${outOfStock.length} out of stock`, accent: '#bd3b28', action: () => setTab('inventory') },
         ].map(({ label, value, sub, accent, action }) => (
           <button key={label} onClick={action} style={{
             background: '#fff', border: '1px solid #f0f0f0',
@@ -158,7 +158,7 @@ function DashboardTab({ setTab, isMobile }) {
                     <Td><span style={{ fontWeight: 600, maxWidth: isMobile ? 100 : 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.products?.name || '—'}</span></Td>
                     <Td>{item.size}</Td>
                     <Td>{item.color}</Td>
-                    <Td><strong style={{ color: item.stock_quantity === 0 ? '#be1826' : '#f59e0b' }}>{item.stock_quantity}</strong></Td>
+                    <Td><strong style={{ color: item.stock_quantity === 0 ? '#bd3b28' : '#f59e0b' }}>{item.stock_quantity}</strong></Td>
                     <Td><Badge label={item.stock_quantity === 0 ? 'Out' : 'Low'} bg={item.stock_quantity === 0 ? '#fee2e2' : '#fef3c7'} color={item.stock_quantity === 0 ? '#991b1b' : '#92400e'} /></Td>
                   </tr>
                 ))}
@@ -308,7 +308,7 @@ function OrdersTab({ isMobile = false }) {
                 border: '1px solid',
                 borderColor: risk === 'high' ? '#fecaca' : risk === 'medium' ? '#fed7aa' : '#f0f0f0',
                 borderLeftWidth: risk ? 3 : 1,
-                borderLeftColor: risk === 'high' ? '#be1826' : risk === 'medium' ? '#f59e0b' : '#f0f0f0',
+                borderLeftColor: risk === 'high' ? '#bd3b28' : risk === 'medium' ? '#f59e0b' : '#f0f0f0',
                 overflow: 'hidden',
               }}>
                 {/* Row */}
@@ -325,7 +325,7 @@ function OrdersTab({ isMobile = false }) {
                         <Badge label={sc.label} bg={sc.bg} color={sc.color} />
                         <Badge label={pc.label} bg={pc.bg} color={pc.color} />
                         {risk && (
-                          <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 8, letterSpacing: '0.1em', color: risk === 'high' ? '#be1826' : '#f59e0b', textTransform: 'uppercase' }}>
+                          <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 8, letterSpacing: '0.1em', color: risk === 'high' ? '#bd3b28' : '#f59e0b', textTransform: 'uppercase' }}>
                             {daysShipped}d ⚠
                           </span>
                         )}
@@ -377,8 +377,8 @@ function OrdersTab({ isMobile = false }) {
 
                     {/* Risk warning */}
                     {risk && (
-                      <div style={{ padding: '10px 12px', backgroundColor: risk === 'high' ? '#fff5f5' : '#fffbeb', borderLeft: `3px solid ${risk === 'high' ? '#be1826' : '#f59e0b'}` }}>
-                        <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: '0.1em', color: risk === 'high' ? '#be1826' : '#92400e', margin: '0 0 2px', textTransform: 'uppercase' }}>
+                      <div style={{ padding: '10px 12px', backgroundColor: risk === 'high' ? '#fff5f5' : '#fffbeb', borderLeft: `3px solid ${risk === 'high' ? '#bd3b28' : '#f59e0b'}` }}>
+                        <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: '0.1em', color: risk === 'high' ? '#bd3b28' : '#92400e', margin: '0 0 2px', textTransform: 'uppercase' }}>
                           {risk === 'high' ? '⚠ Overdue' : '⚡ Running late'}
                         </p>
                         <p style={{ fontSize: 11, color: '#666', margin: 0, lineHeight: 1.5 }}>
@@ -562,7 +562,7 @@ function InventoryTab({ isMobile = false }) {
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
         {[
           { label: 'Total SKUs',  value: inventory.length, color: '#000' },
-          { label: 'Out of Stock', value: outCount,         color: '#be1826' },
+          { label: 'Out of Stock', value: outCount,         color: '#bd3b28' },
           { label: 'Low Stock',    value: lowCount,         color: '#f59e0b' },
         ].map(({ label, value, color }) => (
           <div key={label} style={{ backgroundColor: '#fff', border: '1px solid #f0f0f0', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -736,7 +736,7 @@ function ProductsTab({ isMobile = false }) {
               style={{ width: 64, padding: '7px 8px', border: '1px solid #e8e8e8', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 16, textAlign: 'center' }} />
             <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 16 }}>%</span>
           </div>
-          {discPct > 0 && discOn && <span style={{ fontSize: 12, color: '#be1826' }}>All products showing {discPct}% off</span>}
+          {discPct > 0 && discOn && <span style={{ fontSize: 12, color: '#bd3b28' }}>All products showing {discPct}% off</span>}
           <button onClick={handleSaveDiscount} disabled={discSaving} style={{ ...btnSt, background: discSaved ? '#16a34a' : '#000', marginLeft: 'auto', minWidth: 70 }}>
             {discSaving ? '...' : discSaved ? '✓ Saved' : 'Save'}
           </button>
@@ -767,7 +767,7 @@ function ProductsTab({ isMobile = false }) {
                   <div style={{ fontSize: 10, color: '#bbb', marginTop: 3, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     <span style={{ textTransform: 'uppercase', letterSpacing: '0.06em' }}>{p.category}</span>
                     <span>{fmt(p.price)}</span>
-                    {p.discount_price && <span style={{ color: '#be1826', fontWeight: 600 }}>→ {fmt(p.discount_price)}</span>}
+                    {p.discount_price && <span style={{ color: '#bd3b28', fontWeight: 600 }}>→ {fmt(p.discount_price)}</span>}
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
@@ -779,14 +779,14 @@ function ProductsTab({ isMobile = false }) {
                   </button>
                   {confirmDelete === p.id ? (
                     <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                      <button onClick={() => handleDelete(p.id)} disabled={deleting[p.id]} style={{ ...btnSt, background: '#be1826', padding: '4px 8px', fontSize: 9 }}>
+                      <button onClick={() => handleDelete(p.id)} disabled={deleting[p.id]} style={{ ...btnSt, background: '#bd3b28', padding: '4px 8px', fontSize: 9 }}>
                         {deleting[p.id] ? '...' : 'Yes'}
                       </button>
                       <button onClick={() => setConfirm(null)} style={{ ...btnSt, background: '#f5f5f5', color: '#000', padding: '4px 8px', fontSize: 9 }}>No</button>
                     </div>
                   ) : (
                     <button onClick={() => setConfirm(p.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ddd', padding: 4, transition: 'color 0.15s', WebkitTapHighlightColor: 'transparent' }}
-                      onMouseEnter={e => e.currentTarget.style.color = '#be1826'}
+                      onMouseEnter={e => e.currentTarget.style.color = '#bd3b28'}
                       onMouseLeave={e => e.currentTarget.style.color = '#ddd'}
                     >
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -798,7 +798,7 @@ function ProductsTab({ isMobile = false }) {
               {/* Edit form — smooth slide */}
               <div style={{ overflow: 'hidden', maxHeight: editing === p.id ? '500px' : '0', transition: 'max-height 0.28s ease' }}>
                 <div style={{ borderTop: '1px solid #f5f5f5', padding: 16, backgroundColor: '#fafafa' }}>
-                  {editError[p.id] && <div style={{ padding: '8px 12px', backgroundColor: '#fff5f5', borderLeft: '2px solid #be1826', fontSize: 12, color: '#be1826', marginBottom: 12 }}>{editError[p.id]}</div>}
+                  {editError[p.id] && <div style={{ padding: '8px 12px', backgroundColor: '#fff5f5', borderLeft: '2px solid #bd3b28', fontSize: 12, color: '#bd3b28', marginBottom: 12 }}>{editError[p.id]}</div>}
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 10, marginBottom: 10 }}>
                     {[['Product Name', 'name', 'text'], ['Price (₦)', 'price', 'number'], ['Discount Price (₦)', 'discount_price', 'number']].map(([label, key, type]) => (
                       <div key={key}>

@@ -211,15 +211,15 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="#be1826" strokeWidth="1.6" strokeLinejoin="round"/>
-                <line x1="3" y1="6" x2="21" y2="6" stroke="#be1826" strokeWidth="1.6"/>
-                <path d="M16 10a4 4 0 01-8 0" stroke="#be1826" strokeWidth="1.6" strokeLinecap="round"/>
+                <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="#bd3b28" strokeWidth="1.6" strokeLinejoin="round"/>
+                <line x1="3" y1="6" x2="21" y2="6" stroke="#bd3b28" strokeWidth="1.6"/>
+                <path d="M16 10a4 4 0 01-8 0" stroke="#bd3b28" strokeWidth="1.6" strokeLinecap="round"/>
               </svg>
-              <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '12px', letterSpacing: '0.06em', color: '#be1826' }}>
+              <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '12px', letterSpacing: '0.06em', color: '#bd3b28' }}>
                 {summaryOpen ? 'Hide' : 'Show'} order summary ({itemCount} {itemCount === 1 ? 'item' : 'items'})
               </span>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ transform: summaryOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
-                <path d="M6 9l6 6 6-6" stroke="#be1826" strokeWidth="1.8" strokeLinecap="round"/>
+                <path d="M6 9l6 6 6-6" stroke="#bd3b28" strokeWidth="1.8" strokeLinecap="round"/>
               </svg>
             </div>
             <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '15px', color: '#000' }}>
@@ -280,7 +280,7 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
           <h2 style={sectionHead}>Delivery Details</h2>
 
           {error && (
-            <div style={{ padding: '12px 16px', backgroundColor: '#fff5f5', borderLeft: '3px solid #be1826', fontFamily: "'Archivo', sans-serif", fontSize: '13px', color: '#be1826', marginBottom: '20px', lineHeight: 1.5 }}>
+            <div style={{ padding: '12px 16px', backgroundColor: '#fff5f5', borderLeft: '3px solid #bd3b28', fontFamily: "'Archivo', sans-serif", fontSize: '13px', color: '#bd3b28', marginBottom: '20px', lineHeight: 1.5 }}>
               {error}
             </div>
           )}
@@ -369,7 +369,7 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
       {isMobile && (
         <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', borderTop: '1px solid #f0f0f0', padding: '12px 20px 20px', zIndex: 100 }}>
           {error && (
-            <div style={{ padding: '10px 14px', backgroundColor: '#fff5f5', borderLeft: '3px solid #be1826', fontFamily: "'Archivo', sans-serif", fontSize: '12px', color: '#be1826', marginBottom: '10px', lineHeight: 1.4 }}>
+            <div style={{ padding: '10px 14px', backgroundColor: '#fff5f5', borderLeft: '3px solid #bd3b28', fontFamily: "'Archivo', sans-serif", fontSize: '12px', color: '#bd3b28', marginBottom: '10px', lineHeight: 1.4 }}>
               {error}
             </div>
           )}
@@ -389,7 +389,7 @@ function MobileHeader({ onNavigate }) {
     <div style={{ padding: '16px 20px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
       <button
         onClick={() => onNavigate?.('home')}
-        style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '17px', letterSpacing: '0.08em', color: '#000', background: 'none', border: 'none', cursor: 'pointer' }}
+        style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '17px', letterSpacing: '0.08em', color: '#bd3b28', background: 'none', border: 'none', cursor: 'pointer' }}
       >
         See.Com
       </button>
@@ -458,7 +458,7 @@ function PayButton({ onPay, loading, total }) {
       disabled={loading}
       style={{
         width: '100%', padding: '16px',
-        background: loading ? '#888' : '#be1826',
+        background: loading ? '#888' : '#bd3b28',
         color: '#fff', border: 'none',
         fontFamily: "'Space Grotesk', sans-serif",
         fontWeight: 700, fontSize: '13px', letterSpacing: '0.18em',
@@ -502,5 +502,5 @@ function PaystackBadge() {
 const sectionHead  = { fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '13px', letterSpacing: '0.12em', color: '#000', margin: '0 0 20px', textTransform: 'uppercase' };
 const labelStyle   = { display: 'block', fontFamily: "'Archivo', sans-serif", fontSize: '10px', letterSpacing: '0.1em', color: '#aaa', textTransform: 'uppercase', marginBottom: '7px' };
 const inputStyle   = { width: '100%', padding: '13px 14px', border: '1px solid #e0e0e0', fontFamily: "'Archivo', sans-serif", fontSize: '15px', color: '#000', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s', borderRadius: 0, backgroundColor: '#fff', WebkitAppearance: 'none', minHeight: '48px' };
-const redBtnFull   = { width: '100%', maxWidth: '320px', padding: '15px', background: '#be1826', color: '#fff', border: 'none', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '12px', letterSpacing: '0.16em', cursor: 'pointer', minHeight: '52px' };
-const blackBtnFull = { width: '100%', maxWidth: '320px', padding: '15px', background: '#000', color: '#fff', border: 'none', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '12px', letterSpacing: '0.16em', cursor: 'pointer', minHeight: '52px' };
+const redBtnFull   = { width: '100%', maxWidth: '320px', padding: '15px', background: '#bd3b28', color: '#fff', border: 'none', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '12px', letterSpacing: '0.16em', cursor: 'pointer', minHeight: '52px' };
+const blackBtnFull = { width: '100%', maxWidth: '320px', padding: '15px', background: '#bd3b28', color: '#fff', border: 'none', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '12px', letterSpacing: '0.16em', cursor: 'pointer', minHeight: '52px' };

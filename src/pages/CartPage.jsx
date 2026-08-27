@@ -139,9 +139,9 @@ export default function CartPage({ cart = [], setCart, onNavigate }) {
             <p style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: '16px', letterSpacing: '0.06em', color: '#000', margin: '0 0 8px' }}>Your bag is empty</p>
             <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '13px', color: '#bbb', letterSpacing: '0.02em', margin: 0 }}>Add something to get started.</p>
           </div>
-          <button onClick={() => onNavigate?.('shop')} style={{ padding: '12px 32px', background: '#000', color: '#fff', border: 'none', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '10px', letterSpacing: '0.18em', cursor: 'pointer', transition: 'background 0.2s', textTransform: 'uppercase' }}
-            onMouseEnter={e => e.currentTarget.style.background = '#be1826'}
-            onMouseLeave={e => e.currentTarget.style.background = '#000'}
+          <button onClick={() => onNavigate?.('shop')} style={{ padding: '12px 32px', background: '#bd3b28', color: '#fff', border: 'none', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '10px', letterSpacing: '0.18em', cursor: 'pointer', transition: 'background 0.2s', textTransform: 'uppercase' }}
+            onMouseEnter={e => e.currentTarget.style.background = '#000'}
+            onMouseLeave={e => e.currentTarget.style.background = '#bd3b28'}
           >Shop All</button>
         </div>
         <Footer onNavigate={onNavigate} />
@@ -241,9 +241,9 @@ export default function CartPage({ cart = [], setCart, onNavigate }) {
             <span style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: '22px', letterSpacing: '0.02em', color: '#000' }}>{fmt(total)}</span>
           </div>
 
-          <button onClick={() => onNavigate?.('checkout')} style={{ width: '100%', padding: '15px', background: '#be1826', color: '#fff', border: 'none', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '11px', letterSpacing: '0.18em', cursor: 'pointer', transition: 'background 0.2s', marginBottom: 12 }}
+          <button onClick={() => onNavigate?.('checkout')} style={{ width: '100%', padding: '15px', background: '#bd3b28', color: '#fff', border: 'none', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '11px', letterSpacing: '0.18em', cursor: 'pointer', transition: 'background 0.2s', marginBottom: 12 }}
             onMouseEnter={e => e.currentTarget.style.background = '#a3111f'}
-            onMouseLeave={e => e.currentTarget.style.background = '#be1826'}
+            onMouseLeave={e => e.currentTarget.style.background = '#bd3b28'}
           >
             Proceed to Checkout
           </button>
@@ -375,7 +375,7 @@ function PageHeader({ onNavigate, isMobile, ready }) {
       position: 'relative',
       animation: ready ? 'fadeDown 0.5s ease both' : 'none',
     }}>
-      <button onClick={() => onNavigate?.('home')} style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: isMobile ? '16px' : '20px', letterSpacing: '0.22em', color: '#000', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+      <button onClick={() => onNavigate?.('home')} style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: isMobile ? '16px' : '20px', letterSpacing: '0.22em', color: '#bd3b28', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
         see.Com
       </button>
       <img src={logoBadge} alt="SEE.COM" onClick={() => onNavigate?.('landing')} style={{ position: 'absolute', right: isMobile ? '20px' : '40px', top: '50%', transform: 'translateY(-50%)', width: isMobile ? '36px' : '44px', height: isMobile ? '36px' : '44px', objectFit: 'cover', cursor: 'pointer' }} />
@@ -403,7 +403,7 @@ function CartItem({ item, isLast, onUpdateQty, onRemove, onProductClick, isMobil
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: 6 }}>
             <button onClick={onProductClick} style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px', letterSpacing: '0.02em', color: '#000', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', lineHeight: 1.3 }}>{item.name}</button>
             <button onClick={handleRemove} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ddd', padding: '2px', flexShrink: 0, transition: 'color 0.15s' }}
-              onMouseEnter={e => e.currentTarget.style.color = '#be1826'}
+              onMouseEnter={e => e.currentTarget.style.color = '#bd3b28'}
               onMouseLeave={e => e.currentTarget.style.color = '#ddd'}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M4 4l16 16M20 4L4 20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
@@ -502,7 +502,7 @@ function PendingOrderCard({ order, isMobile, onConfirm, onReportIssue }) {
             <button
               onClick={onReportIssue}
               style={{ padding: '8px 14px', background: 'none', border: '1px solid #e0e0e0', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '9px', letterSpacing: '0.1em', color: '#888', cursor: 'pointer', textTransform: 'uppercase', transition: 'all 0.15s' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#be1826'; e.currentTarget.style.color = '#be1826'; }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#bd3b28'; e.currentTarget.style.color = '#bd3b28'; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = '#e0e0e0'; e.currentTarget.style.color = '#888'; }}
             >
               Report Issue
