@@ -557,36 +557,73 @@ function PayButton({ onPay, loading, total }) {
   );
 }
 
+function ProviderCard({ label, subtext, active, disabled, onClick }) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      style={{
+        width: '100%', minHeight: 56, padding: '12px 16px',
+        display: 'flex', alignItems: 'center', gap: 14, textAlign: 'left',
+        border: `1.5px solid ${disabled ? '#eee' : (active ? '#bd3b28' : '#e0e0e0')}`,
+        background: active && !disabled ? '#fff8f7' : '#fff',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        transition: 'border-color 0.15s, background 0.15s',
+      }}
+    >
+      {/* Radio indicator */}
+      <span style={{
+        flexShrink: 0, width: 20, height: 20, borderRadius: '50%',
+        border: `1.5px solid ${disabled ? '#ddd' : (active ? '#bd3b28' : '#ccc')}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        {active && !disabled && <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#bd3b28' }} />}
+      </span>
+
+      <span>
+        <span style={{
+          display: 'block', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700,
+          fontSize: 13, letterSpacing: '0.04em', color: disabled ? '#ccc' : '#000',
+        }}>
+          {label}
+        </span>
+        <span style={{
+          display: 'block', fontFamily: "'Archivo', sans-serif", fontSize: 11,
+          color: disabled ? '#ccc' : '#999', marginTop: 2,
+        }}>
+          {subtext}
+        </span>
+      </span>
+    </button>
+  );
+}
+
 function ProviderPicker({ provider, setProvider, currency }) {
   const paystackDisabled = currency !== 'NGN';
-  const btn = (active, disabled) => ({
-    flex: 1, padding: '10px 0', textAlign: 'center', cursor: disabled ? 'not-allowed' : 'pointer',
-    border: `1px solid ${active ? '#000' : '#e0e0e0'}`, background: active ? '#000' : '#fff',
-    color: disabled ? '#ccc' : (active ? '#fff' : '#000'),
-    fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: '0.1em',
-    textTransform: 'uppercase', transition: 'all 0.15s',
-  });
   return (
-    <div style={{ marginBottom: 14 }}>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button
-          type="button"
+    <div style={{ marginBottom: 16 }}>
+      <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: 10, letterSpacing: '0.1em', color: '#aaa', textTransform: 'uppercase', margin: '0 0 8px' }}>
+        Select Payment Method
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <ProviderCard
+          label="Paystack"
+          subtext="Cards, Bank Transfer, USSD"
+          active={provider === 'paystack'}
           disabled={paystackDisabled}
           onClick={() => !paystackDisabled && setProvider('paystack')}
-          style={btn(provider === 'paystack', paystackDisabled)}
-        >
-          Paystack
-        </button>
-        <button
-          type="button"
+        />
+        <ProviderCard
+          label="Flutterwave"
+          subtext="Cards, USSD, Mobile Money"
+          active={provider === 'flutterwave'}
+          disabled={false}
           onClick={() => setProvider('flutterwave')}
-          style={btn(provider === 'flutterwave', false)}
-        >
-          Flutterwave
-        </button>
+        />
       </div>
       {paystackDisabled && (
-        <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', color: '#bbb', margin: '6px 0 0', textAlign: 'center' }}>
+        <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', color: '#bbb', margin: '6px 0 0' }}>
           Paystack only supports Naira — switch currency to use it.
         </p>
       )}
