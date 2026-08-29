@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useDiscount } from '../contexts/DiscountContext';
 import { useCurrency } from '../contexts/CurrencyContext';
+import { useHasHover } from '../utils/useHasHover';
 import { getEffectivePrice, isDiscounted, getDiscountLabel } from '../utils/discountUtils';
 
 const thumbImage = (url) => {
@@ -14,6 +15,7 @@ export default function ProductCard({ product, showPrice, onProductClick }) {
   const [hovering, setHovering] = useState(false);
   const { discount }            = useDiscount();
   const { formatPrice }         = useCurrency();
+  const hasHover                = useHasHover();
   const tx   = useRef(null);
   const ty   = useRef(null);
   const drag = useRef(false);
@@ -130,7 +132,7 @@ export default function ProductCard({ product, showPrice, onProductClick }) {
           letterSpacing: '0.04em', color: '#000',
           margin: '0 0 4px',
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          opacity: hovering || showPrice ? 1 : 0,
+          opacity: (hasHover ? hovering : true) || showPrice ? 1 : 0,
           transition: 'opacity 0.25s ease',
         }}>
           {product.name}

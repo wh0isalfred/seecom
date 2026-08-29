@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useCurrency, CURRENCY_SYMBOLS } from '../contexts/CurrencyContext';
+import { useHasHover } from '../utils/useHasHover';
 
 const SHIRT_PATH = "M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z";
 const CURRENCIES = ['NGN', 'USD', 'GBP'];
@@ -12,6 +13,7 @@ const CURRENCIES = ['NGN', 'USD', 'GBP'];
  */
 export default function ViewToggle({ showPrice, setShowPrice, size = 'md', dark = false }) {
   const { currency, setCurrency } = useCurrency();
+  const hasHover = useHasHover();
   const [bubbleOpen, setBubbleOpen] = useState(false);
   const closeTimer = useRef(null);
   const wrapRef = useRef(null);
@@ -28,12 +30,17 @@ export default function ViewToggle({ showPrice, setShowPrice, size = 'md', dark 
   const openBubble  = () => { clearTimeout(closeTimer.current); setBubbleOpen(true); };
   const closeBubble = () => { closeTimer.current = setTimeout(() => setBubbleOpen(false), 160); };
 
-  // Close on outside click (covers touch devices, where there's no hover-out)
+  // Close on outside tap/click — listens for both so it's reliable on touch
+  // even if a browser doesn't emulate mousedown from a real touchstart.
   useEffect(() => {
     if (!bubbleOpen) return;
-    const onClick = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setBubbleOpen(false); };
-    document.addEventListener('mousedown', onClick);
-    return () => document.removeEventListener('mousedown', onClick);
+    const onOutside = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setBubbleOpen(false); };
+    document.addEventListener('mousedown', onOutside);
+    document.addEventListener('touchstart', onOutside);
+    return () => {
+      document.removeEventListener('mousedown', onOutside);
+      document.removeEventListener('touchstart', onOutside);
+    };
   }, [bubbleOpen]);
 
   return (
@@ -45,8 +52,8 @@ export default function ViewToggle({ showPrice, setShowPrice, size = 'md', dark 
       <div
         ref={wrapRef}
         style={{ position: 'relative' }}
-        onMouseEnter={openBubble}
-        onMouseLeave={closeBubble}
+        onMouseEnter={hasHover ? openBubble : undefined}
+        onMouseLeave={hasHover ? closeBubble : undefined}
       >
         <button
           onClick={() => { setShowPrice(true); setBubbleOpen(o => !o); }}
@@ -75,7 +82,7 @@ export default function ViewToggle({ showPrice, setShowPrice, size = 'md', dark 
               key={code}
               onClick={() => { setCurrency(code); setShowPrice(true); setBubbleOpen(false); }}
               style={{
-                width: 34, height: 34, borderRadius: '50%', border: 'none', cursor: 'pointer',
+                width: 38, height: 38, borderRadius: '50%', border: 'none', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 background: currency === code ? 'rgba(0,0,0,0.82)' : 'rgba(255,255,255,0.55)',
                 color: currency === code ? '#fff' : '#000',
