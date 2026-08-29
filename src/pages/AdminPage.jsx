@@ -5,7 +5,7 @@ import { updateProductDetails } from '../services/adminService';
 import {
   fetchAllOrders, updateOrderStatus, updatePaymentStatus, saveTrackingInfo,
   fetchAllInventory, updateStockQuantity,
-  fetchAllProducts, toggleNewArrival, deleteProductById,
+  fetchAllProducts, toggleNewArrival, toggleMadeToOrder, deleteProductById,
 } from '../services/adminService';
 
 // ── Status config ─────────────────────────────────────────────────────────────
@@ -689,6 +689,13 @@ function ProductsTab({ isMobile = false }) {
     setToggling(t => ({ ...t, [id]: false }));
   };
 
+  const handleToggleMadeToOrder = async (id, current) => {
+    setToggling(t => ({ ...t, [id]: true }));
+    try { await toggleMadeToOrder(id, !current); setProducts(prev => prev.map(p => p.id === id ? { ...p, is_made_to_order: !current } : p)); }
+    catch (e) { console.error(e); }
+    setToggling(t => ({ ...t, [id]: false }));
+  };
+
   const handleDelete = async (id) => {
     setDeleting(d => ({ ...d, [id]: true }));
     try { await deleteProductById(id); setProducts(prev => prev.filter(p => p.id !== id)); }
@@ -776,6 +783,9 @@ function ProductsTab({ isMobile = false }) {
                   </button>
                   <button onClick={() => handleToggleNewArrival(p.id, p.is_new_arrival)} disabled={toggling[p.id]} style={{ padding: '4px 8px', border: '1px solid', borderRadius: 12, background: p.is_new_arrival ? '#000' : '#fff', color: p.is_new_arrival ? '#fff' : '#bbb', borderColor: p.is_new_arrival ? '#000' : '#e8e8e8', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 8, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer', opacity: toggling[p.id] ? 0.5 : 1, WebkitTapHighlightColor: 'transparent' }}>
                     New
+                  </button>
+                  <button onClick={() => handleToggleMadeToOrder(p.id, p.is_made_to_order)} disabled={toggling[p.id]} style={{ padding: '4px 8px', border: '1px solid', borderRadius: 12, background: p.is_made_to_order ? '#000' : '#fff', color: p.is_made_to_order ? '#fff' : '#bbb', borderColor: p.is_made_to_order ? '#000' : '#e8e8e8', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 8, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer', opacity: toggling[p.id] ? 0.5 : 1, WebkitTapHighlightColor: 'transparent' }}>
+                    Made to Order
                   </button>
                   {confirmDelete === p.id ? (
                     <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>

@@ -85,6 +85,12 @@ export const toggleNewArrival = async (productId, value) => {
   if (value) notifyNewArrival(productId);
 };
 
+export const toggleMadeToOrder = async (productId, value) => {
+  const { error } = await supabase
+    .from('products').update({ is_made_to_order: value }).eq('id', productId);
+  if (error) throw error;
+};
+
 /**
  * Invoke the notify-new-arrival Supabase Edge Function, which emails everyone
  * on the subscribers list about this product. See supabase/functions/notify-new-arrival/.
