@@ -253,6 +253,16 @@ export default function CartPage({ cart = [], setCart, onNavigate }) {
             <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.1em', color: '#ccc', textTransform: 'uppercase' }}>Secure Checkout</span>
           </div>
 
+          {/* Made-to-order note — only when the cart actually has one */}
+          {cart.some(i => i.madeToOrder) && (
+            <div style={{ display: 'flex', gap: 8, background: '#faf6f0', padding: '10px 12px', border: '1px solid #f0e6d8' }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, marginTop: 2, color: '#a3792f' }}><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.4"/><path d="M12 8v5l3 2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', color: '#8a6524', margin: 0, lineHeight: 1.5 }}>
+                This order includes a made-to-order piece — allow ~3 weeks for that item to be ready before it ships.
+              </p>
+            </div>
+          )}
+
           {/* Delivery + returns info */}
           <div style={{ marginTop: 20, borderTop: '1px solid #f5f5f5', paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', gap: 8 }}>

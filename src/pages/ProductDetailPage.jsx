@@ -62,6 +62,7 @@ export default function ProductDetailPage({ productId, setCart, onNavigate }) {
 
   const sizes  = Array.isArray(product.sizes)  ? product.sizes  : [];
   const colors = Array.isArray(product.colors) ? product.colors : [];
+  const madeToOrder = !!product.is_made_to_order;
 
   const effectivePrice  = getEffectivePrice(product, discount);
   const discounted      = isDiscounted(product, discount);
@@ -74,18 +75,20 @@ export default function ProductDetailPage({ productId, setCart, onNavigate }) {
   };
 
   const sizeIsOOS = size => {
+    if (madeToOrder) return false;
     if (!inventory.length) return false;
     if (!colors.length) return stockFor(size, null) === 0;
     return colors.every(c => stockFor(size, c) === 0);
   };
 
   const selectedStock = (() => {
+    if (madeToOrder) return 999;
     if (!selectedSize) return null;
     if (colors.length > 0 && !selectedColor) return null;
     return stockFor(selectedSize, selectedColor);
   })();
 
-  const isSoldOut  = selectedStock !== null && selectedStock === 0;
+  const isSoldOut  = !madeToOrder && selectedStock !== null && selectedStock === 0;
 
   const toggle = section => setExpanded(p => p === section ? null : section);
 
@@ -99,7 +102,7 @@ export default function ProductDetailPage({ productId, setCart, onNavigate }) {
     setCart(prev => {
       const exists = prev.find(i => i.id === id);
       if (exists) return prev.map(i => i.id === id ? { ...i, quantity: i.quantity + 1 } : i);
-      return [...prev, { id, productId: product.id, name: product.name, price: effectivePrice, image: images[0], size: selectedSize, color: selectedColor, quantity: 1 }];
+      return [...prev, { id, productId: product.id, name: product.name, price: effectivePrice, image: images[0], size: selectedSize, color: selectedColor, quantity: 1, madeToOrder }];
     });
     setBagState('added');
     setTimeout(() => setBagState('idle'), 1800);
@@ -160,7 +163,7 @@ export default function ProductDetailPage({ productId, setCart, onNavigate }) {
           <div style={{ padding: isDesktop ? '28px 32px 20px' : '24px 20px 16px', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
             <div>
               <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.22em', color: '#be1826', textTransform: 'uppercase', margin: '0 0 8px' }}>
-                {product.category}
+                {product.category}{madeToOrder ? ' · Made to Order' : ''}
               </p>
               <div style={{ overflow: 'hidden' }}>
                 <h1 style={{
@@ -223,7 +226,7 @@ export default function ProductDetailPage({ productId, setCart, onNavigate }) {
               <Accordion label="COLOR" isOpen={expanded === 'color'} onToggle={() => toggle('color')} badge={selectedColor}>
                 <div style={{ padding: '14px 0 6px', display: 'flex', flexWrap: 'wrap', gap: 7 }}>
                   {colors.map(color => {
-                    const oos = selectedSize ? stockFor(selectedSize, color) === 0 : inventory.length > 0 && inventory.filter(i => i.color === color).every(i => i.stock_quantity === 0);
+                    const oos = madeToOrder ? false : (selectedSize ? stockFor(selectedSize, color) === 0 : inventory.length > 0 && inventory.filter(i => i.color === color).every(i => i.stock_quantity === 0));
                     return <ColorBtn key={color} label={color} selected={selectedColor === color} oos={oos} onClick={() => { if (!oos) setSelectedColor(color); }} />;
                   })}
                 </div>
@@ -262,7 +265,7 @@ export default function ProductDetailPage({ productId, setCart, onNavigate }) {
                   </svg>
                 }
                 label="Delivery"
-                value="7-14 business days"
+                value={madeToOrder ? 'Made to order · ~3 weeks' : '7-14 business days'}
               />
 
               {/* Returns */}

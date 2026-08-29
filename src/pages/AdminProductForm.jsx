@@ -19,6 +19,7 @@ export default function AdminProductForm({ onProductCreated }) {
     sizes: ['XS', 'S', 'M', 'L', 'XL'],
     colors: [],
     is_new_arrival: true,
+    is_made_to_order: false,
   });
 
   const [images, setImages] = useState({
@@ -98,16 +99,18 @@ export default function AdminProductForm({ onProductCreated }) {
     setError(null);
     setSuccess(false);
 
-    // Validate inventory
-    if (inventory.length === 0) {
-      setError('Please generate inventory and set stock quantities before creating product');
-      return;
-    }
+    // Validate inventory — skipped for made-to-order items, which don't track stock
+    if (!formData.is_made_to_order) {
+      if (inventory.length === 0) {
+        setError('Please generate inventory and set stock quantities before creating product');
+        return;
+      }
 
-    // Check if at least one size/color combo has stock
-    if (!inventory.some(item => item.stock_quantity > 0)) {
-      setError('At least one size/color combination must have stock > 0');
-      return;
+      // Check if at least one size/color combo has stock
+      if (!inventory.some(item => item.stock_quantity > 0)) {
+        setError('At least one size/color combination must have stock > 0');
+        return;
+      }
     }
 
     setLoading(true);
@@ -145,6 +148,7 @@ export default function AdminProductForm({ onProductCreated }) {
         sizes: ['XS', 'S', 'M', 'L', 'XL'],
         colors: [],
         is_new_arrival: true,
+        is_made_to_order: false,
       });
       setImages({
         image_1: null,
@@ -260,6 +264,21 @@ export default function AdminProductForm({ onProductCreated }) {
           </label>
         </div>
 
+        {/* Made to Order Toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <input
+            type="checkbox"
+            id="is_made_to_order"
+            name="is_made_to_order"
+            checked={formData.is_made_to_order}
+            onChange={(e) => setFormData(prev => ({ ...prev, is_made_to_order: e.target.checked }))}
+            style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+          />
+          <label htmlFor="is_made_to_order" style={{ fontWeight: '600', cursor: 'pointer' }}>
+            Made to Order (no stock tracking — ~3 week lead time, e.g. chains)
+          </label>
+        </div>
+
         {/* Images */}
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '16px' }}>
           {['image_1', 'image_2', 'image_male', 'image_female'].map(type => (
@@ -342,39 +361,52 @@ export default function AdminProductForm({ onProductCreated }) {
         {/* Inventory */}
         <div>
           <label style={{ display: 'block', marginBottom: '12px', fontWeight: '600' }}>
-            INVENTORY <span style={{ color: '#be1826' }}>*</span>
+            INVENTORY {!formData.is_made_to_order && <span style={{ color: '#be1826' }}>*</span>}
           </label>
-          <button
-            type="button"
-            onClick={handleInventoryAdd}
-            disabled={formData.colors.length === 0}
-            style={{
-              padding: '10px 16px',
-              background: formData.colors.length === 0 ? '#ccc' : '#000',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: formData.colors.length === 0 ? 'not-allowed' : 'pointer',
-              marginBottom: '12px',
-            }}
-          >
-            {formData.colors.length === 0 ? 'Add Colors First' : 'Generate Inventory (All Size/Color Combos)'}
-          </button>
 
-          {inventory.length === 0 && (
+          {formData.is_made_to_order ? (
             <div style={{
               padding: '12px',
-              background: '#fee',
-              color: '#c33',
+              background: '#f0f0f0',
+              color: '#555',
               borderRadius: '4px',
               fontSize: '12px',
-              marginBottom: '12px',
             }}>
-              ⚠️ You must generate inventory and set stock before creating product
+              Made to order — stock tracking skipped. Customers can still pick from the sizes/colors above; availability is never gated by stock.
             </div>
-          )}
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={handleInventoryAdd}
+                disabled={formData.colors.length === 0}
+                style={{
+                  padding: '10px 16px',
+                  background: formData.colors.length === 0 ? '#ccc' : '#000',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: formData.colors.length === 0 ? 'not-allowed' : 'pointer',
+                  marginBottom: '12px',
+                }}
+              >
+                {formData.colors.length === 0 ? 'Add Colors First' : 'Generate Inventory (All Size/Color Combos)'}
+              </button>
 
-          {inventory.length > 0 && (
+              {inventory.length === 0 && (
+                <div style={{
+                  padding: '12px',
+                  background: '#fee',
+                  color: '#c33',
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  marginBottom: '12px',
+                }}>
+                  ⚠️ You must generate inventory and set stock before creating product
+                </div>
+              )}
+
+              {inventory.length > 0 && (
             <div style={{ maxHeight: '300px', overflowY: 'auto', overflowX: 'auto', border: '1px solid #ccc', borderRadius: '4px', padding: '12px' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: isMobile ? '280px' : 'auto' }}>
                 <thead>
@@ -403,6 +435,8 @@ export default function AdminProductForm({ onProductCreated }) {
                 </tbody>
               </table>
             </div>
+          )}
+            </>
           )}
         </div>
 

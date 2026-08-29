@@ -7,8 +7,8 @@ export const loadRemoteCart = async (userId) => {
     .select('*')
     .eq('user_id', userId);
   if (error) throw error;
-  return (data || []).map(({ id, product_id, name, price, image, size, color, quantity }) => ({
-    id, productId: product_id, name, price, image, size: size || null, color: color || null, quantity,
+  return (data || []).map(({ id, product_id, name, price, image, size, color, quantity, made_to_order }) => ({
+    id, productId: product_id, name, price, image, size: size || null, color: color || null, quantity, madeToOrder: !!made_to_order,
   }));
 };
 
@@ -31,6 +31,7 @@ export const saveRemoteCart = async (userId, cart) => {
     size:       item.size  || null,
     color:      item.color || null,
     quantity:   item.quantity,
+    made_to_order: !!item.madeToOrder,
     updated_at: new Date().toISOString(),
   }));
 
