@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createOrderAfterPayment } from '../services/checkoutService';
 import { useCurrency } from '../contexts/CurrencyContext';
+import { supabase } from '../services/supabase';
 import logoBadge from '../assets/badge.webp';
 
 const SHIPPING_THRESHOLD = 100000;
@@ -86,47 +87,65 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
     return true;
   };
 
-  // Shared by both providers once their payment popup confirms success —
-  // creates the order, stashes it for the cart/tracking page, clears the cart.
-  const completeOrder = ({ provider, reference }) => {
+  // Shared by both providers once their payment popup reports success.
+  // Independently verifies with the provider's server-side API (using their
+  // secret key, never the browser) before trusting the payment and creating
+  // the order — a client-side "it succeeded" callback alone is spoofable.
+  const completeOrder = ({ provider, reference, chargedAmount, chargedCurrency }) => {
     setLoading(true);
     const rate = currency === 'NGN' ? 1 : (rates[currency] || 1);
-    createOrderAfterPayment({ formData: form, cart, provider, reference, currency, exchangeRate: rate, total, shipping })
-      .then(order => {
-        const pending = JSON.parse(localStorage.getItem('pendingOrders') || '[]');
-        const newOrder = {
-          id: order.id,
-          confirm_token: order.confirm_token,
-          order_number: order.order_number,
-          total: order.total,
-          created_at: order.created_at,
-          customer_email: order.customer_email,
-          order_status: order.order_status || 'confirmed',
-          items: cart.map(i => ({
-            name: i.name,
-            size: i.size,
-            color: i.color,
-            quantity: i.quantity,
-            price: i.price,
-            image: i.image
-          })),
-        };
-        pending.push(newOrder);
-        localStorage.setItem('pendingOrders', JSON.stringify(pending));
 
-        // Separate key — survives pendingOrders being cleared
-        const guestIds = JSON.parse(localStorage.getItem('guestOrderIds') || '[]');
-        if (!guestIds.includes(order.id)) guestIds.push(order.id);
-        localStorage.setItem('guestOrderIds', JSON.stringify(guestIds));
+    supabase.functions.invoke('verify-payment', {
+      body: { provider, reference, expectedAmount: chargedAmount, expectedCurrency: chargedCurrency },
+    })
+      .then(({ data, error: fnError }) => {
+        if (fnError || !data?.verified) {
+          setLoading(false);
+          setError(`We couldn't verify this payment (ref: ${reference}). If you were charged, contact us with this reference — don't pay again.`);
+          return;
+        }
 
-        setCart([]);
-        setOrderDone(order);
+        createOrderAfterPayment({ formData: form, cart, provider, reference, currency, exchangeRate: rate, total, shipping })
+          .then(order => {
+            const pending = JSON.parse(localStorage.getItem('pendingOrders') || '[]');
+            const newOrder = {
+              id: order.id,
+              confirm_token: order.confirm_token,
+              order_number: order.order_number,
+              total: order.total,
+              created_at: order.created_at,
+              customer_email: order.customer_email,
+              order_status: order.order_status || 'confirmed',
+              items: cart.map(i => ({
+                name: i.name,
+                size: i.size,
+                color: i.color,
+                quantity: i.quantity,
+                price: i.price,
+                image: i.image
+              })),
+            };
+            pending.push(newOrder);
+            localStorage.setItem('pendingOrders', JSON.stringify(pending));
+
+            // Separate key — survives pendingOrders being cleared
+            const guestIds = JSON.parse(localStorage.getItem('guestOrderIds') || '[]');
+            if (!guestIds.includes(order.id)) guestIds.push(order.id);
+            localStorage.setItem('guestOrderIds', JSON.stringify(guestIds));
+
+            setCart([]);
+            setOrderDone(order);
+          })
+          .catch(() => {
+            setError(`Payment verified (ref: ${reference}) but order failed. Contact us with this reference.`);
+          })
+          .finally(() => {
+            setLoading(false);
+          });
       })
       .catch(() => {
-        setError(`Payment received (ref: ${reference}) but order failed. Contact us with this reference.`);
-      })
-      .finally(() => {
         setLoading(false);
+        setError(`We couldn't verify this payment (ref: ${reference}). If you were charged, contact us with this reference — don't pay again.`);
       });
   };
 
@@ -152,7 +171,7 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
       },
       callback: function (response) {
         // Paystack rejects async callbacks — call an async handler inside instead
-        completeOrder({ provider: 'paystack', reference: response.reference });
+        completeOrder({ provider: 'paystack', reference: response.reference, chargedAmount: total, chargedCurrency: 'NGN' });
       },
       onClose: () => {},
     });
@@ -186,7 +205,7 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
       },
       callback: (response) => {
         if (response.status === 'successful' || response.status === 'completed') {
-          completeOrder({ provider: 'flutterwave', reference: response.tx_ref || ref });
+          completeOrder({ provider: 'flutterwave', reference: response.tx_ref || ref, chargedAmount: chargeAmount, chargedCurrency: currency });
         } else {
           setError('Payment was not completed.');
         }
