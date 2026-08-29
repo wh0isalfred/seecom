@@ -3,7 +3,7 @@ import { createOrderAfterPayment } from '../services/checkoutService';
 import logoBadge from '../assets/badge.webp';
 
 const SHIPPING_THRESHOLD = 100000;
-const FLAT_SHIPPING      = 3500;
+const FLAT_SHIPPING      = 6500;
 
 const NG_STATES = [
   'Abia','Adamawa','Akwa Ibom','Anambra','Bauchi','Bayelsa','Benue','Borno',
