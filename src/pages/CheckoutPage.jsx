@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createOrderAfterPayment } from '../services/checkoutService';
+import { useCurrency } from '../contexts/CurrencyContext';
 import logoBadge from '../assets/badge.webp';
 
 const SHIPPING_THRESHOLD = 100000;
@@ -26,6 +27,7 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
   const [orderDone, setOrderDone]     = useState(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [isMobile, setIsMobile]       = useState(window.innerWidth < 768);
+  const { currency, convert, formatPrice, rates } = useCurrency();
 
   const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
   const shipping = subtotal >= SHIPPING_THRESHOLD ? 0 : FLAT_SHIPPING;
@@ -223,7 +225,7 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
               </svg>
             </div>
             <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '15px', color: '#000' }}>
-              {fmt(total)}
+              {formatPrice(total)}
             </span>
           </button>
 
@@ -247,18 +249,18 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
                     </div>
                   </div>
                   <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '12px' }}>
-                    {fmt(item.price * item.quantity)}
+                    {formatPrice(item.price * item.quantity)}
                   </div>
                 </div>
               ))}
 
               {/* Totals */}
               <div style={{ paddingTop: '12px', borderTop: '1px solid #eee', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <SummaryLine label="Subtotal" value={fmt(subtotal)} />
-                <SummaryLine label="Shipping" value={shipping === 0 ? 'FREE' : fmt(shipping)} valueColor={shipping === 0 ? '#16a34a' : '#000'} />
+                <SummaryLine label="Subtotal" value={formatPrice(subtotal)} />
+                <SummaryLine label="Shipping" value={shipping === 0 ? 'FREE' : formatPrice(shipping)} valueColor={shipping === 0 ? '#16a34a' : '#000'} />
                 <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid #eee' }}>
                   <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '13px' }}>Total</span>
-                  <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px' }}>{fmt(total)}</span>
+                  <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px' }}>{formatPrice(total)}</span>
                 </div>
               </div>
             </div>
@@ -343,23 +345,23 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
                   </div>
                 </div>
                 <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '13px' }}>
-                  {fmt(item.price * item.quantity)}
+                  {formatPrice(item.price * item.quantity)}
                 </div>
               </div>
             ))}
             <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <SummaryLine label="Subtotal" value={fmt(subtotal)} />
-              <SummaryLine label="Shipping" value={shipping === 0 ? 'FREE' : fmt(shipping)} valueColor={shipping === 0 ? '#16a34a' : '#000'} />
+              <SummaryLine label="Subtotal" value={formatPrice(subtotal)} />
+              <SummaryLine label="Shipping" value={shipping === 0 ? 'FREE' : formatPrice(shipping)} valueColor={shipping === 0 ? '#16a34a' : '#000'} />
               {shipping > 0 && (
                 <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '11px', color: '#aaa', margin: '0', lineHeight: 1.5 }}>
-                  Add {fmt(SHIPPING_THRESHOLD - subtotal)} more for <span style={{ color: '#16a34a', fontWeight: 600 }}>free delivery</span>
+                  Add {formatPrice(SHIPPING_THRESHOLD - subtotal)} more for <span style={{ color: '#16a34a', fontWeight: 600 }}>free delivery</span>
                 </p>
               )}
             </div>
             <div style={{ height: 1, backgroundColor: '#f0f0f0', margin: '16px 0' }} />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
               <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '13px', letterSpacing: '0.1em' }}>TOTAL</span>
-              <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '22px' }}>{fmt(total)}</span>
+              <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '22px' }}>{formatPrice(total)}</span>
             </div>
           </div>
         )}
@@ -438,20 +440,22 @@ function SummaryLine({ label, value, valueColor = '#000' }) {
 }
 
 function DesktopSummary({ subtotal, shipping, total }) {
+  const { formatPrice } = useCurrency();
   return (
     <div style={{ padding: '16px', backgroundColor: '#f9f9f9', marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      <SummaryLine label="Subtotal" value={`₦${subtotal.toLocaleString()}`} />
-      <SummaryLine label="Shipping" value={shipping === 0 ? 'FREE' : `₦${shipping.toLocaleString()}`} valueColor={shipping === 0 ? '#16a34a' : '#000'} />
+      <SummaryLine label="Subtotal" value={formatPrice(subtotal)} />
+      <SummaryLine label="Shipping" value={shipping === 0 ? 'FREE' : formatPrice(shipping)} valueColor={shipping === 0 ? '#16a34a' : '#000'} />
       <div style={{ height: 1, backgroundColor: '#e8e8e8', margin: '4px 0' }} />
       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
         <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '12px', letterSpacing: '0.1em' }}>TOTAL</span>
-        <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px' }}>{`₦${total.toLocaleString()}`}</span>
+        <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '16px' }}>{formatPrice(total)}</span>
       </div>
     </div>
   );
 }
 
 function PayButton({ onPay, loading, total }) {
+  const { formatPrice } = useCurrency();
   return (
     <button
       onClick={onPay}
@@ -467,7 +471,7 @@ function PayButton({ onPay, loading, total }) {
         minHeight: '52px',
       }}
     >
-      {loading ? 'PROCESSING...' : `PAY ₦${total.toLocaleString()}`}
+      {loading ? 'PROCESSING...' : `PAY ${formatPrice(total)}`}
     </button>
   );
 }

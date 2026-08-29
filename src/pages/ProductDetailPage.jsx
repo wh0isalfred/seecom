@@ -3,6 +3,7 @@ import { fetchProductById, fetchProductInventory } from '../services/products';
 import Footer from '../components/Footer';
 import logoBadge from '../assets/badge.webp';
 import { useDiscount } from '../contexts/DiscountContext';
+import { useCurrency } from '../contexts/CurrencyContext';
 import { getEffectivePrice, isDiscounted, getDiscountLabel } from '../utils/discountUtils';
 
 export default function ProductDetailPage({ productId, setCart, onNavigate }) {
@@ -19,6 +20,7 @@ export default function ProductDetailPage({ productId, setCart, onNavigate }) {
   const [ready, setReady]               = useState(false);
   const [showSizeGuide, setShowSizeGuide] = useState(false);
   const { discount }                    = useDiscount();
+  const { formatPrice }                 = useCurrency();
   const [retryNonce, setRetryNonce]     = useState(0);
   const retry = () => setRetryNonce(n => n + 1);
 
@@ -177,13 +179,13 @@ export default function ProductDetailPage({ productId, setCart, onNavigate }) {
               </div>
               {discounted && (
                 <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '11px', color: '#bbb', textDecoration: 'line-through', marginTop: 4, display: 'block' }}>
-                  ₦{product.price?.toLocaleString()}
+                  {formatPrice(product.price)}
                 </span>
               )}
             </div>
             <div style={{ textAlign: 'right' }}>
               <span style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: '18px', letterSpacing: '0.02em', color: discounted ? '#be1826' : '#000', whiteSpace: 'nowrap' }}>
-                ₦{effectivePrice?.toLocaleString()}
+                {formatPrice(effectivePrice)}
               </span>
               {discounted && discountLabel && (
                 <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '9px', letterSpacing: '0.1em', color: '#be1826', margin: '2px 0 0' }}>{discountLabel} OFF</p>

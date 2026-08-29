@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useCurrency } from '../contexts/CurrencyContext';
 
 // ADMIN item is injected dynamically only when isAdmin === true
 const BASE_MENU_ITEMS = [
@@ -26,6 +27,7 @@ export default function Sidebar({
 }) {
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [stripHeight, setStripHeight]   = useState('80dvh');
+  const { currency, setCurrency } = useCurrency();
 
   const menuItems = isAdmin
     ? [...BASE_MENU_ITEMS, ADMIN_MENU_ITEM]
@@ -237,6 +239,27 @@ export default function Sidebar({
         {/* Footer */}
         <div style={{ padding: '32px 32px 36px', flexShrink: 0, opacity: isOpen ? 1 : 0, transition: 'opacity 0.5s 0.5s ease' }}>
           <div style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.07)', marginBottom: 20 }} />
+
+          {/* Currency switcher */}
+          <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
+            {['NGN', 'USD', 'GBP'].map(code => (
+              <button
+                key={code}
+                onClick={() => setCurrency(code)}
+                style={{
+                  padding: '5px 10px', borderRadius: 12,
+                  border: '1px solid', borderColor: currency === code ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.15)',
+                  background: currency === code ? 'rgba(255,255,255,0.1)' : 'transparent',
+                  color: currency === code ? '#fff' : 'rgba(255,255,255,0.4)',
+                  fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 9, letterSpacing: '0.08em',
+                  cursor: 'pointer', transition: 'all 0.15s', WebkitTapHighlightColor: 'transparent',
+                }}
+              >
+                {code}
+              </button>
+            ))}
+          </div>
+
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 20px', marginBottom: 20 }}>
             {[
               { label: 'Terms',   route: 'terms' },

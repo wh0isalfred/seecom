@@ -1,24 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import ProductCard from '../components/ProductCard';
+import ViewToggle from '../components/ViewToggle';
 import Footer from '../components/Footer';
 import FetchErrorState from '../components/FetchErrorState';
 import { fetchProducts } from '../services/products';
 import { useAsyncFetch } from '../utils/useAsyncFetch';
 import { useResponsiveGrid } from '../utils/responsiveGrid';
 import logoBadge from '../assets/badge.webp';
-
-function ViewToggle({ showPrice, setShowPrice }) {
-  return (
-    <div style={{ display: 'inline-flex', border: '1px solid #000', borderRadius: '24px', padding: '4px' }}>
-      <button onClick={() => setShowPrice(false)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '20px', border: 'none', background: showPrice ? 'transparent' : '#000', cursor: 'pointer', color: showPrice ? '#000' : '#fff', transition: 'all 0.2s' }}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-      </button>
-      <button onClick={() => setShowPrice(true)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '20px', border: 'none', background: showPrice ? '#000' : 'transparent', cursor: 'pointer', color: showPrice ? '#fff' : '#000', transition: 'all 0.2s' }}>
-        <svg width="14" height="14" viewBox="0 0 24 24"><text x="12" y="17" textAnchor="middle" fontSize="13" fontWeight="700" fill="currentColor" fontFamily="Arial, Helvetica, sans-serif">₦</text></svg>
-      </button>
-    </div>
-  );
-}
 
 export default function ShopPage({ onNavigate }) {
   const [showPrice, setShowPrice]           = useState(false);

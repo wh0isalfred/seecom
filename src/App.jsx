@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { DiscountProvider } from './contexts/DiscountContext'
+import { CurrencyProvider } from './contexts/CurrencyContext'
 import { generateSessionId } from './services/supabase'
 import { stopAudio } from './audio'
 import { loadRemoteCart, saveRemoteCart, mergeCarts } from './services/cartService'
@@ -287,7 +288,9 @@ export default function App() {
   return (
     <AuthProvider>
       <DiscountProvider>
-        <AppInner />
+        <CurrencyProvider>
+          <AppInner />
+        </CurrencyProvider>
       </DiscountProvider>
     </AuthProvider>
   )

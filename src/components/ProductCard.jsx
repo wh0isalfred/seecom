@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { useDiscount } from '../contexts/DiscountContext';
+import { useCurrency } from '../contexts/CurrencyContext';
 import { getEffectivePrice, isDiscounted, getDiscountLabel } from '../utils/discountUtils';
 
 const thumbImage = (url) => {
@@ -12,6 +13,7 @@ export default function ProductCard({ product, showPrice, onProductClick }) {
   const [idx, setIdx]           = useState(0);
   const [hovering, setHovering] = useState(false);
   const { discount }            = useDiscount();
+  const { formatPrice }         = useCurrency();
   const tx   = useRef(null);
   const ty   = useRef(null);
   const drag = useRef(false);
@@ -141,15 +143,15 @@ export default function ProductCard({ product, showPrice, onProductClick }) {
           {discounted ? (
             <>
               <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 12, color: '#be1826' }}>
-                ₦{effectivePrice.toLocaleString()}
+                {formatPrice(effectivePrice)}
               </span>
               <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: 11, color: '#bbb', textDecoration: 'line-through' }}>
-                ₦{product.price?.toLocaleString()}
+                {formatPrice(product.price)}
               </span>
             </>
           ) : (
             <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 12, color: '#000' }}>
-              ₦{effectivePrice?.toLocaleString()}
+              {formatPrice(effectivePrice)}
             </span>
           )}
         </div>

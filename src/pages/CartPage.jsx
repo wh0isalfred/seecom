@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import Footer from '../components/Footer';
 import logoBadge from '../assets/badge.webp';
 import { supabase } from '../services/supabase';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 const SHIPPING_THRESHOLD = 100000;
 const FLAT_SHIPPING      = 3500;
-const fmt = n => `₦${n.toLocaleString()}`;
 
 // Grace window in days before auto-close — flat across all states
 const GRACE_DAYS = 14;
@@ -32,6 +32,7 @@ export default function CartPage({ cart = [], setCart, onNavigate }) {
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 900);
   const [isMobile, setIsMobile]   = useState(window.innerWidth < 640);
   const [ready, setReady]         = useState(false);
+  const { formatPrice } = useCurrency();
   const [pendingOrders, setPendingOrders] = useState(() =>
     JSON.parse(localStorage.getItem('pendingOrders') || '[]')
   );
@@ -219,10 +220,10 @@ export default function CartPage({ cart = [], setCart, onNavigate }) {
           <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', letterSpacing: '0.24em', color: '#bbb', textTransform: 'uppercase', margin: '0 0 20px' }}>Order Summary</p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
-            <SummaryRow label="Subtotal" value={fmt(subtotal)} />
+            <SummaryRow label="Subtotal" value={formatPrice(subtotal)} />
             <SummaryRow
               label="Shipping"
-              value={subtotal >= SHIPPING_THRESHOLD ? 'FREE' : fmt(FLAT_SHIPPING)}
+              value={subtotal >= SHIPPING_THRESHOLD ? 'FREE' : formatPrice(FLAT_SHIPPING)}
               accent={subtotal >= SHIPPING_THRESHOLD}
             />
           </div>
@@ -230,7 +231,7 @@ export default function CartPage({ cart = [], setCart, onNavigate }) {
           {subtotal < SHIPPING_THRESHOLD && subtotal > 0 && (
             <div style={{ padding: '10px 12px', backgroundColor: '#f9f9f9', borderLeft: '2px solid #e8e8e8', marginBottom: 16 }}>
               <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '11px', color: '#888', margin: 0, lineHeight: 1.5 }}>
-                Add {fmt(SHIPPING_THRESHOLD - subtotal)} for <span style={{ color: '#16a34a', fontWeight: 600 }}>free shipping</span>
+                Add {formatPrice(SHIPPING_THRESHOLD - subtotal)} for <span style={{ color: '#16a34a', fontWeight: 600 }}>free shipping</span>
               </p>
             </div>
           )}
@@ -238,7 +239,7 @@ export default function CartPage({ cart = [], setCart, onNavigate }) {
           <div style={{ height: 1, background: '#f0f0f0', margin: '0 0 16px' }} />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 24 }}>
             <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', letterSpacing: '0.16em', color: '#888', textTransform: 'uppercase' }}>Total</span>
-            <span style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: '22px', letterSpacing: '0.02em', color: '#000' }}>{fmt(total)}</span>
+            <span style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 600, fontSize: '22px', letterSpacing: '0.02em', color: '#000' }}>{formatPrice(total)}</span>
           </div>
 
           <button onClick={() => onNavigate?.('checkout')} style={{ width: '100%', padding: '15px', background: '#be1826', color: '#fff', border: 'none', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '11px', letterSpacing: '0.18em', cursor: 'pointer', transition: 'background 0.2s', marginBottom: 12 }}
@@ -395,6 +396,7 @@ function PageHeader({ onNavigate, isMobile, ready }) {
 
 function CartItem({ item, isLast, onUpdateQty, onRemove, onProductClick, isMobile }) {
   const [removing, setRemoving] = useState(false);
+  const { formatPrice } = useCurrency();
   const handleRemove = () => { setRemoving(true); setTimeout(() => onRemove(item.id), 220); };
 
   return (
@@ -437,8 +439,8 @@ function CartItem({ item, isLast, onUpdateQty, onRemove, onProductClick, isMobil
             >+</button>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '13px', color: '#000', margin: 0 }}>{fmt(item.price * item.quantity)}</p>
-            {item.quantity > 1 && <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', color: '#ccc', margin: '1px 0 0' }}>{fmt(item.price)} each</p>}
+            <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '13px', color: '#000', margin: 0 }}>{formatPrice(item.price * item.quantity)}</p>
+            {item.quantity > 1 && <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', color: '#ccc', margin: '1px 0 0' }}>{formatPrice(item.price)} each</p>}
           </div>
         </div>
       </div>
@@ -448,6 +450,7 @@ function CartItem({ item, isLast, onUpdateQty, onRemove, onProductClick, isMobil
 
 function PendingOrderCard({ order, isMobile, onConfirm, onReportIssue }) {
   const [confirming, setConfirming] = useState(false);
+  const { formatPrice } = useCurrency();
   const status    = order.order_status || 'confirmed';
   const statusCfg = STATUS_LABEL[status] || STATUS_LABEL.confirmed;
   const showConfirm = ['shipped', 'out_for_delivery'].includes(status);
@@ -497,14 +500,14 @@ function PendingOrderCard({ order, isMobile, onConfirm, onReportIssue }) {
               <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '11px', color: '#555', margin: 0 }}>{item.name}</p>
               <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', color: '#ccc', margin: '2px 0 0' }}>{[item.size, item.color].filter(Boolean).join(' / ')} × {item.quantity}</p>
             </div>
-            <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '11px', color: '#aaa', margin: 0 }}>{fmt(item.price * item.quantity)}</p>
+            <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '11px', color: '#aaa', margin: 0 }}>{formatPrice(item.price * item.quantity)}</p>
           </div>
         ))}
       </div>
 
       {/* Total + actions */}
       <div style={{ padding: '12px 20px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
-        <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '13px', color: '#000' }}>{fmt(order.total)}</span>
+        <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '13px', color: '#000' }}>{formatPrice(order.total)}</span>
 
         {/* Customer actions — only shown when shipped or out for delivery */}
         {showConfirm && !isInvestigating && (
