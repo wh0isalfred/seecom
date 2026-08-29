@@ -23,7 +23,9 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
   });
   const [loading, setLoading]         = useState(false);
   const [error, setError]             = useState('');
-  const [scriptReady, setReady]       = useState(false);
+  const [paystackReady, setPaystackReady]       = useState(false);
+  const [flutterwaveReady, setFlutterwaveReady] = useState(false);
+  const [provider, setProvider]       = useState('paystack');
   const [orderDone, setOrderDone]     = useState(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [isMobile, setIsMobile]       = useState(window.innerWidth < 768);
@@ -34,6 +36,10 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
   const total    = subtotal + shipping;
   const itemCount = cart.reduce((s, i) => s + i.quantity, 0);
 
+  // Paystack can only charge NGN for this account — once a foreign currency
+  // is selected, Flutterwave is the only option regardless of what's stored.
+  const effectiveProvider = currency === 'NGN' ? provider : 'flutterwave';
+
   useEffect(() => {
     const handle = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handle);
@@ -42,11 +48,23 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
 
   // Load Paystack
   useEffect(() => {
-    if (window.PaystackPop) { setReady(true); return; }
+    if (window.PaystackPop) { setPaystackReady(true); return; }
     const s = document.createElement('script');
     s.src = 'https://js.paystack.co/v1/inline.js';
     s.async = true;
-    s.onload  = () => setReady(true);
+    s.onload  = () => setPaystackReady(true);
+    s.onerror = () => setError('Could not load payment system. Check your connection.');
+    document.head.appendChild(s);
+    return () => { try { document.head.removeChild(s); } catch { /* script already removed */ } };
+  }, []);
+
+  // Load Flutterwave
+  useEffect(() => {
+    if (window.FlutterwaveCheckout) { setFlutterwaveReady(true); return; }
+    const s = document.createElement('script');
+    s.src = 'https://checkout.flutterwave.com/v3.js';
+    s.async = true;
+    s.onload  = () => setFlutterwaveReady(true);
     s.onerror = () => setError('Could not load payment system. Check your connection.');
     document.head.appendChild(s);
     return () => { try { document.head.removeChild(s); } catch { /* script already removed */ } };
@@ -68,9 +86,53 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
     return true;
   };
 
-  const handlePay = () => {
+  // Shared by both providers once their payment popup confirms success —
+  // creates the order, stashes it for the cart/tracking page, clears the cart.
+  const completeOrder = ({ provider, reference }) => {
+    setLoading(true);
+    const rate = currency === 'NGN' ? 1 : (rates[currency] || 1);
+    createOrderAfterPayment({ formData: form, cart, provider, reference, currency, exchangeRate: rate, total, shipping })
+      .then(order => {
+        const pending = JSON.parse(localStorage.getItem('pendingOrders') || '[]');
+        const newOrder = {
+          id: order.id,
+          confirm_token: order.confirm_token,
+          order_number: order.order_number,
+          total: order.total,
+          created_at: order.created_at,
+          customer_email: order.customer_email,
+          order_status: order.order_status || 'confirmed',
+          items: cart.map(i => ({
+            name: i.name,
+            size: i.size,
+            color: i.color,
+            quantity: i.quantity,
+            price: i.price,
+            image: i.image
+          })),
+        };
+        pending.push(newOrder);
+        localStorage.setItem('pendingOrders', JSON.stringify(pending));
+
+        // Separate key — survives pendingOrders being cleared
+        const guestIds = JSON.parse(localStorage.getItem('guestOrderIds') || '[]');
+        if (!guestIds.includes(order.id)) guestIds.push(order.id);
+        localStorage.setItem('guestOrderIds', JSON.stringify(guestIds));
+
+        setCart([]);
+        setOrderDone(order);
+      })
+      .catch(() => {
+        setError(`Payment received (ref: ${reference}) but order failed. Contact us with this reference.`);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
+
+  const handlePayPaystack = () => {
     if (!validate()) return;
-    if (!scriptReady || !window.PaystackPop) {
+    if (!paystackReady || !window.PaystackPop) {
       setError('Payment system still loading — please wait a moment.');
       return;
     }
@@ -90,49 +152,47 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
       },
       callback: function (response) {
         // Paystack rejects async callbacks — call an async handler inside instead
-        setLoading(true);
-        createOrderAfterPayment({ formData: form, cart, paystackReference: response.reference, total, shipping })
-          .then(order => {
-            // Save to localStorage so the order shows on the cart page
-            const pending = JSON.parse(localStorage.getItem('pendingOrders') || '[]');
-            const newOrder = {
-              id: order.id,
-              confirm_token: order.confirm_token, // <-- Add this line
-              order_number: order.order_number,
-              total: order.total,
-              created_at: order.created_at,
-              customer_email: order.customer_email,
-              order_status: order.order_status || 'confirmed',
-              items: cart.map(i => ({
-                name: i.name,
-                size: i.size,
-                color: i.color,
-                quantity: i.quantity,
-                price: i.price,
-                image: i.image
-              })),
-            };
-            pending.push(newOrder);
-            localStorage.setItem('pendingOrders', JSON.stringify(pending));
-
-            // Separate key — survives pendingOrders being cleared
-            const guestIds = JSON.parse(localStorage.getItem('guestOrderIds') || '[]');
-            if (!guestIds.includes(order.id)) guestIds.push(order.id);
-            localStorage.setItem('guestOrderIds', JSON.stringify(guestIds));
-
-            setCart([]);
-            setOrderDone(order);
-          })
-          .catch(() => {
-            setError(`Payment received (ref: ${response.reference}) but order failed. Contact us with this reference.`);
-          })
-          .finally(() => {
-            setLoading(false);
-          });
+        completeOrder({ provider: 'paystack', reference: response.reference });
       },
       onClose: () => {},
     });
     handler.openIframe();
+  };
+
+  const handlePayFlutterwave = () => {
+    if (!validate()) return;
+    if (!flutterwaveReady || !window.FlutterwaveCheckout) {
+      setError('Payment system still loading — please wait a moment.');
+      return;
+    }
+    const ref = `SEE-${Date.now()}-${Math.random().toString(36).substr(2,5).toUpperCase()}`;
+    // Flutterwave charges the amount actually shown to the customer — convert
+    // the NGN total into whatever currency they've selected, rounded to cents.
+    const chargeAmount = currency === 'NGN' ? total : Math.round(convert(total) * 100) / 100;
+    window.FlutterwaveCheckout({
+      public_key: import.meta.env.VITE_FLUTTERWAVE_PUBLIC_KEY,
+      tx_ref: ref,
+      amount: chargeAmount,
+      currency,
+      payment_options: 'card,mobilemoney,ussd',
+      customer: {
+        email: form.email,
+        phone_number: form.phone,
+        name: `${form.firstName} ${form.lastName}`,
+      },
+      customizations: {
+        title: 'SEE.COM',
+        description: `Order for ${itemCount} item${itemCount !== 1 ? 's' : ''}`,
+      },
+      callback: (response) => {
+        if (response.status === 'successful' || response.status === 'completed') {
+          completeOrder({ provider: 'flutterwave', reference: response.tx_ref || ref });
+        } else {
+          setError('Payment was not completed.');
+        }
+      },
+      onclose: () => {},
+    });
   };
 
   // ── Order success ────────────────────────────────────────────────────────
@@ -317,9 +377,10 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
           {!isMobile && (
             <div style={{ marginTop: '32px' }}>
               <DesktopSummary cart={cart} subtotal={subtotal} shipping={shipping} total={total} />
+              <ProviderPicker provider={effectiveProvider} setProvider={setProvider} currency={currency} />
               <PolicyAcceptance onNavigate={onNavigate} />
-              <PayButton onPay={handlePay} loading={loading} total={total} />
-              <PaystackBadge />
+              <PayButton onPay={effectiveProvider === 'flutterwave' ? handlePayFlutterwave : handlePayPaystack} loading={loading} total={total} />
+              <PaystackBadge provider={effectiveProvider} />
             </div>
           )}
         </div>
@@ -375,9 +436,10 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
               {error}
             </div>
           )}
+          <ProviderPicker provider={effectiveProvider} setProvider={setProvider} currency={currency} />
           <PolicyAcceptance onNavigate={onNavigate} />
-          <PayButton onPay={handlePay} loading={loading} total={total} />
-          <PaystackBadge />
+          <PayButton onPay={effectiveProvider === 'flutterwave' ? handlePayFlutterwave : handlePayPaystack} loading={loading} total={total} />
+          <PaystackBadge provider={effectiveProvider} />
         </div>
       )}
     </div>
@@ -476,6 +538,43 @@ function PayButton({ onPay, loading, total }) {
   );
 }
 
+function ProviderPicker({ provider, setProvider, currency }) {
+  const paystackDisabled = currency !== 'NGN';
+  const btn = (active, disabled) => ({
+    flex: 1, padding: '10px 0', textAlign: 'center', cursor: disabled ? 'not-allowed' : 'pointer',
+    border: `1px solid ${active ? '#000' : '#e0e0e0'}`, background: active ? '#000' : '#fff',
+    color: disabled ? '#ccc' : (active ? '#fff' : '#000'),
+    fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: '0.1em',
+    textTransform: 'uppercase', transition: 'all 0.15s',
+  });
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button
+          type="button"
+          disabled={paystackDisabled}
+          onClick={() => !paystackDisabled && setProvider('paystack')}
+          style={btn(provider === 'paystack', paystackDisabled)}
+        >
+          Paystack
+        </button>
+        <button
+          type="button"
+          onClick={() => setProvider('flutterwave')}
+          style={btn(provider === 'flutterwave', false)}
+        >
+          Flutterwave
+        </button>
+      </div>
+      {paystackDisabled && (
+        <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '9px', color: '#bbb', margin: '6px 0 0', textAlign: 'center' }}>
+          Paystack only supports Naira — switch currency to use it.
+        </p>
+      )}
+    </div>
+  );
+}
+
 function PolicyAcceptance({ onNavigate }) {
   const linkStyle = { color: '#666', textDecoration: 'underline', textUnderlineOffset: '2px', cursor: 'pointer' };
   return (
@@ -489,14 +588,15 @@ function PolicyAcceptance({ onNavigate }) {
   );
 }
 
-function PaystackBadge() {
+function PaystackBadge({ provider = 'paystack' }) {
+  const label = provider === 'flutterwave' ? 'Secured by Flutterwave' : 'Secured by Paystack';
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '10px' }}>
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
         <path d="M12 2L3 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z" stroke="#ccc" strokeWidth="1.5" strokeLinejoin="round"/>
       </svg>
       <span style={{ fontFamily: "'Archivo', sans-serif", fontSize: '10px', letterSpacing: '0.06em', color: '#ccc', textTransform: 'uppercase' }}>
-        Secured by Paystack
+        {label}
       </span>
     </div>
   );

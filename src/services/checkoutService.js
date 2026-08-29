@@ -7,20 +7,26 @@ const generateOrderNumber = () => {
 };
 
 /**
- * Called after Paystack confirms payment.
+ * Called after payment (Paystack or Flutterwave) confirms.
  * Creates the order, inserts items, reduces inventory — all in one shot.
+ *
+ * `total`/`shipping` are always in NGN — that stays the ledger currency
+ * regardless of what the customer actually paid in. `currency` +
+ * `exchangeRate` just record what they saw/paid at checkout time, for
+ * reference (exchange_rate is a snapshot — rates drift over time, so it
+ * wouldn't be reconstructable later otherwise).
  */
-export const createOrderAfterPayment = async ({ formData, cart, paystackReference, total, shipping }) => {
+export const createOrderAfterPayment = async ({ formData, cart, provider = 'paystack', reference, currency = 'NGN', exchangeRate = 1, total, shipping }) => {
   // Race against a 10s timeout — prevents silent infinite hang
   const timeoutPromise = new Promise((_, reject) =>
     setTimeout(() => reject(new Error('Order creation timed out — check Supabase RLS SELECT policy on orders')), 10000)
   );
 
-  return Promise.race([_createOrder({ formData, cart, paystackReference, total, shipping }), timeoutPromise]);
+  return Promise.race([_createOrder({ formData, cart, provider, reference, currency, exchangeRate, total, shipping }), timeoutPromise]);
 };
 
 
-const _createOrder = async ({ formData, cart, paystackReference, total, shipping }) => {
+const _createOrder = async ({ formData, cart, provider, reference, currency, exchangeRate, total, shipping }) => {
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -50,7 +56,12 @@ const _createOrder = async ({ formData, cart, paystackReference, total, shipping
       total,
       order_status: 'confirmed',
       payment_status: 'paid',
-      paystack_reference: paystackReference,
+      currency,
+      exchange_rate: exchangeRate,
+      payment_provider: provider,
+      payment_reference: reference,
+      // Kept populated for backward compat with anything still reading this column directly
+      paystack_reference: provider === 'paystack' ? reference : null,
     }])
     .select();
 
