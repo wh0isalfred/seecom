@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createOrderAfterPayment } from '../services/checkoutService';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { supabase } from '../services/supabase';
@@ -31,6 +31,9 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [isMobile, setIsMobile]       = useState(window.innerWidth < 768);
   const { currency, convert, formatPrice, rates } = useCurrency();
+  const errorBannerRef = useRef(null);
+  const mobileBarRef   = useRef(null);
+  const [mobileBarHeight, setMobileBarHeight] = useState(160);
 
   const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
   const shipping = subtotal >= SHIPPING_THRESHOLD ? 0 : FLAT_SHIPPING;
@@ -46,6 +49,25 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
     window.addEventListener('resize', handle);
     return () => window.removeEventListener('resize', handle);
   }, []);
+
+  // Keep the scrollable form's bottom padding in sync with the actual height
+  // of the fixed mobile pay bar — it grows (error banner, provider notes)
+  // and a hardcoded guess would eventually hide fields behind it again.
+  useEffect(() => {
+    if (!isMobile || !mobileBarRef.current) return;
+    const el = mobileBarRef.current;
+    const measure = () => setMobileBarHeight(el.offsetHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [isMobile]);
+
+  // Scroll the error into view whenever one appears — otherwise it can land
+  // above the fold (or behind the mobile pay bar) and go unnoticed.
+  useEffect(() => {
+    if (error) errorBannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [error]);
 
   // Load Paystack
   useEffect(() => {
@@ -264,7 +286,7 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
 
       {/* Loading overlay */}
       {loading && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 100000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ backgroundColor: '#fff', padding: '28px 40px', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '12px', letterSpacing: '0.16em' }}>
             CONFIRMING ORDER...
           </div>
@@ -353,7 +375,7 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
         gridTemplateColumns: isMobile ? undefined : 'minmax(0,1fr) 360px',
         flex: 1,
         alignItems: 'start',
-        paddingBottom: isMobile ? '120px' : '0', // space for sticky button
+        paddingBottom: isMobile ? `${mobileBarHeight + 24}px` : '0', // space for sticky button
       }}>
 
         {/* ── Delivery form ── */}
@@ -361,7 +383,7 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
           <h2 style={sectionHead}>Delivery Details</h2>
 
           {error && (
-            <div style={{ padding: '12px 16px', backgroundColor: '#fff5f5', borderLeft: '3px solid #be1826', fontFamily: "'Archivo', sans-serif", fontSize: '13px', color: '#be1826', marginBottom: '20px', lineHeight: 1.5 }}>
+            <div ref={errorBannerRef} style={{ padding: '12px 16px', backgroundColor: '#fff5f5', borderLeft: '3px solid #be1826', fontFamily: "'Archivo', sans-serif", fontSize: '13px', color: '#be1826', marginBottom: '20px', lineHeight: 1.5 }}>
               {error}
             </div>
           )}
@@ -449,7 +471,7 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
 
       {/* ── Mobile: sticky bottom pay bar ── */}
       {isMobile && (
-        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', borderTop: '1px solid #f0f0f0', padding: '12px 20px 20px', zIndex: 100 }}>
+        <div ref={mobileBarRef} style={{ position: 'fixed', bottom: 0, left: '36px', right: 0, backgroundColor: '#fff', borderTop: '1px solid #f0f0f0', padding: '12px 20px 20px', zIndex: 100 }}>
           {error && (
             <div style={{ padding: '10px 14px', backgroundColor: '#fff5f5', borderLeft: '3px solid #be1826', fontFamily: "'Archivo', sans-serif", fontSize: '12px', color: '#be1826', marginBottom: '10px', lineHeight: 1.4 }}>
               {error}
