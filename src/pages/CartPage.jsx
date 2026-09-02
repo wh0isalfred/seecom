@@ -5,7 +5,7 @@ import { supabase } from '../services/supabase';
 import { useCurrency } from '../contexts/CurrencyContext';
 
 const SHIPPING_THRESHOLD = 100000;
-const FLAT_SHIPPING      = 3500;
+const FLAT_SHIPPING      = 6500;
 
 // Grace window in days before auto-close — flat across all states
 const GRACE_DAYS = 14;
