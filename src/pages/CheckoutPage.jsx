@@ -117,9 +117,19 @@ export default function CheckoutPage({ cart = [], setCart, onNavigate }) {
     setLoading(true);
     const rate = currency === 'NGN' ? 1 : (rates[currency] || 1);
 
-    supabase.functions.invoke('verify-payment', {
-      body: { provider, reference, expectedAmount: chargedAmount, expectedCurrency: chargedCurrency },
-    })
+    // Timeout guard — without this, a slow/hung verify-payment call (network
+    // hiccup, provider API being slow, anything) leaves the customer staring
+    // at "CONFIRMING ORDER..." forever with no way out.
+    const verifyTimeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('verify-payment timed out')), 20000)
+    );
+
+    Promise.race([
+      supabase.functions.invoke('verify-payment', {
+        body: { provider, reference, expectedAmount: chargedAmount, expectedCurrency: chargedCurrency },
+      }),
+      verifyTimeout,
+    ])
       .then(({ data, error: fnError }) => {
         if (fnError || !data?.verified) {
           setLoading(false);
