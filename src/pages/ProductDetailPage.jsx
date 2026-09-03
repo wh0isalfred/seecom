@@ -378,44 +378,57 @@ export default function ProductDetailPage({ productId, setCart, onNavigate }) {
               </button>
             </div>
 
-            {/* T-Shirts table */}
-            {(!product.category || product.category === 'tshirts') && (
-              <div style={{ padding: '20px 24px 0' }}>
-                <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '10px', letterSpacing: '0.14em', color: '#000', textTransform: 'uppercase', margin: '0 0 14px' }}>T-Shirts — cm</p>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: "'Archivo', sans-serif" }}>
-                  <thead>
-                    <tr style={{ borderBottom: '2px solid #000' }}>
-                      {['Size', 'Chest', 'Length', 'Shoulder', 'Sleeve'].map(h => (
-                        <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontSize: '9px', letterSpacing: '0.14em', fontWeight: 700, color: '#000', textTransform: 'uppercase' }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[
-                      ['XS', '86–91', '66', '41', '60'],
-                      ['S',  '91–96', '69', '43', '62'],
-                      ['M',  '96–101','71', '45', '64'],
-                      ['L',  '101–106','74','47', '66'],
-                      ['XL', '106–111','76','49', '68'],
-                    ].map(([size, ...vals], i) => (
-                      <tr key={size} style={{ backgroundColor: i % 2 === 0 ? '#fafafa' : '#fff', borderBottom: '1px solid #f0f0f0' }}>
-                        <td style={{ padding: '10px 10px', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '12px', color: '#000' }}>{size}</td>
-                        {vals.map((v, vi) => (
-                          <td key={vi} style={{ padding: '10px 10px', fontSize: '12px', color: '#555' }}>{v}</td>
+            {/* Size chart — from the product's own data if the admin set one,
+                falling back to the old hardcoded defaults for products that
+                predate this feature (their size_chart column is null).
+                columns/rows are keyed by column name (not position), so a
+                product can show any subset of measurements in any order. */}
+            {(product.size_chart?.type === 'table' || (!product.size_chart && (!product.category || product.category === 'tshirts'))) && (() => {
+              const chart = product.size_chart?.type === 'table' ? product.size_chart : {
+                columns: ['Chest', 'Length', 'Shoulder', 'Sleeve'],
+                rows: {
+                  XS: { Chest: '86–91',  Length: '66', Shoulder: '41', Sleeve: '60' },
+                  S:  { Chest: '91–96',  Length: '69', Shoulder: '43', Sleeve: '62' },
+                  M:  { Chest: '96–101', Length: '71', Shoulder: '45', Sleeve: '64' },
+                  L:  { Chest: '101–106', Length: '74', Shoulder: '47', Sleeve: '66' },
+                  XL: { Chest: '106–111', Length: '76', Shoulder: '49', Sleeve: '68' },
+                },
+              };
+              const sizeOrder = Array.isArray(product.sizes) && product.sizes.length ? product.sizes : Object.keys(chart.rows);
+              return (
+                <div style={{ padding: '20px 24px 0' }}>
+                  <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '10px', letterSpacing: '0.14em', color: '#000', textTransform: 'uppercase', margin: '0 0 14px' }}>{product.category || 'Sizing'} — cm</p>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: "'Archivo', sans-serif" }}>
+                    <thead>
+                      <tr style={{ borderBottom: '2px solid #000' }}>
+                        {['Size', ...chart.columns].map(h => (
+                          <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontSize: '9px', letterSpacing: '0.14em', fontWeight: 700, color: '#000', textTransform: 'uppercase' }}>{h}</th>
                         ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    </thead>
+                    <tbody>
+                      {sizeOrder.filter(size => chart.rows[size]).map((size, i) => (
+                        <tr key={size} style={{ backgroundColor: i % 2 === 0 ? '#fafafa' : '#fff', borderBottom: '1px solid #f0f0f0' }}>
+                          <td style={{ padding: '10px 10px', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '12px', color: '#000' }}>{size}</td>
+                          {chart.columns.map(col => (
+                            <td key={col} style={{ padding: '10px 10px', fontSize: '12px', color: '#555' }}>{chart.rows[size][col] ?? '—'}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
 
-            {/* Chains note */}
-            {product.category === 'chains' && (
+            {/* Size note (e.g. chains) — same fallback logic as the table above */}
+            {(product.size_chart?.type === 'note' || (!product.size_chart && product.category === 'chains')) && (
               <div style={{ padding: '24px' }}>
                 <div style={{ padding: '16px', backgroundColor: '#f9f9f9', borderLeft: '2px solid #be1826' }}>
                   <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '13px', color: '#555', lineHeight: 1.7, margin: 0 }}>
-                    All SEE.COM chains are <strong style={{ color: '#000' }}>one size fits all</strong>. Standard length: <strong style={{ color: '#000' }}>50cm</strong> with an adjustable clasp. Contact us if you need a custom length.
+                    {product.size_chart?.type === 'note'
+                      ? product.size_chart.text
+                      : <>All SEE.COM chains are <strong style={{ color: '#000' }}>one size fits all</strong>. Standard length: <strong style={{ color: '#000' }}>50cm</strong> with an adjustable clasp. Contact us if you need a custom length.</>}
                   </p>
                 </div>
               </div>

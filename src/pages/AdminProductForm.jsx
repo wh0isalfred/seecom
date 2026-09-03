@@ -1,6 +1,37 @@
 import { useState, useEffect } from 'react';
 import { uploadProductImage, createProduct, notifyIfNewArrival } from '../services/productAdmin';
 
+// Every measurement column that can ever appear in a size guide. Per-product,
+// the admin ticks which of these actually apply — some pieces skip Shoulder,
+// some split Sleeve into Short/Long, etc. Add more here if a future piece
+// needs a column that doesn't exist yet.
+const SIZE_CHART_COLUMN_POOL = ['Chest', 'Length', 'Shoulder', 'Sleeve', 'Short Sleeve', 'Long Sleeve'];
+
+// Default size guide per category — matches what used to be hardcoded on
+// the product page. New products auto-fill from this with zero admin
+// effort; the admin only ever edits it when a specific piece runs
+// differently from the norm (missing a column, split sleeve lengths, etc).
+const SIZE_CHART_DEFAULTS = {
+  tshirts: {
+    type: 'table',
+    columns: ['Chest', 'Length', 'Shoulder', 'Sleeve'],
+    rows: {
+      XS: { Chest: '86–91',  Length: '66', Shoulder: '41', Sleeve: '60' },
+      S:  { Chest: '91–96',  Length: '69', Shoulder: '43', Sleeve: '62' },
+      M:  { Chest: '96–101', Length: '71', Shoulder: '45', Sleeve: '64' },
+      L:  { Chest: '101–106', Length: '74', Shoulder: '47', Sleeve: '66' },
+      XL: { Chest: '106–111', Length: '76', Shoulder: '49', Sleeve: '68' },
+    },
+  },
+  chains: {
+    type: 'note',
+    text: "All SEE.COM chains are one size fits all. Standard length: 50cm with an adjustable clasp. Contact us if you need a custom length.",
+  },
+};
+
+const defaultChartFor = (category) =>
+  JSON.parse(JSON.stringify(SIZE_CHART_DEFAULTS[category] || SIZE_CHART_DEFAULTS.tshirts));
+
 export default function AdminProductForm({ onProductCreated }) {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
@@ -21,6 +52,8 @@ export default function AdminProductForm({ onProductCreated }) {
     is_new_arrival: true,
     is_made_to_order: false,
   });
+  const [sizeChart, setSizeChart] = useState(defaultChartFor('tshirts'));
+  const [customizeSizing, setCustomizeSizing] = useState(false);
 
   const [images, setImages] = useState({
     image_1: null,
@@ -49,6 +82,10 @@ export default function AdminProductForm({ onProductCreated }) {
       }
       return updated;
     });
+    if (name === 'category') {
+      setSizeChart(defaultChartFor(value));
+      setCustomizeSizing(false);
+    }
   };
 
   const handleImageChange = (e, imageType) => {
@@ -131,6 +168,7 @@ export default function AdminProductForm({ onProductCreated }) {
         discount_price: formData.discount_price ? parseFloat(formData.discount_price) : null,
         sizes: formData.sizes,
         colors: formData.colors,
+        size_chart: sizeChart,
         ...uploadedImages,
       };
 
@@ -150,6 +188,8 @@ export default function AdminProductForm({ onProductCreated }) {
         is_new_arrival: true,
         is_made_to_order: false,
       });
+      setSizeChart(defaultChartFor('tshirts'));
+      setCustomizeSizing(false);
       setImages({
         image_1: null,
         image_2: null,
@@ -316,6 +356,106 @@ export default function AdminProductForm({ onProductCreated }) {
               </span>
             ))}
           </div>
+        </div>
+
+        {/* Size guide — auto-fills from the category default; only touched
+            when this specific piece runs differently from the norm */}
+        <div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: '600' }}>
+            <input
+              type="checkbox"
+              checked={customizeSizing}
+              onChange={(e) => setCustomizeSizing(e.target.checked)}
+              style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+            />
+            This item's sizing runs differently than usual
+          </label>
+          <p style={{ margin: '4px 0 0 26px', fontSize: '11px', color: '#999' }}>
+            Unchecked, this product uses the standard {formData.category} size guide — no need to touch anything below.
+          </p>
+
+          {customizeSizing && sizeChart.type === 'table' && (
+            <div style={{ marginTop: '12px' }}>
+              {/* Which columns apply to this piece */}
+              <p style={{ fontSize: '11px', fontWeight: 600, color: '#666', marginBottom: '6px' }}>Columns to show</p>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '14px' }}>
+                {SIZE_CHART_COLUMN_POOL.map(col => {
+                  const checked = sizeChart.columns.includes(col);
+                  return (
+                    <label key={col} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 10px', background: checked ? '#f0f0f0' : '#fff', border: '1px solid #e0e0e0', borderRadius: '4px', fontSize: '12px', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => {
+                          setSizeChart(prev => ({
+                            ...prev,
+                            columns: e.target.checked
+                              ? [...prev.columns, col]
+                              : prev.columns.filter(c => c !== col),
+                          }));
+                        }}
+                        style={{ width: '14px', height: '14px', cursor: 'pointer' }}
+                      />
+                      {col}
+                    </label>
+                  );
+                })}
+              </div>
+
+              {/* Values for whichever columns are currently checked — values
+                  for unchecked columns are preserved in the background, so
+                  re-checking a column brings back whatever was typed before */}
+              {sizeChart.columns.length > 0 && (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ borderCollapse: 'collapse', minWidth: '100%' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ padding: '6px 8px', textAlign: 'left', fontSize: '11px', color: '#999' }}>Size</th>
+                        {sizeChart.columns.map(col => (
+                          <th key={col} style={{ padding: '6px 8px', textAlign: 'left', fontSize: '11px', color: '#999' }}>{col}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {formData.sizes.map(size => (
+                        <tr key={size}>
+                          <td style={{ padding: '4px 8px', fontWeight: 600, fontSize: '12px' }}>{size}</td>
+                          {sizeChart.columns.map(col => (
+                            <td key={col} style={{ padding: '4px 4px' }}>
+                              <input
+                                type="text"
+                                value={sizeChart.rows[size]?.[col] ?? ''}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setSizeChart(prev => ({
+                                    ...prev,
+                                    rows: {
+                                      ...prev.rows,
+                                      [size]: { ...prev.rows[size], [col]: val },
+                                    },
+                                  }));
+                                }}
+                                style={{ width: '70px', padding: '5px 6px', border: '1px solid #e0e0e0', borderRadius: '3px', fontSize: '12px' }}
+                              />
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {customizeSizing && sizeChart.type === 'note' && (
+            <textarea
+              value={sizeChart.text}
+              onChange={(e) => setSizeChart(prev => ({ ...prev, text: e.target.value }))}
+              rows={3}
+              style={{ width: '100%', marginTop: '12px', padding: '10px 12px', border: '1px solid #e0e0e0', borderRadius: '4px', fontFamily: "'Archivo', sans-serif", fontSize: '13px', resize: 'vertical' }}
+            />
+          )}
         </div>
 
         {/* Colors */}
